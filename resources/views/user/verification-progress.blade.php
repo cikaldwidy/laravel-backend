@@ -46,8 +46,7 @@
     <div class="px-4 md:px-14 lg:px-20 pb-10">
         <div class="max-w-5xl mx-auto bg-white rounded-md shadow-lg p-6 md:p-8">
             <div class="text-center">
-                <h1 class="text-2xl font-bold text-gray-800 tracking-[0.4px]">Verifikasi Wajah</h1>
-                <p class="text-sm text-blue-600 font-semibold mt-1">Langkah 3 dari 4</p>
+                <h1 class="text-2xl font-bold text-gray-700 tracking-[0.4px]">Verifikasi Wajah</h1>
                 <p class="text-sm text-gray-400 mt-3">
                     Sistem sedang memverifikasi sampel wajah Anda.
                 </p>

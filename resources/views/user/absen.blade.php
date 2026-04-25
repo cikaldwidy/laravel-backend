@@ -98,6 +98,9 @@ let latestSnapshot = null;
 let trackingTimer = null;
 let isSubmitting = false;
 let latestQualityMetrics = null;
+const MIN_BRIGHTNESS = 38;
+const MAX_BRIGHTNESS = 210;
+const MIN_SHARPNESS = 10;
 
 function updateStatus(message, isError = false) {
     statusText.textContent = message;
@@ -198,16 +201,33 @@ function captureSnapshot() {
     return canvas.toDataURL('image/jpeg', 0.9);
 }
 
-function getFrameQuality() {
+function getFrameQuality(faceBox = null) {
     const canvas = document.createElement('canvas');
-    canvas.width = 160;
-    canvas.height = 120;
+    canvas.width = 240;
+    canvas.height = 180;
     const context = canvas.getContext('2d', { willReadFrequently: true });
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const { data, width, height } = context.getImageData(0, 0, canvas.width, canvas.height);
+    const width = canvas.width;
+    const height = canvas.height;
+
+    let sampleX = Math.floor(width * 0.2);
+    let sampleY = Math.floor(height * 0.15);
+    let sampleWidth = Math.floor(width * 0.6);
+    let sampleHeight = Math.floor(height * 0.7);
+
+    if (faceBox) {
+        const scaleX = width / video.videoWidth;
+        const scaleY = height / video.videoHeight;
+        sampleX = Math.max(0, Math.floor(faceBox.x * scaleX));
+        sampleY = Math.max(0, Math.floor(faceBox.y * scaleY));
+        sampleWidth = Math.min(width - sampleX, Math.floor(faceBox.width * scaleX));
+        sampleHeight = Math.min(height - sampleY, Math.floor(faceBox.height * scaleY));
+    }
+
+    const { data } = context.getImageData(sampleX, sampleY, sampleWidth, sampleHeight);
 
     let brightnessTotal = 0;
-    const grayscale = new Float32Array(width * height);
+    const grayscale = new Float32Array(sampleWidth * sampleHeight);
 
     for (let i = 0, pixelIndex = 0; i < data.length; i += 4, pixelIndex++) {
         const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
@@ -216,27 +236,27 @@ function getFrameQuality() {
     }
 
     let sharpnessTotal = 0;
-    for (let y = 1; y < height - 1; y++) {
-        for (let x = 1; x < width - 1; x++) {
-            const index = y * width + x;
+    for (let y = 1; y < sampleHeight - 1; y++) {
+        for (let x = 1; x < sampleWidth - 1; x++) {
+            const index = y * sampleWidth + x;
             const laplacian =
                 4 * grayscale[index] -
                 grayscale[index - 1] -
                 grayscale[index + 1] -
-                grayscale[index - width] -
-                grayscale[index + width];
+                grayscale[index - sampleWidth] -
+                grayscale[index + sampleWidth];
             sharpnessTotal += Math.abs(laplacian);
         }
     }
 
     return {
         brightness: brightnessTotal / grayscale.length,
-        sharpness: sharpnessTotal / ((width - 2) * (height - 2)),
+        sharpness: sharpnessTotal / ((sampleWidth - 2) * (sampleHeight - 2)),
     };
 }
 
 function isFrameQualityGood(quality) {
-    return quality.brightness >= 55 && quality.brightness <= 210 && quality.sharpness >= 18;
+    return quality.brightness >= MIN_BRIGHTNESS && quality.brightness <= MAX_BRIGHTNESS && quality.sharpness >= MIN_SHARPNESS;
 }
 
 function stopTracking() {
@@ -273,13 +293,13 @@ function trackChallenge() {
 
         const currentExpectedStep = challenge.steps[completedSteps.length];
         const currentPose = getHeadPoseStep(detection.landmarks);
-        const quality = getFrameQuality();
+        const quality = getFrameQuality(detection.detection.box);
 
         faceStatus.textContent = `Wajah terdeteksi (${currentPose})`;
 
         if (!isFrameQualityGood(quality)) {
             faceStatus.textContent = 'Wajah terdeteksi, tapi frame kurang jelas';
-            updateStatus('Perbaiki pencahayaan atau stabilkan wajah sebelum verifikasi.', true);
+            updateStatus(`Perbaiki pencahayaan/stabilitas. Cahaya ${Math.round(quality.brightness)}, ketajaman ${Math.round(quality.sharpness)}.`, true);
             return;
         }
 

@@ -54,7 +54,7 @@
                     <span class="absolute bottom-4 -right-5 w-2 h-2 rounded-full bg-orange-400"></span>
                 </div>
 
-                <h1 class="mt-8 text-3xl font-bold text-gray-800 tracking-[0.4px]">Pendaftaran Berhasil!</h1>
+                <h1 class="mt-8 text-3xl font-bold text-gray-700 tracking-[0.4px]">Pendaftaran Berhasil!</h1>
                 <p class="mt-4 text-sm text-gray-500 max-w-sm">
                     Wajah Anda berhasil didaftarkan. Anda dapat melanjutkan ke dashboard.
                 </p>

@@ -3,6 +3,13 @@
 @section('title', 'Pendaftaran Wajah')
 
 @section('content')
+<style>
+@keyframes face-scan-line {
+    0% { transform: translateX(-50%) translateY(0); opacity: 0.55; }
+    50% { transform: translateX(-50%) translateY(132px); opacity: 1; }
+    100% { transform: translateX(-50%) translateY(0); opacity: 0.55; }
+}
+</style>
 <div class="min-h-screen bg-[#f8fbff]">
     <div class="px-8 md:px-14 lg:px-20 pt-6">
         <div class="flex items-center gap-3">
@@ -46,8 +53,7 @@
     <div class="px-4 md:px-14 lg:px-20 pb-10">
         <div class="max-w-6xl mx-auto bg-white rounded-md shadow-lg p-4 md:p-6">
             <div class="text-center mb-6">
-                <h1 class="text-xl md:text-2xl font-bold text-gray-800 tracking-[0.4px]">Pendaftaran Wajah</h1>
-                <p class="text-sm text-blue-600 font-semibold mt-1">Langkah 2 dari 4</p>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-700 tracking-[0.4px]">Pendaftaran Wajah</h1>
                 <p class="text-sm text-gray-400 mt-2">
                     Pastikan wajah Anda berada di dalam frame dan pencahayaan cukup.
                 </p>
@@ -59,15 +65,21 @@
                         <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
                         <div class="absolute inset-5 border-4 border-white rounded-2xl pointer-events-none"></div>
                         <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                            <div id="headGuide" class="relative w-40 h-40 md:w-48 md:h-48 transition-transform duration-500 ease-out">
-                                <div class="absolute inset-0 rounded-full border-2 border-white/70 shadow-[0_0_0_10px_rgba(255,255,255,0.08)]"></div>
-                                <div class="absolute left-1/2 top-[24%] w-10 h-10 -translate-x-1/2 rounded-full border-2 border-white/80"></div>
-                                <div class="absolute left-1/2 top-[42%] w-[68px] h-[52px] -translate-x-1/2 rounded-[45%] border-2 border-white/80"></div>
-                                <div class="absolute left-1/2 bottom-[12%] w-[92px] h-[48px] -translate-x-1/2 rounded-b-[60px] border-2 border-t-0 border-white/80"></div>
-                                <div id="guideArrow" class="absolute -right-10 top-1/2 -translate-y-1/2 text-white/90 text-3xl transition-all duration-500 ease-out">
-                                    <i class="fa-solid fa-arrow-right"></i>
+                            <div id="headGuide" class="relative w-52 h-64 md:w-60 md:h-80 transition-transform duration-500 ease-out">
+                                <div class="absolute inset-[8%] rounded-[999px] bg-white/12"></div>
+                                <div class="absolute inset-[18%] rounded-[999px] border-[3px] border-white/75 shadow-[0_0_0_10px_rgba(255,255,255,0.05)]"></div>
+                                <div class="absolute inset-[18%] rounded-[999px] overflow-hidden">
+                                    <div id="radialTicks" class="absolute inset-0"></div>
                                 </div>
-                                <div id="guidePulse" class="absolute inset-0 rounded-full border-2 border-blue-300/60 animate-ping"></div>
+                                <div id="scanLine" class="absolute top-[18%] bottom-[18%] left-1/2 w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-cyan-200 to-transparent opacity-90" style="animation: face-scan-line 2.4s ease-in-out infinite;"></div>
+                                <div class="absolute left-1/2 top-[18%] bottom-[18%] w-px -translate-x-1/2 bg-cyan-100/60"></div>
+                                <div class="absolute top-1/2 left-[18%] right-[18%] h-px -translate-y-1/2 bg-white/20"></div>
+                                <div class="absolute left-1/2 top-[30%] w-10 h-10 -translate-x-1/2 rounded-full border-[3px] border-white/80"></div>
+                                <div class="absolute left-1/2 top-[48%] w-[78px] h-[58px] -translate-x-1/2 rounded-[40%] border-[3px] border-white/80"></div>
+                                <div class="absolute left-1/2 bottom-[20%] w-[102px] h-[58px] -translate-x-1/2 rounded-b-[70px] border-[3px] border-t-0 border-white/80"></div>
+                                <div id="guideArrow" class="absolute left-1/2 -bottom-8 -translate-x-1/2 text-white/95 text-4xl transition-all duration-500 ease-out">
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </div>
                             </div>
                         </div>
                         <div class="absolute top-4 left-4 bg-blue-600/90 text-white text-xs px-3 py-2 rounded-full shadow">
@@ -84,7 +96,13 @@
 
                     <div class="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <button id="startCamera" class="sm:col-span-3 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-md font-semibold text-sm shadow transition">
-                            <i class="fa-solid fa-camera mr-2"></i>MULAI PENDAFTARAN WAJAH
+                            <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA
+                        </button>
+                        <button id="resetSamples" class="border border-red-200 text-red-500 hover:bg-red-50 px-4 py-3 rounded-md font-semibold text-sm transition">
+                            RESET
+                        </button>
+                        <button id="captureSample" class="sm:col-span-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-md font-semibold text-sm shadow disabled:opacity-50 disabled:cursor-not-allowed transition" disabled>
+                            <i class="fa-solid fa-camera mr-2"></i>AMBIL SAMPEL
                         </button>
                     </div>
                 </div>
@@ -130,11 +148,6 @@
                             <span id="sampleDot3" class="w-3 h-3 rounded-full bg-gray-200"></span>
                         </div>
                     </div>
-
-                    <div class="mt-8 rounded-md border border-blue-100 bg-blue-50/60 p-4 text-sm text-gray-500">
-                        Data user: <span class="font-semibold text-gray-700">{{ auth()->user()->name }}</span><br>
-                        Email: <span class="font-semibold text-gray-700">{{ auth()->user()->email }}</span>
-                    </div>
                 </div>
             </div>
 
@@ -147,6 +160,8 @@
 <script>
 const video = document.getElementById('video');
 const startCameraButton = document.getElementById('startCamera');
+const resetSamplesButton = document.getElementById('resetSamples');
+const captureSampleButton = document.getElementById('captureSample');
 const statusText = document.getElementById('status');
 const sampleCount = document.getElementById('sampleCount');
 const canvas = document.getElementById('captureCanvas');
@@ -158,6 +173,7 @@ const sampleDots = [
 const headGuide = document.getElementById('headGuide');
 const guideArrow = document.getElementById('guideArrow');
 const guideInstruction = document.getElementById('guideInstruction');
+const radialTicks = document.getElementById('radialTicks');
 
 const REQUIRED_SAMPLES = 3;
 const descriptors = [];
@@ -177,6 +193,22 @@ const detectorOptions = new faceapi.TinyFaceDetectorOptions({
     inputSize: 224,
     scoreThreshold: 0.5,
 });
+const MIN_BRIGHTNESS = 38;
+const MAX_BRIGHTNESS = 210;
+const MIN_SHARPNESS = 10;
+
+function buildRadialTicks() {
+    const totalTicks = 40;
+
+    for (let i = 0; i < totalTicks; i++) {
+        const tick = document.createElement('span');
+        const angle = (360 / totalTicks) * i;
+        tick.className = 'absolute left-1/2 top-1/2 h-4 w-[2px] rounded-full bg-emerald-400/90 origin-bottom';
+        tick.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateY(-118px)`;
+        tick.style.boxShadow = '0 0 8px rgba(74, 222, 128, 0.45)';
+        radialTicks.appendChild(tick);
+    }
+}
 
 function updateStatus(message, isError = false) {
     statusText.textContent = message;
@@ -237,19 +269,36 @@ function getHeadPoseStep(landmarks) {
     return 'center';
 }
 
-function getFrameQuality() {
+function getFrameQuality(faceBox = null) {
     if (!video.videoWidth || !video.videoHeight) {
         return { brightness: 0, sharpness: 0 };
     }
 
-    canvas.width = 160;
-    canvas.height = 120;
+    canvas.width = 240;
+    canvas.height = 180;
     const context = canvas.getContext('2d', { willReadFrequently: true });
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    const { data, width, height } = context.getImageData(0, 0, canvas.width, canvas.height);
+    const width = canvas.width;
+    const height = canvas.height;
+
+    let sampleX = Math.floor(width * 0.2);
+    let sampleY = Math.floor(height * 0.15);
+    let sampleWidth = Math.floor(width * 0.6);
+    let sampleHeight = Math.floor(height * 0.7);
+
+    if (faceBox) {
+        const scaleX = width / video.videoWidth;
+        const scaleY = height / video.videoHeight;
+        sampleX = Math.max(0, Math.floor(faceBox.x * scaleX));
+        sampleY = Math.max(0, Math.floor(faceBox.y * scaleY));
+        sampleWidth = Math.min(width - sampleX, Math.floor(faceBox.width * scaleX));
+        sampleHeight = Math.min(height - sampleY, Math.floor(faceBox.height * scaleY));
+    }
+
+    const { data } = context.getImageData(sampleX, sampleY, sampleWidth, sampleHeight);
 
     let brightnessTotal = 0;
-    const grayscale = new Float32Array(width * height);
+    const grayscale = new Float32Array(sampleWidth * sampleHeight);
 
     for (let i = 0, pixelIndex = 0; i < data.length; i += 4, pixelIndex++) {
         const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
@@ -258,27 +307,27 @@ function getFrameQuality() {
     }
 
     let sharpnessTotal = 0;
-    for (let y = 1; y < height - 1; y++) {
-        for (let x = 1; x < width - 1; x++) {
-            const index = y * width + x;
+    for (let y = 1; y < sampleHeight - 1; y++) {
+        for (let x = 1; x < sampleWidth - 1; x++) {
+            const index = y * sampleWidth + x;
             const laplacian =
                 4 * grayscale[index] -
                 grayscale[index - 1] -
                 grayscale[index + 1] -
-                grayscale[index - width] -
-                grayscale[index + width];
+                grayscale[index - sampleWidth] -
+                grayscale[index + sampleWidth];
             sharpnessTotal += Math.abs(laplacian);
         }
     }
 
     return {
         brightness: brightnessTotal / grayscale.length,
-        sharpness: sharpnessTotal / ((width - 2) * (height - 2)),
+        sharpness: sharpnessTotal / ((sampleWidth - 2) * (sampleHeight - 2)),
     };
 }
 
 function isFrameQualityGood(quality) {
-    return quality.brightness >= 55 && quality.brightness <= 210 && quality.sharpness >= 18;
+    return quality.brightness >= MIN_BRIGHTNESS && quality.brightness <= MAX_BRIGHTNESS && quality.sharpness >= MIN_SHARPNESS;
 }
 
 function stopEnrollmentTracking() {
@@ -294,6 +343,17 @@ function stopCameraStream() {
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
     }
+}
+
+function resetSamples() {
+    descriptors.length = 0;
+    sampleQualities.length = 0;
+    lastCaptureAt = 0;
+    isSaving = false;
+    processingDetection = false;
+    updateSampleCount();
+    captureSampleButton.disabled = !video.srcObject;
+    updateStatus('Sampel direset. Ikuti panduan lalu tekan Ambil Sampel.');
 }
 
 async function loadModels() {
@@ -334,11 +394,7 @@ async function startCamera() {
     try {
         stopEnrollmentTracking();
         stopCameraStream();
-        descriptors.length = 0;
-        sampleQualities.length = 0;
-        lastCaptureAt = 0;
-        isSaving = false;
-        updateSampleCount();
+        resetSamples();
 
         updateStatus('Menyalakan kamera...');
 
@@ -354,86 +410,78 @@ async function startCamera() {
 
         video.srcObject = stream;
         await video.play();
+        captureSampleButton.disabled = false;
         updateStatus('Kamera aktif. Menyiapkan deteksi wajah...');
         await loadModels();
-        updateStatus('Kamera aktif. Ikuti arah gerakan kepala sampai proses selesai.');
-        startEnrollmentTracking();
+        updateStatus('Kamera aktif. Ikuti arah panduan dan tekan Ambil Sampel.');
     } catch (error) {
         updateStatus(error.message || 'Kamera atau model wajah gagal diinisialisasi.', true);
     }
 }
 
-function startEnrollmentTracking() {
-    stopEnrollmentTracking();
-    trackingActive = true;
+async function captureSample() {
+    if (!video.srcObject) {
+        updateStatus('Aktifkan kamera terlebih dulu.', true);
+        return;
+    }
 
-    const detectFrame = async () => {
-        if (!trackingActive) {
+    if (descriptors.length >= REQUIRED_SAMPLES) {
+        updateStatus('Sampel sudah lengkap. Tekan reset jika ingin mengulang.', true);
+        return;
+    }
+
+    if (processingDetection) {
+        return;
+    }
+
+    processingDetection = true;
+
+    try {
+        const detection = await faceapi
+            .detectSingleFace(video, detectorOptions)
+            .withFaceLandmarks(true)
+            .withFaceDescriptor();
+
+        if (!detection) {
+            updateStatus('Wajah belum terdeteksi. Pastikan wajah berada di dalam bingkai.', true);
             return;
         }
 
-        enrollmentInterval = window.requestAnimationFrame(detectFrame);
+        const expectedStep = guideSteps[descriptors.length];
+        const currentStep = getHeadPoseStep(detection.landmarks);
+        const quality = getFrameQuality(detection.detection.box);
 
-        if (!video.srcObject || descriptors.length >= REQUIRED_SAMPLES || isSaving || processingDetection) {
+        if (currentStep !== expectedStep) {
+            updateStatus(`Ikuti instruksi: ${guideInstruction.textContent}`, true);
+            return;
+        }
+
+        if (!isFrameQualityGood(quality)) {
+            updateStatus(`Wajah belum cukup jelas. Cahaya ${Math.round(quality.brightness)}, ketajaman ${Math.round(quality.sharpness)}.`, true);
             return;
         }
 
         const now = Date.now();
-        if (now - lastDetectionAt < 180) {
+        if (now - lastCaptureAt < 700) {
             return;
         }
 
-        lastDetectionAt = now;
-        processingDetection = true;
+        lastCaptureAt = now;
+        descriptors.push(Array.from(detection.descriptor));
+        sampleQualities.push(quality);
+        updateSampleCount();
 
-        try {
-            const detection = await faceapi
-                .detectSingleFace(video, detectorOptions)
-                .withFaceLandmarks(true)
-                .withFaceDescriptor();
-
-            if (!detection) {
-                updateStatus('Wajah belum terdeteksi. Pastikan wajah berada di dalam bingkai.', true);
-                return;
-            }
-
-            const expectedStep = guideSteps[descriptors.length];
-            const currentStep = getHeadPoseStep(detection.landmarks);
-            const quality = getFrameQuality();
-
-            if (currentStep !== expectedStep) {
-                updateStatus(`Ikuti instruksi: ${guideInstruction.textContent}`, false);
-                return;
-            }
-
-            if (!isFrameQualityGood(quality)) {
-                updateStatus('Wajah belum cukup jelas. Perbaiki cahaya atau posisikan wajah lebih stabil.', true);
-                return;
-            }
-
-            if (now - lastCaptureAt < 900) {
-                return;
-            }
-
-            lastCaptureAt = now;
-            descriptors.push(Array.from(detection.descriptor));
-            sampleQualities.push(quality);
-            updateSampleCount();
-
-            if (descriptors.length === REQUIRED_SAMPLES) {
-                updateStatus('Sampel lengkap. Menyimpan data wajah...');
-                guideInstruction.textContent = 'Sampel lengkap. Menyimpan data wajah.';
-                stopEnrollmentTracking();
-                await saveEmbedding();
-            } else {
-                updateStatus('Pose terdeteksi. Lanjutkan ke gerakan berikutnya.');
-            }
-        } finally {
-            processingDetection = false;
+        if (descriptors.length === REQUIRED_SAMPLES) {
+            captureSampleButton.disabled = true;
+            updateStatus('Sampel lengkap. Menyimpan data wajah...');
+            guideInstruction.textContent = 'Sampel lengkap. Menyimpan data wajah.';
+            await saveEmbedding();
+        } else {
+            updateStatus('Sampel berhasil diambil. Lanjutkan ke posisi berikutnya.');
         }
-    };
-
-    detectFrame();
+    } finally {
+        processingDetection = false;
+    }
 }
 
 function averageDescriptors(samples) {
@@ -487,12 +535,16 @@ async function saveEmbedding() {
         window.location.href = result.redirect;
     } catch (error) {
         isSaving = false;
+        captureSampleButton.disabled = false;
         updateStatus(error.message || 'Terjadi kesalahan saat menyimpan data wajah.', true);
     }
 }
 
 startCameraButton.addEventListener('click', startCamera);
+resetSamplesButton.addEventListener('click', resetSamples);
+captureSampleButton.addEventListener('click', captureSample);
 updateSampleCount();
+buildRadialTicks();
 window.addEventListener('load', () => {
     loadModels().catch(() => {
         // error detail tetap ditampilkan saat user menekan tombol mulai
