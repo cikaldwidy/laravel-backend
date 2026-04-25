@@ -95,12 +95,20 @@ let completedSteps = [];
 let verificationReady = false;
 let latestDescriptor = null;
 let latestSnapshot = null;
-let trackingTimer = null;
 let isSubmitting = false;
 let latestQualityMetrics = null;
+let descriptorSamples = [];
+let qualitySamples = [];
+let trackingFrame = null;
+let processingDetection = false;
+let lastDetectionAt = 0;
 const MIN_BRIGHTNESS = 38;
 const MAX_BRIGHTNESS = 210;
 const MIN_SHARPNESS = 10;
+const detectorOptions = new faceapi.TinyFaceDetectorOptions({
+    inputSize: 224,
+    scoreThreshold: 0.5,
+});
 
 function updateStatus(message, isError = false) {
     statusText.textContent = message;
@@ -142,8 +150,8 @@ async function loadModels() {
 
     try {
         await Promise.all([
-            faceapi.nets.ssdMobilenetv1.loadFromUri(modelBaseUrl),
-            faceapi.nets.faceLandmark68Net.loadFromUri(modelBaseUrl),
+            faceapi.nets.tinyFaceDetector.loadFromUri(modelBaseUrl),
+            faceapi.nets.faceLandmark68TinyNet.loadFromUri(modelBaseUrl),
             faceapi.nets.faceRecognitionNet.loadFromUri(modelBaseUrl),
         ]);
     } catch (error) {
@@ -259,10 +267,29 @@ function isFrameQualityGood(quality) {
     return quality.brightness >= MIN_BRIGHTNESS && quality.brightness <= MAX_BRIGHTNESS && quality.sharpness >= MIN_SHARPNESS;
 }
 
+function averageDescriptors(samples) {
+    const averaged = new Array(samples[0].length).fill(0);
+
+    samples.forEach((sample) => {
+        sample.forEach((value, index) => {
+            averaged[index] += value;
+        });
+    });
+
+    return averaged.map((value) => value / samples.length);
+}
+
+function summarizeQuality(samples) {
+    return {
+        brightness: samples.reduce((total, sample) => total + sample.brightness, 0) / samples.length,
+        sharpness: samples.reduce((total, sample) => total + sample.sharpness, 0) / samples.length,
+    };
+}
+
 function stopTracking() {
-    if (trackingTimer) {
-        window.clearInterval(trackingTimer);
-        trackingTimer = null;
+    if (trackingFrame) {
+        window.cancelAnimationFrame(trackingFrame);
+        trackingFrame = null;
     }
 }
 
@@ -276,14 +303,25 @@ function stopStream() {
 function trackChallenge() {
     stopTracking();
 
-    trackingTimer = window.setInterval(async () => {
+    const runDetection = async () => {
+        trackingFrame = window.requestAnimationFrame(runDetection);
+
         if (!challenge || completedSteps.length === challenge.steps.length) {
             return;
         }
 
+        const now = performance.now();
+        if (processingDetection || now - lastDetectionAt < 220) {
+            return;
+        }
+
+        processingDetection = true;
+        lastDetectionAt = now;
+
+        try {
         const detection = await faceapi
-            .detectSingleFace(video)
-            .withFaceLandmarks()
+            .detectSingleFace(video, detectorOptions)
+            .withFaceLandmarks(true)
             .withFaceDescriptor();
 
         if (!detection) {
@@ -305,9 +343,11 @@ function trackChallenge() {
 
         if (currentPose === currentExpectedStep) {
             completedSteps.push(currentExpectedStep);
-            latestDescriptor = Array.from(detection.descriptor);
+            descriptorSamples.push(Array.from(detection.descriptor));
+            qualitySamples.push(quality);
+            latestDescriptor = averageDescriptors(descriptorSamples);
             latestSnapshot = captureSnapshot();
-            latestQualityMetrics = quality;
+            latestQualityMetrics = summarizeQuality(qualitySamples);
             renderChallenge();
             challengeStatus.textContent = `${completedSteps.length}/${challenge.steps.length} langkah selesai`;
             updateStatus(`Langkah "${humanizeStep(currentExpectedStep)}" berhasil.`);
@@ -321,7 +361,12 @@ function trackChallenge() {
             stopTracking();
             submitAttendance();
         }
-    }, 300);
+        } finally {
+            processingDetection = false;
+        }
+    };
+
+    runDetection();
 }
 
 async function requestGeolocation() {
@@ -343,10 +388,19 @@ async function requestGeolocation() {
 async function startVerification() {
     try {
         updateStatus('Menyiapkan kamera, lokasi, dan challenge...');
+        isSubmitting = false;
         submitAttendanceButton.disabled = true;
         verificationReady = false;
         latestDescriptor = null;
         latestSnapshot = null;
+        latestQualityMetrics = null;
+        descriptorSamples = [];
+        qualitySamples = [];
+        completedSteps = [];
+        challenge = null;
+        challengeStatus.textContent = 'Belum dimulai';
+        faceStatus.textContent = 'Menunggu scan';
+        renderChallenge();
         stopTracking();
         stopStream();
 
@@ -357,8 +411,9 @@ async function startVerification() {
         stream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode: 'user',
-                width: { ideal: 640 },
-                height: { ideal: 480 }
+                width: { ideal: 480 },
+                height: { ideal: 360 },
+                frameRate: { ideal: 24, max: 24 }
             },
             audio: false
         });
@@ -409,10 +464,10 @@ async function submitAttendance() {
         const result = await response.json();
 
         if (!response.ok) {
-            const debugText = result.debug
-                ? ` [debug expires_at=${result.debug.expires_at}, server_time=${result.debug.server_time}, steps=${(result.debug.steps || []).join(',')}]`
+            const faceDistanceText = typeof result.face_distance === 'number'
+                ? ` (jarak wajah ${result.face_distance})`
                 : '';
-            throw new Error((result.message || 'Absensi gagal diproses.') + debugText);
+            throw new Error((result.message || 'Absensi gagal diproses.') + faceDistanceText);
         }
 
         updateStatus(result.message || 'Absensi berhasil dikirim.');
