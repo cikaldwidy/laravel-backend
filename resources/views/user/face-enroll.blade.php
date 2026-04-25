@@ -55,21 +55,15 @@
                         <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
                         <div class="absolute inset-5 border-4 border-white rounded-2xl pointer-events-none"></div>
                         <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                            <div id="headGuide" class="relative w-52 h-64 md:w-60 md:h-80 transition-transform duration-500 ease-out">
-                                <div class="absolute inset-[8%] rounded-[999px] bg-white/12"></div>
-                                <div class="absolute inset-[18%] rounded-[999px] border-[3px] border-white/75 shadow-[0_0_0_10px_rgba(255,255,255,0.05)]"></div>
-                                <div class="absolute inset-[18%] rounded-[999px] overflow-hidden">
-                                    <div id="radialTicks" class="absolute inset-0"></div>
-                                </div>
-                                <div id="scanLine" class="absolute top-[18%] bottom-[18%] left-1/2 w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-cyan-200 to-transparent opacity-90" style="animation: face-scan-line 2.4s ease-in-out infinite;"></div>
-                                <div class="absolute left-1/2 top-[18%] bottom-[18%] w-px -translate-x-1/2 bg-cyan-100/60"></div>
-                                <div class="absolute top-1/2 left-[18%] right-[18%] h-px -translate-y-1/2 bg-white/20"></div>
-                                <div class="absolute left-1/2 top-[30%] w-10 h-10 -translate-x-1/2 rounded-full border-[3px] border-white/80"></div>
-                                <div class="absolute left-1/2 top-[48%] w-[78px] h-[58px] -translate-x-1/2 rounded-[40%] border-[3px] border-white/80"></div>
-                                <div class="absolute left-1/2 bottom-[20%] w-[102px] h-[58px] -translate-x-1/2 rounded-b-[70px] border-[3px] border-t-0 border-white/80"></div>
-                                <div id="guideArrow" class="absolute left-1/2 -bottom-8 -translate-x-1/2 text-white/95 text-4xl transition-all duration-500 ease-out">
-                                    <i class="fa-solid fa-arrow-up"></i>
-                                </div>
+                            <div id="headGuide" class="relative w-64 h-64 md:w-80 md:h-80 transition-transform duration-500 ease-out">
+                                <div id="headFrameGlow" class="absolute inset-2 rounded-full bg-red-500/10 blur-md transition-all duration-300"></div>
+                                <div id="headFrame" class="absolute inset-4 rounded-full border-[6px] border-red-400/90 shadow-[0_0_0_10px_rgba(248,113,113,0.12)] transition-all duration-300"></div>
+                                <div id="scanLine" class="absolute top-[15%] bottom-[15%] left-1/2 w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-cyan-200 to-transparent opacity-90" style="animation: face-scan-line 2.4s ease-in-out infinite;"></div>
+                                <div class="absolute left-1/2 top-[15%] bottom-[15%] w-px -translate-x-1/2 bg-cyan-100/60"></div>
+                                <div class="absolute top-1/2 left-[15%] right-[15%] h-px -translate-y-1/2 bg-white/20"></div>
+                            <div id="guideArrow" class="absolute left-1/2 -bottom-8 -translate-x-1/2 text-white/95 text-4xl transition-all duration-500 ease-out">
+                                <i class="fa-solid fa-arrow-up"></i>
+                            </div>
                             </div>
                         </div>
                         <div class="absolute top-4 left-4 bg-blue-600/90 text-white text-xs px-3 py-2 rounded-full shadow">
@@ -161,9 +155,10 @@ const sampleDots = [
     document.getElementById('sampleDot3'),
 ];
 const headGuide = document.getElementById('headGuide');
+const headFrame = document.getElementById('headFrame');
+const headFrameGlow = document.getElementById('headFrameGlow');
 const guideArrow = document.getElementById('guideArrow');
 const guideInstruction = document.getElementById('guideInstruction');
-const radialTicks = document.getElementById('radialTicks');
 
 const REQUIRED_SAMPLES = 3;
 const descriptors = [];
@@ -187,24 +182,22 @@ const MIN_BRIGHTNESS = 38;
 const MAX_BRIGHTNESS = 210;
 const MIN_SHARPNESS = 10;
 
-function buildRadialTicks() {
-    const totalTicks = 40;
-
-    for (let i = 0; i < totalTicks; i++) {
-        const tick = document.createElement('span');
-        const angle = (360 / totalTicks) * i;
-        tick.className = 'absolute left-1/2 top-1/2 h-4 w-[2px] rounded-full bg-emerald-400/90 origin-bottom';
-        tick.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateY(-118px)`;
-        tick.style.boxShadow = '0 0 8px rgba(74, 222, 128, 0.45)';
-        radialTicks.appendChild(tick);
-    }
-}
-
 function updateStatus(message, isError = false) {
     statusText.textContent = message;
     statusText.className = isError
         ? 'mt-4 text-sm text-red-500 text-center md:text-left'
         : 'mt-4 text-sm text-gray-500 text-center md:text-left';
+}
+
+function updateFrameIndicator(isValid) {
+    if (isValid) {
+        headFrame.className = 'absolute inset-4 rounded-full border-[6px] border-emerald-400/95 shadow-[0_0_0_10px_rgba(74,222,128,0.14)] transition-all duration-300';
+        headFrameGlow.className = 'absolute inset-2 rounded-full bg-emerald-400/15 blur-md transition-all duration-300';
+        return;
+    }
+
+    headFrame.className = 'absolute inset-4 rounded-full border-[6px] border-red-400/90 shadow-[0_0_0_10px_rgba(248,113,113,0.12)] transition-all duration-300';
+    headFrameGlow.className = 'absolute inset-2 rounded-full bg-red-500/10 blur-md transition-all duration-300';
 }
 
 function updateSampleCount() {
@@ -257,6 +250,26 @@ function getHeadPoseStep(landmarks) {
     }
 
     return 'center';
+}
+
+function isFaceInsideGuide(box) {
+    if (!video.videoWidth || !video.videoHeight) {
+        return false;
+    }
+
+    const faceCenterX = box.x + (box.width / 2);
+    const faceCenterY = box.y + (box.height / 2);
+    const horizontalOffset = Math.abs((faceCenterX / video.videoWidth) - 0.5);
+    const verticalOffset = Math.abs((faceCenterY / video.videoHeight) - 0.5);
+    const faceWidthRatio = box.width / video.videoWidth;
+    const faceHeightRatio = box.height / video.videoHeight;
+
+    return horizontalOffset <= 0.12 &&
+        verticalOffset <= 0.15 &&
+        faceWidthRatio >= 0.22 &&
+        faceWidthRatio <= 0.52 &&
+        faceHeightRatio >= 0.32 &&
+        faceHeightRatio <= 0.72;
 }
 
 function getFrameQuality(faceBox = null) {
@@ -322,6 +335,7 @@ function isFrameQualityGood(quality) {
 
 function stopEnrollmentTracking() {
     trackingActive = false;
+    updateFrameIndicator(false);
     if (enrollmentInterval) {
         window.cancelAnimationFrame(enrollmentInterval);
         enrollmentInterval = null;
@@ -343,7 +357,53 @@ function resetSamples() {
     processingDetection = false;
     updateSampleCount();
     captureSampleButton.disabled = !video.srcObject;
+    updateFrameIndicator(false);
     updateStatus('Sampel direset. Ikuti panduan lalu tekan Ambil Sampel.');
+}
+
+function startEnrollmentTracking() {
+    stopEnrollmentTracking();
+    trackingActive = true;
+    lastDetectionAt = 0;
+
+    const runTracking = async () => {
+        if (!trackingActive) {
+            return;
+        }
+
+        enrollmentInterval = window.requestAnimationFrame(runTracking);
+
+        if (!video.srcObject || processingDetection) {
+            return;
+        }
+
+        const now = performance.now();
+        if (now - lastDetectionAt < 220) {
+            return;
+        }
+
+        lastDetectionAt = now;
+
+        try {
+            const detection = await faceapi
+                .detectSingleFace(video, detectorOptions)
+                .withFaceLandmarks(true);
+
+            if (!detection) {
+                updateFrameIndicator(false);
+                return;
+            }
+
+            const expectedStep = guideSteps[Math.min(descriptors.length, guideSteps.length - 1)];
+            const currentStep = getHeadPoseStep(detection.landmarks);
+            const isInsideGuide = isFaceInsideGuide(detection.detection.box);
+            updateFrameIndicator(isInsideGuide && currentStep === expectedStep);
+        } catch (error) {
+            updateFrameIndicator(false);
+        }
+    };
+
+    runTracking();
 }
 
 async function loadModels() {
@@ -403,6 +463,7 @@ async function startCamera() {
         captureSampleButton.disabled = false;
         updateStatus('Kamera aktif. Menyiapkan deteksi wajah...');
         await loadModels();
+        startEnrollmentTracking();
         updateStatus('Kamera aktif. Ikuti arah panduan dan tekan Ambil Sampel.');
     } catch (error) {
         updateStatus(error.message || 'Kamera atau model wajah gagal diinisialisasi.', true);
@@ -440,6 +501,14 @@ async function captureSample() {
         const expectedStep = guideSteps[descriptors.length];
         const currentStep = getHeadPoseStep(detection.landmarks);
         const quality = getFrameQuality(detection.detection.box);
+        const isInsideGuide = isFaceInsideGuide(detection.detection.box);
+
+        updateFrameIndicator(isInsideGuide && currentStep === expectedStep);
+
+        if (!isInsideGuide) {
+            updateStatus('Posisikan wajah lebih pas di dalam lingkaran sampai indikator berubah hijau.', true);
+            return;
+        }
 
         if (currentStep !== expectedStep) {
             updateStatus(`Ikuti instruksi: ${guideInstruction.textContent}`, true);
@@ -534,7 +603,6 @@ startCameraButton.addEventListener('click', startCamera);
 resetSamplesButton.addEventListener('click', resetSamples);
 captureSampleButton.addEventListener('click', captureSample);
 updateSampleCount();
-buildRadialTicks();
 window.addEventListener('load', () => {
     loadModels().catch(() => {
         // error detail tetap ditampilkan saat user menekan tombol mulai

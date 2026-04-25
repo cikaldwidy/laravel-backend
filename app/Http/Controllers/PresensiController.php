@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Presensi;
+use App\Models\User;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,11 +14,14 @@ class PresensiController extends Controller
 {
     public function show()
     {
-        if (!Auth::user()->hasFaceEnrollment()) {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (!$user->hasFaceEnrollment()) {
             return redirect()->route('face.enroll');
         }
 
-        $presensi = Presensi::where('user_id', Auth::id())
+        $presensi = Presensi::where('user_id', $user->id)
             ->whereDate('tanggal', today())
             ->first();
 
@@ -66,6 +70,7 @@ class PresensiController extends Controller
             'challenge_steps.*' => ['required', 'in:center,left,right'],
         ]);
 
+        /** @var User $user */
         $user = Auth::user();
 
         if (!$user->hasFaceEnrollment()) {
