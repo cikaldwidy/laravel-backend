@@ -2,7 +2,7 @@
 
 @section('content')
 
-<div class="w-full min-h-screen bg-gray-100 flex justify-center">
+<div class="w-full min-h-screen bg-white flex justify-center">
 
     <!-- CONTAINER -->
     <div class="w-full md:max-w-md bg-white min-h-screen shadow-xl flex flex-col">

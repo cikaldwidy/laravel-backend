@@ -1,16 +1,8 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="w-full min-h-screen bg-slate-100 py-8 px-4">
+<div class="w-full min-h-screen bg-white py-8 px-4">
     <div class="max-w-6xl mx-auto grid gap-6 lg:grid-cols-[1.15fr_0.85fr] items-start">
-        <div class="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <div class="bg-slate-900 px-6 py-5 text-white">
-                <p class="text-sm uppercase tracking-[0.3em] text-emerald-300">Verifikasi Absensi</p>
-                <h1 class="text-2xl font-bold mt-2">Scan wajah dan validasi lokasi sebelum absen</h1>
-                <p class="text-sm text-slate-300 mt-2">
-                    Sistem akan memeriksa challenge gerakan wajah, kecocokan template, dan posisi GPS Anda.
-                </p>
-            </div>
 
             <div class="p-6">
                 <div class="relative rounded-3xl overflow-hidden bg-slate-950 aspect-video">

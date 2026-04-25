@@ -6,6 +6,7 @@
 
 <!-- STEP PROGRESS -->
 <div class="px-8 md:px-14 lg:px-20 mt-5">
+    
 
   <div class="relative p-5">
 

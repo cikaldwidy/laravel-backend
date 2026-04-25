@@ -3,17 +3,7 @@
 @section('title', 'Pendaftaran Berhasil')
 
 @section('content')
-<div class="min-h-screen bg-[#f8fbff]">
-    <div class="px-8 md:px-14 lg:px-20 pt-6">
-        <div class="flex items-center gap-3">
-            <img src="{{ asset('img/logo.jpeg') }}" class="w-12 h-12 rounded-xl object-cover shadow">
-            <div class="leading-tight">
-                <p class="text-[10px] font-semibold text-gray-400 tracking-widest uppercase">Rumah Sakit Umum</p>
-                <p class="text-sm font-extrabold text-blue-700 tracking-wide">SATITI PRIMA HUSADA</p>
-                <p class="text-[10px] font-bold text-red-500 tracking-widest uppercase">Tulungagung</p>
-            </div>
-        </div>
-    </div>
+<div class="min-h-screen bg-white">
 
     <div class="px-8 md:px-14 lg:px-20 mt-5">
         <div class="relative p-5">
