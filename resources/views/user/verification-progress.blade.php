@@ -96,7 +96,7 @@ const interval = window.setInterval(() => {
         window.clearInterval(interval);
         progressLabel.textContent = 'Verifikasi selesai. Mengalihkan ke halaman berhasil...';
         window.setTimeout(() => {
-            window.location.href = '{{ route('face.success') }}';
+           window.location.href = "{{ route('face.success') }}";
         }, 500);
     }
 }, 120);

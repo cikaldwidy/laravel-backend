@@ -10,7 +10,10 @@ class FaceEnrollmentController extends Controller
 {
     public function show()
     {
-        if (Auth::user()->hasFaceEnrollment()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->hasFaceEnrollment()) {
             return redirect()->route('face.verify.progress');
         }
 
@@ -19,7 +22,10 @@ class FaceEnrollmentController extends Controller
 
     public function showVerificationProgress()
     {
-        if (!Auth::user()->hasFaceEnrollment()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if (!$user->hasFaceEnrollment()) {
             return redirect()->route('face.enroll');
         }
 
@@ -28,7 +34,10 @@ class FaceEnrollmentController extends Controller
 
     public function showSuccess()
     {
-        if (!Auth::user()->hasFaceEnrollment()) {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if (!$user->hasFaceEnrollment()) {
             return redirect()->route('face.enroll');
         }
 
@@ -58,9 +67,10 @@ class FaceEnrollmentController extends Controller
             ], 422);
         }
 
+        // ✅ FIXED: Jangan json_encode manual — model sudah cast 'array' otomatis
         FaceEmbedding::updateOrCreate(
             ['user_id' => Auth::id()],
-            ['embedding' => json_encode($validated['embedding'])]
+            ['embedding' => $validated['embedding']]
         );
 
         return response()->json([
