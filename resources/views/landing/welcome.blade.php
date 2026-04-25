@@ -10,7 +10,7 @@
     <div class="flex flex-col items-center text-center gap-3 px-8 md:px-14 lg:px-20 pt-20 md:pt-6 z-10 md:flex-row md:text-left">
       <img src="{{ asset('img/logo.jpeg') }}" class=" w-20 h-auto md:w-12 md:h-12 rounded-xl object-cover shadow">
       <div class="leading-tight">
-        <p class="text-md md:text-[10px] font-semibold text-gray-400 tracking-widest uppercase">Rumah Sakit Umum</p>
+        <p class="text-md md:text-[10px] font-semibold text-gray-400 tracking-widest uppercase">RUMAH SAKIT UMUM</p>
         <p class="text-xl md:text-sm font-extrabold text-blue-700 tracking-wide">SATITI PRIMA HUSADA</p>
         <p class="text-md md:text-[10px] font-bold text-red-500 tracking-widest uppercase">Tulungagung</p>
       </div>
