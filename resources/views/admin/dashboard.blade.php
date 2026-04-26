@@ -63,6 +63,18 @@
                     </p>
                 </div>
             </div>
+            <div class="mt-3 text-sm text-gray-600">
+                GPS:
+                <span class="font-semibold text-gray-800">
+                    {{ $workSetting?->office_latitude ?? config('attendance.office_latitude') }},
+                    {{ $workSetting?->office_longitude ?? config('attendance.office_longitude') }}
+                </span>
+                <span class="text-gray-400">|</span>
+                Radius:
+                <span class="font-semibold text-gray-800">
+                    {{ $workSetting?->radius_meters ?? config('attendance.radius_meters', 100) }} meter
+                </span>
+            </div>
         </div>
 
         <a href="{{ route('admin.settings.work.edit') }}"

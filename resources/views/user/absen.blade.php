@@ -1,69 +1,200 @@
 @extends('layouts.app')
 
-@section('content')
-<div class="w-full min-h-screen bg-white py-8 px-4">
-    <div class="max-w-6xl mx-auto grid gap-6 lg:grid-cols-[1.15fr_0.85fr] items-start">
+@section('title', 'E-Presensi')
 
-            <div class="p-6">
-                <div class="relative rounded-3xl overflow-hidden bg-slate-950 aspect-video">
-                    <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                    <div class="absolute inset-0 border-[3px] border-dashed border-emerald-400/70 m-6 rounded-[2rem] pointer-events-none"></div>
-                    <div class="absolute top-4 left-4 bg-black/60 text-white text-xs px-3 py-2 rounded-full">
-                        Kamera aktif
+@section('content')
+@php
+    $jadwalMasuk = $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_masuk)->substr(0, 5) : '08:00';
+    $jadwalPulang = $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_pulang)->substr(0, 5) : '16:00';
+    $jamMasuk = $presensi?->jam_masuk?->format('H:i') ?? $jadwalMasuk;
+    $jamPulang = $presensi?->jam_keluar?->format('H:i') ?? $jadwalPulang;
+    $sudahMasuk = (bool) $presensi?->jam_masuk;
+    $sudahPulang = (bool) $presensi?->jam_keluar;
+    $jenisAbsen = !$presensi ? 'Masuk' : (!$presensi->jam_keluar ? 'Pulang' : 'Selesai');
+    $fotoAktif = $presensi?->foto_keluar ?? $presensi?->foto_masuk ?? $presensi?->foto ?? null;
+@endphp
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<div class="min-h-[100dvh] bg-cyan-50 flex justify-center">
+    <div class="w-full max-w-sm min-h-[100dvh] bg-[#dffcff] shadow-2xl relative pb-[calc(6rem+env(safe-area-inset-bottom))]">
+        <header class="h-14 bg-emerald-800 text-white flex items-center px-4 shadow">
+            <a href="{{ route('dashboard') }}" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
+                <i class="fa-solid fa-chevron-left"></i>
+            </a>
+            <h1 class="flex-1 text-center text-sm font-bold tracking-wide">E-Presensi</h1>
+            <div class="w-8"></div>
+        </header>
+
+        <main class="px-4 pt-5 space-y-4">
+            <section class="bg-slate-950 rounded-2xl overflow-hidden shadow-xl">
+                <div class="relative aspect-[4/3] bg-slate-900">
+                    @if($sudahPulang && $fotoAktif)
+                        <img src="{{ asset('storage/' . $fotoAktif) }}" alt="Foto presensi" class="w-full h-full object-cover">
+                    @elseif($sudahPulang && !$fotoAktif)
+                        <div class="w-full h-full flex flex-col items-center justify-center text-white/70 bg-gradient-to-br from-slate-800 to-slate-950">
+                            <i class="fa-solid fa-camera text-4xl"></i>
+                            <p class="text-xs mt-3">Foto presensi akan tampil di sini</p>
+                        </div>
+                    @else
+                        <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                        <div id="cameraOverlay" class="absolute inset-0 flex items-center justify-center bg-black/35 text-white text-xs font-semibold">
+                            Tekan Masuk/Verifikasi untuk menyalakan kamera
+                        </div>
+                    @endif
+                    <div class="absolute inset-4 rounded-2xl border-2 border-dashed border-emerald-300/80 pointer-events-none"></div>
+                    <div class="absolute top-3 left-3 bg-white/95 text-slate-800 text-xs font-semibold px-3 py-1 rounded-md shadow">
+                        {{ now()->translatedFormat('d F Y') }}
+                    </div>
+                    <div id="clock" class="absolute top-3 right-3 bg-white/95 text-slate-800 text-xs font-bold px-3 py-1 rounded-md shadow">
+                        --:--:--
+                    </div>
+                    <div class="absolute bottom-3 left-3 right-3 bg-black/70 text-white text-xs px-3 py-2 rounded-xl">
+                        <i class="fa-solid fa-camera mr-1"></i>
+                        Kamera verifikasi wajah
                     </div>
                 </div>
 
-                <div class="mt-6 flex flex-wrap gap-3">
-                    <button id="startVerification" class="bg-slate-900 text-white px-5 py-3 rounded-2xl font-semibold">
-                        Mulai Verifikasi
-                    </button>
-                    <button id="submitAttendance" class="bg-emerald-500 text-white px-5 py-3 rounded-2xl font-semibold" disabled>
-                        Kirim Absensi
-                    </button>
+                <div class="p-3">
+                    <div class="relative rounded-xl overflow-hidden border border-white/10">
+                        <div
+                            id="attendanceMap"
+                            class="h-28 bg-slate-700"
+                            data-office-lat="{{ (float) $officeLatitude }}"
+                            data-office-lng="{{ (float) $officeLongitude }}"
+                            data-office-radius="{{ (int) $officeRadius }}"
+                        ></div>
+                        <div class="absolute left-3 bottom-3 bg-black/75 text-white text-xs px-3 py-2 rounded-lg max-w-[88%]">
+                            <i class="fa-solid fa-location-dot mr-1"></i>
+                            <span id="gpsStatus">GPS belum diambil</span>
+                        </div>
+                    </div>
                 </div>
+            </section>
 
-                <p id="status" class="mt-4 text-sm text-slate-600">Klik mulai verifikasi untuk menyalakan kamera dan GPS.</p>
-            </div>
-        </div>
+            <section class="grid grid-cols-3 gap-2">
+                <div class="bg-emerald-700 text-white rounded-xl p-3 text-center shadow">
+                    <i class="fa-solid fa-user-clock text-sm"></i>
+                    <p class="text-[11px] mt-1 opacity-90">Shift</p>
+                    <p class="text-xs font-bold">SHIFT 1</p>
+                </div>
+                <div class="bg-emerald-700 text-white rounded-xl p-3 text-center shadow">
+                    <i class="fa-solid fa-right-to-bracket text-sm"></i>
+                    <p class="text-[11px] mt-1 opacity-90">Jam Masuk</p>
+                    <p class="text-xs font-bold">{{ $jamMasuk }}</p>
+                </div>
+                <div class="bg-emerald-700 text-white rounded-xl p-3 text-center shadow">
+                    <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                    <p class="text-[11px] mt-1 opacity-90">Jam Pulang</p>
+                    <p class="text-xs font-bold">{{ $jamPulang }}</p>
+                </div>
+            </section>
 
-        <div class="space-y-6">
-            <div class="bg-white rounded-3xl shadow-xl p-6">
-                <h2 class="text-lg font-bold text-slate-800">Status Hari Ini</h2>
-                <div class="mt-4 space-y-3 text-sm text-slate-600">
-                    <p>Nama: <span class="font-semibold text-slate-800">{{ auth()->user()->name }}</span></p>
-                    <p>Jenis absensi berikutnya:
-                        <span class="font-semibold text-slate-800">
-                            @if(!$presensi)
-                                Check-in
-                            @elseif(!$presensi->jam_keluar)
-                                Check-out
-                            @else
-                                Selesai
-                            @endif
+            <section class="bg-white/80 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-3">
+                <div class="relative h-14 rounded-full bg-slate-100 overflow-hidden">
+                    <div class="absolute inset-0 grid grid-cols-2">
+                        <div class="bg-emerald-600/15"></div>
+                        <div class="bg-orange-500/15"></div>
+                    </div>
+
+                    <div class="relative z-10 h-full grid grid-cols-2 gap-2 p-2">
+                        <button
+                            id="startVerification"
+                            type="button"
+                            class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
+                                {{ $sudahPulang ? 'bg-slate-200 text-slate-400' : (!$sudahMasuk ? 'bg-emerald-700 text-white' : 'bg-white text-emerald-800 border border-emerald-100') }}"
+                            @if($sudahPulang) disabled @endif
+                        >
+                            <i class="fa-solid fa-fingerprint"></i>
+                            {{ $sudahPulang ? 'Selesai' : ($jenisAbsen === 'Pulang' ? 'Verifikasi' : 'Masuk') }}
+                        </button>
+
+                        <button
+                            id="submitAttendance"
+                            type="button"
+                            class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
+                                bg-orange-600 text-white disabled:bg-orange-100 disabled:text-orange-400"
+                            disabled
+                        >
+                            <i class="fa-solid fa-paper-plane"></i>
+                            {{ $jenisAbsen === 'Pulang' ? 'Pulang' : 'Kirim' }}
+                        </button>
+                    </div>
+
+                    <div class="pointer-events-none absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-white shadow border border-slate-200 flex items-center justify-center">
+                        <span class="w-9 h-9 rounded-full bg-emerald-700/10 flex items-center justify-center">
+                            <i class="fa-solid fa-circle text-amber-400 text-[10px]"></i>
                         </span>
-                    </p>
-                    <p>Threshold wajah: <span class="font-semibold text-slate-800">{{ $faceThreshold }}</span></p>
-                    <p>Radius kantor: <span class="font-semibold text-slate-800">{{ $officeRadius }} meter</span></p>
+                    </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="bg-white rounded-3xl shadow-xl p-6">
-                <h2 class="text-lg font-bold text-slate-800">Challenge Liveness</h2>
-                <ol id="challengeList" class="mt-4 space-y-3 text-sm text-slate-600 list-decimal pl-5"></ol>
-            </div>
-
-            <div class="bg-white rounded-3xl shadow-xl p-6">
-                <h2 class="text-lg font-bold text-slate-800">Hasil Validasi</h2>
-                <div class="mt-4 space-y-3 text-sm text-slate-600">
-                    <p>GPS: <span id="gpsStatus" class="font-semibold text-slate-800">Belum diambil</span></p>
-                    <p>Challenge: <span id="challengeStatus" class="font-semibold text-slate-800">Belum dimulai</span></p>
-                    <p>Wajah: <span id="faceStatus" class="font-semibold text-slate-800">Menunggu scan</span></p>
+            <section class="bg-white rounded-2xl shadow p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-500">Status Hari Ini</p>
+                        <p class="font-bold text-gray-800">{{ auth()->user()->name }}</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $sudahPulang ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                        {{ $jenisAbsen }}
+                    </span>
                 </div>
+                <div class="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                    <div>
+                        <p class="text-xs text-gray-400">Radius kantor</p>
+                        <p class="font-semibold text-gray-800">{{ $officeRadius }} meter</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">Threshold wajah</p>
+                        <p class="font-semibold text-gray-800">{{ $faceThreshold }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">Challenge</p>
+                        <p id="challengeStatus" class="font-semibold text-gray-800">Belum dimulai</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">Wajah</p>
+                        <p id="faceStatus" class="font-semibold text-gray-800">Menunggu scan</p>
+                    </div>
+                </div>
+                <p id="status" class="text-sm text-gray-500">
+                    {{ $sudahPulang ? 'Absensi hari ini sudah selesai.' : 'Klik Masuk/Verifikasi untuk menyalakan kamera dan GPS.' }}
+                </p>
+            </section>
+
+            <section class="bg-white rounded-2xl shadow p-4">
+                <h2 class="font-bold text-gray-800">Challenge Liveness</h2>
+                <ol id="challengeList" class="mt-3 space-y-2 text-sm text-gray-600 list-decimal pl-5"></ol>
+            </section>
+        </main>
+
+        <nav class="fixed bottom-0 left-0 w-full flex justify-center z-50 pb-[env(safe-area-inset-bottom)]">
+            <div class="w-full max-w-sm h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl">
+                <a href="{{ route('dashboard') }}" class="text-gray-500 text-center text-xs">
+                    <i class="fa-solid fa-house text-lg"></i>
+                    <p>Home</p>
+                </a>
+                <a href="#" class="text-gray-500 text-center text-xs">
+                    <i class="fa-solid fa-file-lines text-lg"></i>
+                    <p>Histori</p>
+                </a>
+                <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-emerald-700 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                    <i class="fa-solid fa-fingerprint text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-500 text-center text-xs">
+                    <i class="fa-solid fa-calendar-days text-lg"></i>
+                    <p>Jadwal</p>
+                </a>
+                <a href="#" class="text-gray-500 text-center text-xs">
+                    <i class="fa-solid fa-gear text-lg"></i>
+                    <p>Setting</p>
+                </a>
             </div>
-        </div>
+        </nav>
     </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
 const modelBaseUrl = '/face-api/models';
@@ -78,6 +209,60 @@ const challengeList = document.getElementById('challengeList');
 const gpsStatus = document.getElementById('gpsStatus');
 const challengeStatus = document.getElementById('challengeStatus');
 const faceStatus = document.getElementById('faceStatus');
+const attendanceMapElement = document.getElementById('attendanceMap');
+const officeLatitude = Number(attendanceMapElement?.dataset.officeLat ?? 0);
+const officeLongitude = Number(attendanceMapElement?.dataset.officeLng ?? 0);
+const officeRadius = Number(attendanceMapElement?.dataset.officeRadius ?? 0);
+
+function updateClock() {
+    const now = new Date();
+    const clock = document.getElementById('clock');
+    if (clock) clock.innerText = now.toLocaleTimeString('id-ID');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+let attendanceMap = null;
+let userMarker = null;
+let officeCircle = null;
+
+function initializeAttendanceMap() {
+    if (!window.L) return;
+
+    attendanceMap = L.map('attendanceMap', {
+        zoomControl: false,
+        dragging: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        boxZoom: false,
+        keyboard: false,
+    }).setView([officeLatitude, officeLongitude], 16);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap',
+    }).addTo(attendanceMap);
+
+    officeCircle = L.circle([officeLatitude, officeLongitude], {
+        radius: officeRadius,
+        color: '#047857',
+        fillColor: '#10b981',
+        fillOpacity: 0.15,
+        weight: 2,
+    }).addTo(attendanceMap);
+
+    userMarker = L.marker([officeLatitude, officeLongitude]).addTo(attendanceMap);
+}
+
+function updateAttendanceMap(latitude, longitude) {
+    if (!attendanceMap || !userMarker) return;
+
+    const latLng = [latitude, longitude];
+    userMarker.setLatLng(latLng);
+    attendanceMap.setView(latLng, 17);
+}
+
+initializeAttendanceMap();
 
 let stream;
 let modelsLoaded = false;
@@ -272,6 +457,56 @@ function stopStream() {
     }
 }
 
+function getCameraErrorMessage(error) {
+    const name = error?.name || '';
+    if (!window.isSecureContext) return 'Kamera hanya bisa dipakai lewat HTTPS (atau localhost).';
+    if (name === 'NotAllowedError' || name === 'PermissionDeniedError') return 'Izin kamera ditolak. Aktifkan izin kamera di browser.';
+    if (name === 'NotFoundError' || name === 'DevicesNotFoundError') return 'Kamera tidak ditemukan.';
+    if (name === 'NotReadableError' || name === 'TrackStartError') return 'Kamera sedang dipakai aplikasi lain.';
+    return error?.message || 'Kamera gagal dinyalakan.';
+}
+
+async function startCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Browser tidak mendukung akses kamera.');
+    }
+
+    if (!window.isSecureContext) {
+        throw new Error('Kamera hanya bisa dipakai lewat HTTPS (atau localhost).');
+    }
+
+    updateStatus('Meminta izin kamera...');
+
+    // Minta kamera duluan supaya tetap dianggap "user gesture" di iOS Safari.
+    stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+            facingMode: 'user',
+            width: { ideal: 480 },
+            height: { ideal: 360 },
+            frameRate: { ideal: 24, max: 30 }
+        },
+        audio: false
+    }).catch((error) => {
+        throw new Error(getCameraErrorMessage(error));
+    });
+
+    video.setAttribute('playsinline', '');
+    video.muted = true;
+    video.autoplay = true;
+    video.srcObject = stream;
+
+    await video.play().catch(() => {});
+
+    // Tunggu video siap sebelum mulai deteksi
+    await new Promise(resolve => {
+        if (video.readyState >= 2) return resolve();
+        video.addEventListener('loadeddata', resolve, { once: true });
+    });
+
+    const overlay = document.getElementById('cameraOverlay');
+    if (overlay) overlay.classList.add('hidden');
+}
+
 function trackChallenge() {
     stopTracking();
 
@@ -353,6 +588,7 @@ async function requestGeolocation() {
         );
     });
     gpsStatus.textContent = `${geolocation.latitude.toFixed(6)}, ${geolocation.longitude.toFixed(6)}`;
+    updateAttendanceMap(geolocation.latitude, geolocation.longitude);
 }
 
 async function startVerification() {
@@ -375,35 +611,24 @@ async function startVerification() {
         stopStream();
 
         // ✅ Jalankan paralel: model + challenge + GPS + kamera sekaligus
+        await startCamera();
         updateStatus('Mempersiapkan sistem...');
-        const [, , coords] = await Promise.all([
+        await Promise.all([
             loadModels(),
             requestChallenge(),
             requestGeolocation(),
         ]);
 
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: 'user',
-                width: { ideal: 480 },
-                height: { ideal: 360 },
-                frameRate: { ideal: 24, max: 30 }
-            },
-            audio: false
-        });
-
-        video.srcObject = stream;
-        await video.play();
-
-        // Tunggu video siap sebelum mulai deteksi
-        await new Promise(resolve => {
-            if (video.readyState >= 2) return resolve();
-            video.addEventListener('loadeddata', resolve, { once: true });
-        });
+        // startCamera() sudah menyalakan kamera dan menunggu video siap.
 
         trackChallenge();
         updateStatus(`Ikuti urutan challenge: ${humanizeStep(challenge.steps[0])}`);
     } catch (error) {
+        const overlay = document.getElementById('cameraOverlay');
+        if (overlay) {
+            overlay.textContent = error.message || 'Kamera gagal dinyalakan.';
+            overlay.classList.remove('hidden');
+        }
         updateStatus(error.message || 'Verifikasi gagal dimulai.', true);
     }
 }

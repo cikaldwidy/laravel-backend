@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FaceEnrollmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PresensiController;
+use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkSettingController;
@@ -27,13 +28,7 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::post('/absen/challenge', [PresensiController::class, 'challenge'])->name('absen.challenge');
     Route::post('/absen', [PresensiController::class, 'absen'])->name('absen.store');
 
-    Route::get('/dashboard', function () {
-        if (!auth()->user()->hasFaceEnrollment()) {
-            return redirect()->route('face.enroll');
-        }
-
-        return view('user.dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
 });
 
 // ================= ADMIN =================

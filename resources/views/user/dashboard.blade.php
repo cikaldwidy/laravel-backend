@@ -1,191 +1,212 @@
 @extends('layouts.app')
 
+@section('title', 'E-Presensi')
+
 @section('content')
+@php
+    $jadwalMasuk = $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_masuk)->substr(0, 5) : '08:00';
+    $jadwalPulang = $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_pulang)->substr(0, 5) : '16:00';
+    $jamMasuk = $presensiHariIni?->jam_masuk?->format('H:i') ?? null;
+    $jamPulang = $presensiHariIni?->jam_keluar?->format('H:i') ?? null;
+    $sudahMasuk = (bool) $presensiHariIni?->jam_masuk;
+    $sudahPulang = (bool) $presensiHariIni?->jam_keluar;
+    $statusHariIni = !$sudahMasuk
+        ? 'Belum Absen'
+        : ($presensiHariIni?->status === 'telat' ? 'Telat' : 'Tepat Waktu');
+    $statusBadgeClass = !$sudahMasuk
+        ? 'bg-slate-100 text-slate-600'
+        : ($presensiHariIni?->status === 'telat' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+@endphp
 
-<div class="w-full min-h-screen bg-gray-100 flex justify-center">
-
-    <div class="w-full md:max-w-md min-h-screen bg-white shadow-xl flex flex-col">
-
-        <!-- HEADER -->
-        <div class="bg-gradient-to-b from-green-700 to-green-500 pt-10 pb-24 px-6 rounded-b-[2.5rem] text-white relative">
-
-            <div class="flex justify-between items-center mb-6">
-                <i class="fas fa-bell text-lg"></i>
-                <img src="https://i.pravatar.cc/100" class="w-12 h-12 rounded-full border-2 border-white">
-            </div>
-
-            <div>
-                <h2 class="font-bold text-lg">
-                    {{ auth()->user()->name }}
-                </h2>
-                <p class="text-sm opacity-80">
-                    {{ auth()->user()->role }}
-                </p>
-            </div>
-
-            <!-- JAM -->
-            <div class="text-center mt-6">
-                <h1 id="clock" class="text-4xl font-bold tracking-widest"></h1>
-                <p class="text-sm mt-1 opacity-90">
-                    {{ now()->translatedFormat('l, d F Y') }}
-                </p>
-            </div>
-        </div>
-
-        <!-- STATUS SP -->
-        <div class="px-4 -mt-16">
-            <div class="bg-red-100 text-red-700 rounded-2xl p-4 shadow">
-                <div class="flex items-center space-x-3">
-                    <i class="fas fa-exclamation-triangle text-xl"></i>
-                    <div>
-                        <p class="font-bold text-sm">Status Dalam Masa SP</p>
-                        <p class="text-xs">
-                            Berlaku hingga: <b>28 Februari 2026</b>
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- JAM MASUK PULANG -->
-        <div class="px-4 mt-4">
-            <div class="bg-white rounded-2xl shadow p-4 flex justify-between items-center">
-
-                <div class="text-center">
-                    <i class="fas fa-camera text-green-600 mb-1"></i>
-                    <p class="text-xs text-gray-500">Jam Masuk</p>
-                    <p class="font-bold">--:--</p>
+<div class="min-h-[100dvh] bg-cyan-50 flex justify-center">
+    <div class="w-full max-w-sm min-h-[100dvh] bg-[#dffcff] shadow-2xl relative pb-[calc(6rem+env(safe-area-inset-bottom))]">
+        <header class="px-4 pt-4">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-sm font-semibold text-slate-700 leading-tight">{{ auth()->user()->name }}</p>
+                    <p class="text-xs text-slate-500 leading-tight">Akun User</p>
                 </div>
 
-                <div class="h-10 w-px bg-gray-200"></div>
-
-                <div class="text-center">
-                    <i class="fas fa-camera text-green-600 mb-1"></i>
-                    <p class="text-xs text-gray-500">Jam Pulang</p>
-                    <p class="font-bold">--:--</p>
-                </div>
-
+                <form method="POST" action="/logout" class="shrink-0">
+                    @csrf
+                    <button type="submit" class="w-9 h-9 rounded-xl bg-white/70 hover:bg-white text-slate-700 flex items-center justify-center shadow-sm border border-white/60">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </button>
+                </form>
             </div>
-        </div>
 
-        <!-- REKAP -->
-        <div class="px-4 mt-4">
-            <div class="bg-white rounded-2xl shadow p-4">
+            <div class="mt-3 flex flex-col items-center">
+                <div id="bigClock" class="text-4xl font-extrabold tracking-tight text-emerald-800 leading-none">--:--:--</div>
+                <div class="mt-1 text-xs text-slate-500">{{ now()->translatedFormat('l, d F Y') }}</div>
+            </div>
+        </header>
 
-                <h3 class="text-center font-bold text-gray-700 text-sm mb-2">
-                    Rekap Presensi 30 Hari
-                </h3>
-
-                <p class="text-center text-xs text-gray-400 mb-4">
-                    Update terakhir: {{ now()->format('H:i') }} WIB
-                </p>
-
-                <div class="grid grid-cols-4 text-center">
-                    <div>
-                        <p class="text-green-600 font-bold text-lg">3</p>
-                        <p class="text-xs text-gray-500">Hadir</p>
+        <main class="px-4 pt-4 space-y-4">
+            <section class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-white/70 overflow-hidden">
+                <div class="grid grid-cols-2 divide-x divide-slate-100">
+                    <div class="p-3 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-slate-500 leading-tight">Jam Masuk</p>
+                            <p class="text-sm font-bold text-slate-800 leading-tight">{{ $jamMasuk ?? $jadwalMasuk }}</p>
+                        </div>
                     </div>
-                    <div>
-                        <p class="text-yellow-500 font-bold text-lg">0</p>
-                        <p class="text-xs text-gray-500">Sakit</p>
-                    </div>
-                    <div>
-                        <p class="text-blue-500 font-bold text-lg">0</p>
-                        <p class="text-xs text-gray-500">Izin</p>
-                    </div>
-                    <div>
-                        <p class="text-red-500 font-bold text-lg">0</p>
-                        <p class="text-xs text-gray-500">Cuti</p>
+                    <div class="p-3 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-slate-500 leading-tight">Jam Pulang</p>
+                            <p class="text-sm font-bold text-slate-800 leading-tight">{{ $jamPulang ?? 'Belum Absen' }}</p>
+                        </div>
                     </div>
                 </div>
+            </section>
 
-            </div>
-        </div>
-
-        <!-- MENU -->
-        <div class="px-4 mt-6 flex-grow">
-            <div class="grid grid-cols-4 gap-4 text-center">
-
+            <section class="grid grid-cols-4 gap-3">
                 @php
-                $menus = [
-                    ['icon'=>'fa-id-card','label'=>'ID Card'],
-                    ['icon'=>'fa-coffee','label'=>'Istirahat'],
-                    ['icon'=>'fa-clock','label'=>'Lembur'],
-                    ['icon'=>'fa-wallet','label'=>'Slip Gaji'],
-                    ['icon'=>'fa-list','label'=>'Aktivitas'],
-                    ['icon'=>'fa-map','label'=>'Visit'],
-                    ['icon'=>'fa-user','label'=>'Wajah'],
-                    ['icon'=>'fa-th','label'=>'Lainnya'],
-                ];
+                    $menu = [
+                        ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir],
+                        ['label' => 'Sakit', 'icon' => 'fa-user-injured', 'badge' => 0],
+                        ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => 0],
+                        ['label' => 'Cuti', 'icon' => 'fa-plane-departure', 'badge' => 0],
+                        ['label' => 'ID Card', 'icon' => 'fa-id-card', 'badge' => 0],
+                        ['label' => 'Istirahat', 'icon' => 'fa-mug-hot', 'badge' => 0],
+                        ['label' => 'Lembur', 'icon' => 'fa-clock', 'badge' => 0],
+                        ['label' => 'Slip Gaji', 'icon' => 'fa-wallet', 'badge' => 0],
+                        ['label' => 'Aktivitas', 'icon' => 'fa-chart-line', 'badge' => 0],
+                        ['label' => 'Kunjungan', 'icon' => 'fa-location-dot', 'badge' => 0],
+                    ];
                 @endphp
 
-                @foreach($menus as $menu)
-                <div>
-                    <div class="bg-gray-100 w-14 h-14 flex items-center justify-center rounded-xl mx-auto">
-                        <i class="fas {{ $menu['icon'] }}"></i>
-                    </div>
-                    <p class="text-xs mt-1">{{ $menu['label'] }}</p>
-                </div>
-                @endforeach
-
-            </div>
-        </div>
-
-        <!-- BOTTOM NAV -->
-        <!-- BOTTOM NAV -->
-        <div class="fixed bottom-0 left-0 w-full flex justify-center z-50">
-            
-            <div class="w-full md:max-w-md bg-white border-t shadow-lg px-6 py-3 flex justify-between items-center relative">
-
-                <!-- HOME -->
-                <div class="text-center text-gray-500">
-                    <i class="fas fa-home text-lg"></i>
-                    <p class="text-xs">Home</p>
-                </div>
-
-                <!-- HISTORI -->
-                <div class="text-center text-gray-500">
-                    <i class="fas fa-file-alt text-lg"></i>
-                    <p class="text-xs">Histori</p>
-                </div>
-
-                <!-- BUTTON TENGAH -->
-                <div class="absolute -top-8 left-1/2 transform -translate-x-1/2">
-                    <a href="{{ route('absen.page') }}"
-                    class="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center shadow-xl border-4 border-white">
-                        <i class="fas fa-fingerprint text-white text-2xl"></i>
+                @foreach($menu as $item)
+                    <a href="#"
+                       class="relative bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm px-2 py-3 text-center active:scale-[0.99] transition">
+                        @if(($item['badge'] ?? 0) > 0)
+                            <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
+                                {{ (int) $item['badge'] }}
+                            </span>
+                        @endif
+                        <div class="w-10 h-10 mx-auto rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                            <i class="fa-solid {{ $item['icon'] }}"></i>
+                        </div>
+                        <p class="mt-2 text-[11px] font-semibold text-slate-700 leading-tight">{{ $item['label'] }}</p>
                     </a>
+                @endforeach
+            </section>
+
+            <section class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-700">30 Hari terakhir</p>
+                        <p class="text-[11px] text-slate-500">Ringkasan absensi</p>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $statusBadgeClass }}">{{ $statusHariIni }}</span>
                 </div>
 
-                <!-- PENGAJUAN -->
-                <div class="text-center text-gray-500">
-                    <i class="fas fa-calendar-alt text-lg"></i>
-                    <p class="text-xs">Pengajuan</p>
+                <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                    <div class="rounded-xl bg-emerald-50 p-2">
+                        <p class="text-sm font-extrabold text-emerald-700">{{ $hadir }}</p>
+                        <p class="text-[11px] text-slate-500">Hadir</p>
+                    </div>
+                    <div class="rounded-xl bg-amber-50 p-2">
+                        <p class="text-sm font-extrabold text-amber-700">{{ $telat }}</p>
+                        <p class="text-[11px] text-slate-500">Telat</p>
+                    </div>
+                    <div class="rounded-xl bg-sky-50 p-2">
+                        <p class="text-sm font-extrabold text-sky-700">{{ $totalPresensi }}</p>
+                        <p class="text-[11px] text-slate-500">Total</p>
+                    </div>
                 </div>
+            </section>
 
-                <!-- SETTING -->
-                <div class="text-center text-gray-500">
-                    <i class="fas fa-cog text-lg"></i>
-                    <p class="text-xs">Setting</p>
-                </div>
+            <section class="space-y-3">
+                @php
+                    $shiftLabel = 'SHIFT 1';
+                    $shiftJam = $jadwalMasuk . ' - ' . $jadwalPulang;
+                @endphp
 
+                @forelse($recentPresensis as $item)
+                    @php
+                        $itemTanggal = optional($item->tanggal)->translatedFormat('d F Y') ?? '-';
+                        $itemMasuk = $item->jam_masuk?->format('H:i');
+                        $itemPulang = $item->jam_keluar?->format('H:i');
+                        $itemRange = $itemMasuk
+                            ? ($itemMasuk . ' - ' . ($itemPulang ?? 'Belum Absen'))
+                            : 'Belum Absen';
+                        $itemStatus = $itemMasuk
+                            ? (($item->status === 'telat') ? 'Telat' : 'Tepat Waktu')
+                            : 'Belum Absen';
+                        $itemBadge = !$itemMasuk
+                            ? 'bg-slate-100 text-slate-600'
+                            : (($item->status === 'telat') ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+                    @endphp
+
+                    <div class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                                    <i class="fa-solid fa-fingerprint"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-800 leading-tight">{{ $itemTanggal }}</p>
+                                    <p class="text-[11px] text-slate-500 leading-tight">{{ $itemRange }}</p>
+                                    <span class="inline-flex mt-2 px-2.5 py-1 rounded-full text-[11px] font-bold {{ $itemBadge }}">{{ $itemStatus }}</span>
+                                </div>
+                            </div>
+
+                            <div class="text-right">
+                                <p class="text-[11px] font-bold text-slate-700 leading-tight">{{ $shiftLabel }}</p>
+                                <p class="text-[11px] text-slate-500 leading-tight">{{ $shiftJam }}</p>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-6 text-center text-sm text-slate-500">
+                        Belum ada data presensi.
+                    </div>
+                @endforelse
+            </section>
+        </main>
+
+        <nav class="fixed bottom-0 left-0 w-full flex justify-center z-50 pb-[env(safe-area-inset-bottom)]">
+            <div class="w-full max-w-sm h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl">
+                <a href="{{ route('dashboard') }}" class="text-emerald-700 text-center text-xs">
+                    <i class="fa-solid fa-house text-lg"></i>
+                    <p>Home</p>
+                </a>
+                <a href="#" class="text-gray-500 text-center text-xs">
+                    <i class="fa-solid fa-file-lines text-lg"></i>
+                    <p>Histori</p>
+                </a>
+                <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-emerald-700 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                    <i class="fa-solid fa-fingerprint text-xl"></i>
+                </a>
+                <a href="#" class="text-gray-500 text-center text-xs">
+                    <i class="fa-solid fa-calendar-days text-lg"></i>
+                    <p>Jadwal</p>
+                </a>
+                <a href="#" class="text-gray-500 text-center text-xs">
+                    <i class="fa-solid fa-gear text-lg"></i>
+                    <p>Setting</p>
+                </a>
             </div>
-        </div>
-
+        </nav>
     </div>
 </div>
 
-
-
-<!-- CLOCK -->
 <script>
-function updateClock(){
+function updateClock() {
     const now = new Date();
-    document.getElementById('clock').innerText =
-        now.toLocaleTimeString('id-ID');
+    const clockText = now.toLocaleTimeString('id-ID');
+    const clock = document.getElementById('clock');
+    if (clock) clock.innerText = clockText;
+    const bigClock = document.getElementById('bigClock');
+    if (bigClock) bigClock.innerText = clockText;
 }
-setInterval(updateClock,1000);
+setInterval(updateClock, 1000);
 updateClock();
 </script>
-
 @endsection

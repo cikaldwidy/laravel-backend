@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Presensi;
 use App\Models\User;
 use App\Models\WorkSetting; // 🔥 TAMBAHAN
+use Carbon\Carbon;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,11 +26,15 @@ class PresensiController extends Controller
         $presensi = Presensi::where('user_id', $user->id)
             ->whereDate('tanggal', today())
             ->first();
+        $setting = WorkSetting::first();
 
         return view('user.absen', [
             'presensi' => $presensi,
+            'workSetting' => $setting,
             'faceThreshold' => config('attendance.face_threshold', 0.55),
-            'officeRadius' => config('attendance.radius_meters', 100),
+            'officeRadius' => $setting->radius_meters ?? config('attendance.radius_meters', 100),
+            'officeLatitude' => $setting->office_latitude ?? config('attendance.office_latitude'),
+            'officeLongitude' => $setting->office_longitude ?? config('attendance.office_longitude'),
         ]);
     }
 
@@ -81,9 +86,10 @@ class PresensiController extends Controller
             ], 422);
         }
 
-        $officeLatitude = (float) config('attendance.office_latitude', -6.123456);
-        $officeLongitude = (float) config('attendance.office_longitude', 106.123456);
-        $officeRadius = (int) config('attendance.radius_meters', 100);
+        $setting = WorkSetting::first();
+        $officeLatitude = (float) ($setting->office_latitude ?? config('attendance.office_latitude', -6.123456));
+        $officeLongitude = (float) ($setting->office_longitude ?? config('attendance.office_longitude', 106.123456));
+        $officeRadius = (int) ($setting->radius_meters ?? config('attendance.radius_meters', 100));
 
         if (!$this->isValidChallenge(
             $validated['challenge_token'],
@@ -142,10 +148,11 @@ class PresensiController extends Controller
         $today = today()->toDateString();
 
         // 🔥 TAMBAHAN JAM KERJA
-        $setting = WorkSetting::first();
         $jamMasuk = $setting->jam_masuk ?? '08:00:00';
         $jamPulang = $setting->jam_pulang ?? '16:00:00';
         $batasTelat = $setting->batas_telat ?? 15;
+        $jamMasukHariIni = Carbon::parse($today . ' ' . $jamMasuk);
+        $jamPulangHariIni = Carbon::parse($today . ' ' . $jamPulang);
 
         $presensi = Presensi::where('user_id', $user->id)
             ->whereDate('tanggal', $today)
@@ -162,15 +169,9 @@ class PresensiController extends Controller
         if (!$presensi) {
 
             // 🔥 STATUS MASUK
-            $statusMasuk = 'hadir';
-
-            if (now()->format('H:i:s') > $jamMasuk) {
-                $telat = now()->diffInMinutes($jamMasuk);
-
-                if ($telat > $batasTelat) {
-                    $statusMasuk = 'telat';
-                }
-            }
+            $statusMasuk = now()->greaterThan($jamMasukHariIni->copy()->addMinutes($batasTelat))
+                ? 'telat'
+                : 'hadir';
 
             Presensi::create([
                 'user_id' => $user->id,
@@ -191,7 +192,8 @@ class PresensiController extends Controller
             return response()->json([
                 'status' => 'masuk',
                 'message' => 'Absen masuk berhasil',
-                'status_presensi' => $statusMasuk
+                'status_presensi' => $statusMasuk,
+                'redirect' => route('dashboard', [], false),
             ]);
         }
 
@@ -199,11 +201,9 @@ class PresensiController extends Controller
         if (!$presensi->jam_keluar) {
 
             // 🔥 STATUS PULANG
-            $statusPulang = 'normal';
-
-            if (now()->format('H:i:s') < $jamPulang) {
-                $statusPulang = 'pulang_cepat';
-            }
+            $statusPulang = now()->lessThan($jamPulangHariIni)
+                ? 'pulang_cepat'
+                : 'normal';
 
             $presensi->update([
                 'jam_keluar' => now(),
@@ -221,7 +221,8 @@ class PresensiController extends Controller
             return response()->json([
                 'status' => 'pulang',
                 'message' => 'Absen pulang berhasil',
-                'status_pulang' => $statusPulang
+                'status_pulang' => $statusPulang,
+                'redirect' => route('dashboard', [], false),
             ]);
         }
 

@@ -17,9 +17,13 @@ class DashboardController extends Controller
             'tanggal' => ['nullable', 'date'],
         ]);
 
+        $tanggalPresensiTerbaru = Presensi::query()->latest('tanggal')->value('tanggal');
+
         $tanggal = $request->filled('tanggal')
             ? Carbon::parse($request->input('tanggal'))->toDateString()
-            : today()->toDateString();
+            : ($tanggalPresensiTerbaru
+                ? Carbon::parse($tanggalPresensiTerbaru)->toDateString()
+                : today()->toDateString());
 
         $presensiHarian = Presensi::whereDate('tanggal', $tanggal);
         $totalUser = User::count();
