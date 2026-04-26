@@ -565,7 +565,7 @@ async function saveEmbedding() {
     updateStatus('Menyimpan data wajah ke server...');
 
     try {
-        const response = await fetch("{{ route('face.enroll.store') }}", {
+        const response = await fetch(window.location.origin + "/face/enroll", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

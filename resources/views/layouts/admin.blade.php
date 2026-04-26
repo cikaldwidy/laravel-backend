@@ -2,66 +2,54 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Panel</title>
+    <title>@yield('title', 'Admin Panel')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
 
 <div class="flex min-h-screen">
-
-    <!-- SIDEBAR -->
     <aside class="w-64 bg-white shadow-lg hidden md:block">
-
         <div class="p-6 font-bold text-xl border-b">
             Presensi Admin
         </div>
 
         <nav class="p-4 space-y-2">
-
-            <a href="/admin/dashboard"
-               class="block p-3 rounded-lg bg-blue-500 text-white">
+            <a href="{{ route('admin.dashboard') }}"
+               class="block p-3 rounded-lg {{ request()->routeIs('admin.dashboard') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
                 Dashboard
             </a>
 
-            <a href="/admin/users"
-               class="block p-3 rounded-lg hover:bg-gray-100">
-                👤 Kelola User
+            <a href="{{ route('admin.users.index') }}"
+               class="block p-3 rounded-lg {{ request()->routeIs('admin.users.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
+                Kelola User
+            </a>
+
+            <a href="{{ route('admin.presensi.index') }}"
+               class="block p-3 rounded-lg {{ request()->routeIs('admin.presensi.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
+                Presensi
             </a>
 
             <a href="#"
                class="block p-3 rounded-lg hover:bg-gray-100">
-                📊 Presensi
+                Data Wajah
             </a>
 
-            <a href="#"
-               class="block p-3 rounded-lg hover:bg-gray-100">
-                📷 Data Wajah
+            <a href="{{ route('admin.settings.work.edit') }}"
+               class="block p-3 rounded-lg {{ request()->routeIs('admin.settings.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
+                Jam Kerja
             </a>
-
-            <a href="#"
-               class="block p-3 rounded-lg hover:bg-gray-100">
-                ⚙️ Pengaturan
-            </a>
-
         </nav>
-
     </aside>
 
-    <!-- MAIN -->
     <main class="flex-1">
-
-        <!-- TOPBAR -->
         <div class="bg-white shadow px-6 py-4 flex justify-between items-center">
-
             <h1 class="text-lg font-bold">
                 @yield('title')
             </h1>
 
             <div class="flex items-center gap-4">
-
                 <span class="text-sm">
                     {{ auth()->user()->name }}
                 </span>
@@ -72,18 +60,13 @@
                         Logout
                     </button>
                 </form>
-
             </div>
-
         </div>
 
-        <!-- CONTENT -->
         <div class="p-6">
             @yield('content')
         </div>
-
     </main>
-
 </div>
 
 </body>

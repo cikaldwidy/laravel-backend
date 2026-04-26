@@ -25,10 +25,10 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required',
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
             'password' => 'required|min:6',
-            'role' => 'required'
+            'role' => 'required|in:admin,user'
         ]);
 
         User::create([
@@ -38,7 +38,8 @@ class UserController extends Controller
             'role' => $request->role
         ]);
 
-        return redirect('/admin/users')->with('success', 'User berhasil dibuat');
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User berhasil dibuat');
     }
 
     // ================= EDIT =================
@@ -53,9 +54,10 @@ class UserController extends Controller
         $user = User::findOrFail($id);
 
         $request->validate([
-            'name' => 'required',
+            'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $id,
-            'role' => 'required'
+            'role' => 'required|in:admin,user',
+            'password' => 'nullable|min:6'
         ]);
 
         $data = [
@@ -64,19 +66,29 @@ class UserController extends Controller
             'role' => $request->role
         ];
 
-        if ($request->password) {
+        // 🔥 hanya update password kalau diisi
+        if (!empty($request->password)) {
             $data['password'] = Hash::make($request->password);
         }
 
         $user->update($data);
 
-        return redirect('/admin/users')->with('success', 'User berhasil diupdate');
+        return redirect()->route('admin.users.index')
+            ->with('success', 'User berhasil diupdate');
     }
 
     // ================= DELETE =================
     public function destroy($id)
     {
-        User::destroy($id);
-        return back()->with('success', 'User dihapus');
+        $user = User::findOrFail($id);
+
+        // 🔥 CEGAH HAPUS DIRI SENDIRI
+        if ($user->id == auth()->id()) {
+            return back()->with('error', 'Tidak bisa menghapus akun sendiri');
+        }
+
+        $user->delete();
+
+        return back()->with('success', 'User berhasil dihapus');
     }
 }

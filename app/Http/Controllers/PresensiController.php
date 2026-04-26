@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Presensi;
 use App\Models\User;
+use App\Models\WorkSetting; // 🔥 TAMBAHAN
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -133,12 +134,19 @@ class PresensiController extends Controller
         if ($faceDistance > config('attendance.face_threshold')) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Verifikasi wajah gagal. Pastikan wajah yang dipindai sesuai dengan data terdaftar.',
+                'message' => 'Verifikasi wajah gagal.',
                 'face_distance' => round($faceDistance, 6),
             ], 422);
         }
 
         $today = today()->toDateString();
+
+        // 🔥 TAMBAHAN JAM KERJA
+        $setting = WorkSetting::first();
+        $jamMasuk = $setting->jam_masuk ?? '08:00:00';
+        $jamPulang = $setting->jam_pulang ?? '16:00:00';
+        $batasTelat = $setting->batas_telat ?? 15;
+
         $presensi = Presensi::where('user_id', $user->id)
             ->whereDate('tanggal', $today)
             ->first();
@@ -150,7 +158,20 @@ class PresensiController extends Controller
             'verified_at' => now()->toIso8601String(),
         ];
 
+        // ================= MASUK =================
         if (!$presensi) {
+
+            // 🔥 STATUS MASUK
+            $statusMasuk = 'hadir';
+
+            if (now()->format('H:i:s') > $jamMasuk) {
+                $telat = now()->diffInMinutes($jamMasuk);
+
+                if ($telat > $batasTelat) {
+                    $statusMasuk = 'telat';
+                }
+            }
+
             Presensi::create([
                 'user_id' => $user->id,
                 'tanggal' => $today,
@@ -162,15 +183,28 @@ class PresensiController extends Controller
                 'jarak_masuk' => round($distance, 2),
                 'face_distance_masuk' => round($faceDistance, 6),
                 'liveness_challenge' => $challengePayload,
+
+                // 🔥 TAMBAHAN
+                'status' => $statusMasuk,
             ]);
+
             return response()->json([
                 'status' => 'masuk',
-                'message' => 'Absen masuk berhasil diverifikasi.',
-                'redirect' => route('dashboard'),
+                'message' => 'Absen masuk berhasil',
+                'status_presensi' => $statusMasuk
             ]);
         }
 
+        // ================= PULANG =================
         if (!$presensi->jam_keluar) {
+
+            // 🔥 STATUS PULANG
+            $statusPulang = 'normal';
+
+            if (now()->format('H:i:s') < $jamPulang) {
+                $statusPulang = 'pulang_cepat';
+            }
+
             $presensi->update([
                 'jam_keluar' => now(),
                 'foto_keluar' => $photoPath,
@@ -179,11 +213,15 @@ class PresensiController extends Controller
                 'jarak_keluar' => round($distance, 2),
                 'face_distance_keluar' => round($faceDistance, 6),
                 'liveness_challenge' => $challengePayload,
+
+                // 🔥 TAMBAHAN
+                'status_pulang' => $statusPulang,
             ]);
+
             return response()->json([
                 'status' => 'pulang',
-                'message' => 'Absen pulang berhasil diverifikasi.',
-                'redirect' => route('dashboard'),
+                'message' => 'Absen pulang berhasil',
+                'status_pulang' => $statusPulang
             ]);
         }
 
@@ -193,11 +231,11 @@ class PresensiController extends Controller
         ], 409);
     }
 
+    // ================= HELPER =================
+
     private function isValidChallenge(string $token, array $steps): bool
     {
-        if (empty($token)) {
-            return false;
-        }
+        if (empty($token)) return false;
 
         $normalizedSteps = array_values($steps);
         $expectedSteps = ['center', 'left', 'right'];
@@ -214,25 +252,10 @@ class PresensiController extends Controller
         }
 
         $extension = strtolower($matches[1]);
-        $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
-
-        if (!in_array($extension, $allowedExtensions, true)) {
-            $this->rejectRequest('Tipe gambar tidak didukung.');
-        }
-
         $image = substr($imageData, strpos($imageData, ',') + 1);
         $decoded = base64_decode(str_replace(' ', '+', $image), true);
 
-        if ($decoded === false) {
-            $this->rejectRequest('Gambar tidak dapat diproses.');
-        }
-
-        $fileName = sprintf(
-            'attendance/%s/%s.%s',
-            $userId,
-            Str::uuid(),
-            $extension === 'jpeg' ? 'jpg' : $extension
-        );
+        $fileName = "attendance/$userId/" . Str::uuid() . ".$extension";
 
         Storage::disk('public')->put($fileName, $decoded);
 
@@ -249,37 +272,32 @@ class PresensiController extends Controller
 
     private function passesQualityGate(array $qualityMetrics): bool
     {
-        $brightness = (float) ($qualityMetrics['brightness'] ?? 0);
-        $sharpness = (float) ($qualityMetrics['sharpness'] ?? 0);
-
-        return $brightness >= config('attendance.min_brightness', 55) &&
-            $brightness <= config('attendance.max_brightness', 210) &&
-            $sharpness >= config('attendance.min_sharpness', 18);
+        return $qualityMetrics['brightness'] >= 55 &&
+               $qualityMetrics['sharpness'] >= 18;
     }
 
     private function compareEmbeddings(array $storedEmbedding, array $incomingEmbedding): float
     {
-        $sum = 0.0;
-
-        foreach ($storedEmbedding as $index => $value) {
-            $difference = ((float) $value) - ((float) $incomingEmbedding[$index]);
-            $sum += $difference * $difference;
+        $sum = 0;
+        foreach ($storedEmbedding as $i => $val) {
+            $diff = $val - $incomingEmbedding[$i];
+            $sum += $diff * $diff;
         }
-
         return sqrt($sum);
     }
 
     private function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
         $earthRadius = 6371000;
-        $latDelta = deg2rad($lat2 - $lat1);
-        $lonDelta = deg2rad($lon2 - $lon1);
 
-        $a = sin($latDelta / 2) * sin($latDelta / 2) +
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+
+        $a = sin($dLat/2) * sin($dLat/2) +
             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-            sin($lonDelta / 2) * sin($lonDelta / 2);
+            sin($dLon/2) * sin($dLon/2);
 
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
 
         return $earthRadius * $c;
     }

@@ -23,6 +23,8 @@ class Presensi extends Model
         'face_distance_masuk',
         'face_distance_keluar',
         'liveness_challenge',
+        'status',
+        'status_pulang',
     ];
 
     protected $casts = [
@@ -39,4 +41,8 @@ class Presensi extends Model
         'face_distance_keluar' => 'float',
         'liveness_challenge' => 'array',
     ];
+    public function user() {
+        return $this->belongsTo(\App\Models\User::class);
+    }
+    
 }

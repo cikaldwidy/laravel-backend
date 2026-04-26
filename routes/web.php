@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FaceEnrollmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PresensiController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WorkSettingController;
 
 // ================= USER LOGIN =================
 Route::view('/', 'landing.welcome')->name('landing');
@@ -34,25 +37,23 @@ Route::middleware(['auth', 'role:user'])->group(function () {
 });
 
 // ================= ADMIN =================
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin/dashboard', function () {
-        return view('admin.dashboard');
-    });
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/presensi', [DashboardController::class, 'index'])->name('presensi.index');
+
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::post('/users/{id}/update', [UserController::class, 'update'])->name('users.update');
+        Route::post('/users/{id}/delete', [UserController::class, 'destroy'])->name('users.destroy');
+
+        Route::get('/settings/work', [WorkSettingController::class, 'edit'])->name('settings.work.edit');
+        Route::post('/settings/work', [WorkSettingController::class, 'update'])->name('settings.work.update');
 });
 
 // ================= LOGOUT =================
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
-
-
-use App\Http\Controllers\Admin\UserController;
-
-Route::middleware(['auth','role:admin'])->group(function () {
-
-    Route::get('/admin/users', [UserController::class, 'index']);
-    Route::get('/admin/users/create', [UserController::class, 'create']);
-    Route::post('/admin/users', [UserController::class, 'store']);
-    Route::get('/admin/users/{id}/edit', [UserController::class, 'edit']);
-    Route::post('/admin/users/{id}/update', [UserController::class, 'update']);
-    Route::post('/admin/users/{id}/delete', [UserController::class, 'destroy']);
-
-});
