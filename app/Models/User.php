@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -42,6 +43,21 @@ class User extends Authenticatable
     public function faceEmbedding(): HasOne
     {
         return $this->hasOne(FaceEmbedding::class);
+    }
+
+    public function userProfile(): HasOne
+    {
+        return $this->hasOne(UserProfile::class);
+    }
+
+    public function employeeDetail(): HasOne
+    {
+        return $this->hasOne(EmployeeDetail::class);
+    }
+
+    public function userShifts(): HasMany
+    {
+        return $this->hasMany(UserShift::class);
     }
 
     public function hasFaceEnrollment(): bool

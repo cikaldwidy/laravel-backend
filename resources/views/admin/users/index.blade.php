@@ -35,6 +35,7 @@
                 <td>{{ $u->role }}</td>
                 <td class="space-x-2">
                     <a href="/admin/users/{{ $u->id }}/edit" class="text-blue-500">Edit</a>
+                    <a href="{{ route('admin.biodata.edit', $u) }}" class="text-emerald-600">Biodata</a>
 
                     <form method="POST" action="/admin/users/{{ $u->id }}/delete" class="inline">
                         @csrf

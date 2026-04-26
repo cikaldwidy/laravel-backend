@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Presensi;
 use App\Models\User;
+use App\Models\UserShift;
 use App\Models\WorkSetting; // 🔥 TAMBAHAN
 use Carbon\Carbon;
+use App\Support\ShiftTime;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,14 +25,53 @@ class PresensiController extends Controller
             return redirect()->route('face.enroll');
         }
 
+        $tanggalPresensi = today();
+        $activeShift = null;
+        $now = now();
+
+        // Shift-aware: cek shift hari ini atau shift malam kemarin yang masih berjalan.
+        $candidates = UserShift::query()
+            ->with('shift')
+            ->where('user_id', $user->id)
+            ->whereIn('tanggal', [
+                $now->toDateString(),
+                $now->copy()->subDay()->toDateString(),
+            ])
+            ->get();
+
+        foreach ($candidates as $candidate) {
+            if (!$candidate->shift) {
+                continue;
+            }
+
+            $shiftDate = Carbon::parse($candidate->tanggal)->startOfDay();
+            $window = ShiftTime::window($shiftDate, $candidate->shift->jam_masuk, $candidate->shift->jam_pulang, 60, 180);
+
+            if ($now->between($window['allowed_start'], $window['allowed_end'], true)) {
+                $tanggalPresensi = $shiftDate;
+                $activeShift = $candidate->shift;
+                break;
+            }
+        }
+
+        // Kalau tidak sedang dalam window shift, tetap pakai shift hari ini jika ada (untuk display).
+        if (!$activeShift) {
+            $todayShift = $candidates->firstWhere('tanggal', $now->toDateString());
+            if ($todayShift && $todayShift->shift) {
+                $tanggalPresensi = Carbon::parse($todayShift->tanggal)->startOfDay();
+                $activeShift = $todayShift->shift;
+            }
+        }
+
         $presensi = Presensi::where('user_id', $user->id)
-            ->whereDate('tanggal', today())
+            ->whereDate('tanggal', $tanggalPresensi)
             ->first();
         $setting = WorkSetting::first();
 
         return view('user.absen', [
             'presensi' => $presensi,
             'workSetting' => $setting,
+            'activeShift' => $activeShift,
             'faceThreshold' => config('attendance.face_threshold', 0.55),
             'officeRadius' => $setting->radius_meters ?? config('attendance.radius_meters', 100),
             'officeLatitude' => $setting->office_latitude ?? config('attendance.office_latitude'),
@@ -146,6 +187,49 @@ class PresensiController extends Controller
         }
 
         $today = today()->toDateString();
+        $now = now();
+
+        // Shift-aware: wajib absen sesuai shift. Support shift malam lintas hari.
+        $activeShiftAssignment = null;
+        $shiftDate = null;
+        $shiftStart = null;
+        $shiftEnd = null;
+
+        $shiftCandidates = UserShift::query()
+            ->with('shift')
+            ->where('user_id', $user->id)
+            ->whereIn('tanggal', [
+                $now->toDateString(),
+                $now->copy()->subDay()->toDateString(),
+            ])
+            ->get();
+
+        foreach ($shiftCandidates as $candidate) {
+            if (!$candidate->shift) {
+                continue;
+            }
+
+            $candidateShiftDate = Carbon::parse($candidate->tanggal)->startOfDay();
+            $window = ShiftTime::window($candidateShiftDate, $candidate->shift->jam_masuk, $candidate->shift->jam_pulang, 60, 180);
+
+            if ($now->between($window['allowed_start'], $window['allowed_end'], true)) {
+                $activeShiftAssignment = $candidate;
+                $shiftDate = $candidateShiftDate;
+                $shiftStart = $window['start'];
+                $shiftEnd = $window['end'];
+                break;
+            }
+        }
+
+        if (!$activeShiftAssignment || !$shiftDate || !$shiftStart || !$shiftEnd) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Shift belum diatur untuk Anda atau Anda berada di luar jam shift.',
+            ], 403);
+        }
+
+        // Presensi "tanggal" mengikuti tanggal shift (shift malam setelah lewat tengah malam tetap dianggap shift kemarin).
+        $today = $shiftDate->toDateString();
 
         // 🔥 TAMBAHAN JAM KERJA
         $jamMasuk = $setting->jam_masuk ?? '08:00:00';
@@ -153,6 +237,11 @@ class PresensiController extends Controller
         $batasTelat = $setting->batas_telat ?? 15;
         $jamMasukHariIni = Carbon::parse($today . ' ' . $jamMasuk);
         $jamPulangHariIni = Carbon::parse($today . ' ' . $jamPulang);
+
+        // Override jam kerja berdasarkan shift aktif (RS).
+        $jamMasukHariIni = $shiftStart;
+        $jamPulangHariIni = $shiftEnd;
+        $batasTelat = 0;
 
         $presensi = Presensi::where('user_id', $user->id)
             ->whereDate('tanggal', $today)
@@ -169,7 +258,7 @@ class PresensiController extends Controller
         if (!$presensi) {
 
             // 🔥 STATUS MASUK
-            $statusMasuk = now()->greaterThan($jamMasukHariIni->copy()->addMinutes($batasTelat))
+            $statusMasuk = $now->greaterThan($jamMasukHariIni->copy()->addMinutes($batasTelat))
                 ? 'telat'
                 : 'hadir';
 

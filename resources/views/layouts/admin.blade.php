@@ -31,6 +31,21 @@
                 Presensi
             </a>
 
+            <a href="{{ route('admin.shifts.index') }}"
+               class="block p-3 rounded-lg {{ request()->routeIs('admin.shifts.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
+                Master Shift
+            </a>
+
+            <a href="{{ route('admin.user_shifts.index') }}"
+               class="block p-3 rounded-lg {{ request()->routeIs('admin.user_shifts.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
+                Jadwal Shift
+            </a>
+
+            <a href="{{ route('admin.biodata.index') }}"
+               class="block p-3 rounded-lg {{ request()->routeIs('admin.biodata.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
+                Biodata User
+            </a>
+
             <a href="#"
                class="block p-3 rounded-lg hover:bg-gray-100">
                 Data Wajah

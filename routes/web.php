@@ -5,9 +5,13 @@ use App\Http\Controllers\FaceEnrollmentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\UserDashboardController;
+use App\Http\Controllers\UserBiodataController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkSettingController;
+use App\Http\Controllers\Admin\ShiftController;
+use App\Http\Controllers\Admin\UserShiftController;
+use App\Http\Controllers\Admin\UserBiodataController as AdminUserBiodataController;
 
 // ================= USER LOGIN =================
 Route::view('/', 'landing.welcome')->name('landing');
@@ -31,6 +35,12 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
 });
 
+Route::middleware(['auth'])->group(function () {
+    Route::get('/profile', [UserBiodataController::class, 'index'])->name('profile.index');
+    Route::get('/profile/edit', [UserBiodataController::class, 'edit'])->name('profile.edit');
+    Route::post('/profile/update', [UserBiodataController::class, 'update'])->name('profile.update');
+});
+
 // ================= ADMIN =================
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
@@ -48,6 +58,24 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/settings/work', [WorkSettingController::class, 'edit'])->name('settings.work.edit');
         Route::post('/settings/work', [WorkSettingController::class, 'update'])->name('settings.work.update');
+
+        // ===== SHIFT (RS) =====
+        Route::get('/shifts', [ShiftController::class, 'index'])->name('shifts.index');
+        Route::get('/shifts/create', [ShiftController::class, 'create'])->name('shifts.create');
+        Route::post('/shifts', [ShiftController::class, 'store'])->name('shifts.store');
+        Route::get('/shifts/{shift}/edit', [ShiftController::class, 'edit'])->name('shifts.edit');
+        Route::put('/shifts/{shift}', [ShiftController::class, 'update'])->name('shifts.update');
+        Route::delete('/shifts/{shift}', [ShiftController::class, 'destroy'])->name('shifts.destroy');
+
+        // Jadwal shift per user per tanggal
+        Route::get('/user-shifts', [UserShiftController::class, 'index'])->name('user_shifts.index');
+        Route::post('/user-shifts', [UserShiftController::class, 'store'])->name('user_shifts.store');
+
+        // Biodata user (admin manage)
+        Route::get('/biodata', [AdminUserBiodataController::class, 'index'])->name('biodata.index');
+        Route::get('/biodata/{user}/edit', [AdminUserBiodataController::class, 'edit'])->name('biodata.edit');
+        Route::post('/biodata/{user}', [AdminUserBiodataController::class, 'update'])->name('biodata.update');
+        Route::post('/biodata/{user}/delete', [AdminUserBiodataController::class, 'destroy'])->name('biodata.destroy');
 });
 
 // ================= LOGOUT =================
