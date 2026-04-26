@@ -7,6 +7,7 @@
     $badge = [
         'hadir' => 'bg-green-100 text-green-700',
         'telat' => 'bg-yellow-100 text-yellow-700',
+        'terlambat' => 'bg-yellow-100 text-yellow-700',
         'normal' => 'bg-blue-100 text-blue-700',
         'pulang_cepat' => 'bg-red-100 text-red-700',
     ];
@@ -42,27 +43,7 @@
 
     <div class="bg-white rounded-lg shadow p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h2 class="font-bold text-lg text-gray-800">Setting Jam Kerja</h2>
-            <div class="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                <div>
-                    <p class="text-gray-500">Jam Masuk</p>
-                    <p class="font-semibold text-gray-800">
-                        {{ $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_masuk)->substr(0, 5) : 'Belum diatur' }}
-                    </p>
-                </div>
-                <div>
-                    <p class="text-gray-500">Jam Pulang</p>
-                    <p class="font-semibold text-gray-800">
-                        {{ $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_pulang)->substr(0, 5) : 'Belum diatur' }}
-                    </p>
-                </div>
-                <div>
-                    <p class="text-gray-500">Batas Telat</p>
-                    <p class="font-semibold text-gray-800">
-                        {{ $workSetting ? $workSetting->batas_telat . ' menit' : 'Belum diatur' }}
-                    </p>
-                </div>
-            </div>
+            <h2 class="font-bold text-lg text-gray-800">Setting Lokasi & Jam Default</h2>
             <div class="mt-3 text-sm text-gray-600">
                 GPS:
                 <span class="font-semibold text-gray-800">
@@ -79,7 +60,7 @@
 
         <a href="{{ route('admin.settings.work.edit') }}"
            class="inline-flex justify-center bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md font-semibold">
-            Atur Jam Kerja
+            Atur Lokasi
         </a>
     </div>
 

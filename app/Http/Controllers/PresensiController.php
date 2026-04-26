@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Presensi;
 use App\Models\User;
 use App\Models\UserShift;
-use App\Models\WorkSetting; // 🔥 TAMBAHAN
-use Carbon\Carbon;
+use App\Models\WorkSetting;
 use App\Support\ShiftTime;
+use Carbon\Carbon;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,43 +25,12 @@ class PresensiController extends Controller
             return redirect()->route('face.enroll');
         }
 
-        $tanggalPresensi = today();
-        $activeShift = null;
         $now = now();
-
-        // Shift-aware: cek shift hari ini atau shift malam kemarin yang masih berjalan.
-        $candidates = UserShift::query()
-            ->with('shift')
-            ->where('user_id', $user->id)
-            ->whereIn('tanggal', [
-                $now->toDateString(),
-                $now->copy()->subDay()->toDateString(),
-            ])
-            ->get();
-
-        foreach ($candidates as $candidate) {
-            if (!$candidate->shift) {
-                continue;
-            }
-
-            $shiftDate = Carbon::parse($candidate->tanggal)->startOfDay();
-            $window = ShiftTime::window($shiftDate, $candidate->shift->jam_masuk, $candidate->shift->jam_pulang, 60, 180);
-
-            if ($now->between($window['allowed_start'], $window['allowed_end'], true)) {
-                $tanggalPresensi = $shiftDate;
-                $activeShift = $candidate->shift;
-                break;
-            }
-        }
-
-        // Kalau tidak sedang dalam window shift, tetap pakai shift hari ini jika ada (untuk display).
-        if (!$activeShift) {
-            $todayShift = $candidates->firstWhere('tanggal', $now->toDateString());
-            if ($todayShift && $todayShift->shift) {
-                $tanggalPresensi = Carbon::parse($todayShift->tanggal)->startOfDay();
-                $activeShift = $todayShift->shift;
-            }
-        }
+        $activeShiftContext = $this->resolveActiveShift($user, $now);
+        $scheduledShift = $this->getTodayShiftAssignment($user, $now)?->shift;
+        $activeShift = $activeShiftContext['shift'] ?? null;
+        $canAttend = (bool) $activeShiftContext;
+        $tanggalPresensi = $activeShiftContext['shift_date'] ?? $now->copy()->startOfDay();
 
         $presensi = Presensi::where('user_id', $user->id)
             ->whereDate('tanggal', $tanggalPresensi)
@@ -72,6 +41,8 @@ class PresensiController extends Controller
             'presensi' => $presensi,
             'workSetting' => $setting,
             'activeShift' => $activeShift,
+            'scheduledShift' => $scheduledShift,
+            'canAttend' => $canAttend,
             'faceThreshold' => config('attendance.face_threshold', 0.55),
             'officeRadius' => $setting->radius_meters ?? config('attendance.radius_meters', 100),
             'officeLatitude' => $setting->office_latitude ?? config('attendance.office_latitude'),
@@ -186,65 +157,23 @@ class PresensiController extends Controller
             ], 422);
         }
 
-        $today = today()->toDateString();
         $now = now();
+        $activeShiftContext = $this->resolveActiveShift($user, $now);
 
-        // Shift-aware: wajib absen sesuai shift. Support shift malam lintas hari.
-        $activeShiftAssignment = null;
-        $shiftDate = null;
-        $shiftStart = null;
-        $shiftEnd = null;
-
-        $shiftCandidates = UserShift::query()
-            ->with('shift')
-            ->where('user_id', $user->id)
-            ->whereIn('tanggal', [
-                $now->toDateString(),
-                $now->copy()->subDay()->toDateString(),
-            ])
-            ->get();
-
-        foreach ($shiftCandidates as $candidate) {
-            if (!$candidate->shift) {
-                continue;
-            }
-
-            $candidateShiftDate = Carbon::parse($candidate->tanggal)->startOfDay();
-            $window = ShiftTime::window($candidateShiftDate, $candidate->shift->jam_masuk, $candidate->shift->jam_pulang, 60, 180);
-
-            if ($now->between($window['allowed_start'], $window['allowed_end'], true)) {
-                $activeShiftAssignment = $candidate;
-                $shiftDate = $candidateShiftDate;
-                $shiftStart = $window['start'];
-                $shiftEnd = $window['end'];
-                break;
-            }
-        }
-
-        if (!$activeShiftAssignment || !$shiftDate || !$shiftStart || !$shiftEnd) {
+        if (!$activeShiftContext) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Shift belum diatur untuk Anda atau Anda berada di luar jam shift.',
             ], 403);
         }
 
-        // Presensi "tanggal" mengikuti tanggal shift (shift malam setelah lewat tengah malam tetap dianggap shift kemarin).
-        $today = $shiftDate->toDateString();
-
-        // 🔥 TAMBAHAN JAM KERJA
-        $jamMasuk = $setting->jam_masuk ?? '08:00:00';
-        $jamPulang = $setting->jam_pulang ?? '16:00:00';
-        $batasTelat = $setting->batas_telat ?? 15;
-        $jamMasukHariIni = Carbon::parse($today . ' ' . $jamMasuk);
-        $jamPulangHariIni = Carbon::parse($today . ' ' . $jamPulang);
-
-        // Override jam kerja berdasarkan shift aktif (RS).
-        $jamMasukHariIni = $shiftStart;
-        $jamPulangHariIni = $shiftEnd;
-        $batasTelat = 0;
+        // Tanggal presensi mengikuti tanggal shift agar shift malam setelah tengah malam tetap dianggap shift kemarin.
+        $tanggalPresensi = $activeShiftContext['shift_date']->toDateString();
+        $jamMasukShift = $activeShiftContext['start'];
+        $jamPulangShift = $activeShiftContext['end'];
 
         $presensi = Presensi::where('user_id', $user->id)
-            ->whereDate('tanggal', $today)
+            ->whereDate('tanggal', $tanggalPresensi)
             ->first();
 
         $photoPath = $this->storeAttendanceImage($validated['image'], $user->id);
@@ -254,17 +183,13 @@ class PresensiController extends Controller
             'verified_at' => now()->toIso8601String(),
         ];
 
-        // ================= MASUK =================
+        // CHECK-IN
         if (!$presensi) {
-
-            // 🔥 STATUS MASUK
-            $statusMasuk = $now->greaterThan($jamMasukHariIni->copy()->addMinutes($batasTelat))
-                ? 'telat'
-                : 'hadir';
+            $statusMasuk = $now->lte($jamMasukShift) ? 'hadir' : 'terlambat';
 
             Presensi::create([
                 'user_id' => $user->id,
-                'tanggal' => $today,
+                'tanggal' => $tanggalPresensi,
                 'jam_masuk' => now(),
                 'foto' => $photoPath,
                 'foto_masuk' => $photoPath,
@@ -273,8 +198,6 @@ class PresensiController extends Controller
                 'jarak_masuk' => round($distance, 2),
                 'face_distance_masuk' => round($faceDistance, 6),
                 'liveness_challenge' => $challengePayload,
-
-                // 🔥 TAMBAHAN
                 'status' => $statusMasuk,
             ]);
 
@@ -286,46 +209,102 @@ class PresensiController extends Controller
             ]);
         }
 
-        // ================= PULANG =================
-        if (!$presensi->jam_keluar) {
-
-            // 🔥 STATUS PULANG
-            $statusPulang = now()->lessThan($jamPulangHariIni)
-                ? 'pulang_cepat'
-                : 'normal';
-
-            $presensi->update([
-                'jam_keluar' => now(),
-                'foto_keluar' => $photoPath,
-                'latitude_keluar' => $validated['lat'],
-                'longitude_keluar' => $validated['lng'],
-                'jarak_keluar' => round($distance, 2),
-                'face_distance_keluar' => round($faceDistance, 6),
-                'liveness_challenge' => $challengePayload,
-
-                // 🔥 TAMBAHAN
-                'status_pulang' => $statusPulang,
-            ]);
-
+        // VALIDASI TAMBAHAN
+        if (!$presensi->jam_masuk) {
             return response()->json([
-                'status' => 'pulang',
-                'message' => 'Absen pulang berhasil',
-                'status_pulang' => $statusPulang,
-                'redirect' => route('dashboard', [], false),
-            ]);
+                'status' => 'error',
+                'message' => 'Anda belum melakukan absen masuk.',
+            ], 422);
         }
 
+        if ($presensi->jam_keluar) {
+            return response()->json([
+                'status' => 'done',
+                'message' => 'Anda sudah melakukan absen masuk dan pulang hari ini',
+            ], 409);
+        }
+
+        if ($now->lt($jamPulangShift)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'belum waktunya pulang',
+            ], 422);
+        }
+
+        // CHECK-OUT
+        $presensi->update([
+            'jam_keluar' => now(),
+            'foto_keluar' => $photoPath,
+            'latitude_keluar' => $validated['lat'],
+            'longitude_keluar' => $validated['lng'],
+            'jarak_keluar' => round($distance, 2),
+            'face_distance_keluar' => round($faceDistance, 6),
+            'liveness_challenge' => $challengePayload,
+            'status_pulang' => 'normal',
+        ]);
+
         return response()->json([
-            'status' => 'done',
-            'message' => 'Anda sudah melakukan absen masuk dan pulang hari ini'
-        ], 409);
+            'status' => 'pulang',
+            'message' => 'Absen pulang berhasil',
+            'status_pulang' => 'normal',
+            'redirect' => route('dashboard', [], false),
+        ]);
+    }
+
+    private function getTodayShiftAssignment(User $user, Carbon $now): ?UserShift
+    {
+        return UserShift::query()
+            ->with('shift')
+            ->where('user_id', $user->id)
+            ->whereDate('tanggal', $now->toDateString())
+            ->first();
+    }
+
+    private function resolveActiveShift(User $user, Carbon $now): ?array
+    {
+        // Cek shift hari ini dan shift kemarin untuk handle shift lintas hari.
+        $shiftCandidates = UserShift::query()
+            ->with('shift')
+            ->where('user_id', $user->id)
+            ->whereIn('tanggal', [
+                $now->toDateString(),
+                $now->copy()->subDay()->toDateString(),
+            ])
+            ->orderByDesc('tanggal')
+            ->get();
+
+        foreach ($shiftCandidates as $candidate) {
+            if (!$candidate->shift) {
+                continue;
+            }
+
+            $shiftDate = Carbon::parse($candidate->tanggal)->startOfDay();
+            $window = ShiftTime::window($shiftDate, $candidate->shift->jam_masuk, $candidate->shift->jam_pulang, 60, 180);
+
+            if (!$now->between($window['allowed_start'], $window['allowed_end'], true)) {
+                continue;
+            }
+
+            return [
+                'assignment' => $candidate,
+                'shift' => $candidate->shift,
+                'shift_date' => $shiftDate,
+                'start' => $window['start'],
+                'end' => $window['end'],
+                'is_overnight' => ShiftTime::isOvernight($candidate->shift->jam_masuk, $candidate->shift->jam_pulang),
+            ];
+        }
+
+        return null;
     }
 
     // ================= HELPER =================
 
     private function isValidChallenge(string $token, array $steps): bool
     {
-        if (empty($token)) return false;
+        if (empty($token)) {
+            return false;
+        }
 
         $normalizedSteps = array_values($steps);
         $expectedSteps = ['center', 'left', 'right'];
@@ -383,11 +362,11 @@ class PresensiController extends Controller
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
 
-        $a = sin($dLat/2) * sin($dLat/2) +
+        $a = sin($dLat / 2) * sin($dLat / 2) +
             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-            sin($dLon/2) * sin($dLon/2);
+            sin($dLon / 2) * sin($dLon / 2);
 
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadius * $c;
     }

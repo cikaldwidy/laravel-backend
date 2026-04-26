@@ -35,7 +35,7 @@ class DashboardController extends Controller
             ->count();
 
         $telat = (clone $presensiHarian)
-            ->where('status', 'telat')
+            ->whereIn('status', ['telat', 'terlambat'])
             ->count();
 
         $pulangCepat = (clone $presensiHarian)

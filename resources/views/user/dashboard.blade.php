@@ -4,18 +4,23 @@
 
 @section('content')
 @php
-    $jadwalMasuk = $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_masuk)->substr(0, 5) : '08:00';
-    $jadwalPulang = $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_pulang)->substr(0, 5) : '16:00';
+    $jadwalMasuk = isset($scheduledShift) && $scheduledShift?->jam_masuk
+        ? \Illuminate\Support\Str::of($scheduledShift->jam_masuk)->substr(0, 5)
+        : '--:--';
+    $jadwalPulang = isset($scheduledShift) && $scheduledShift?->jam_pulang
+        ? \Illuminate\Support\Str::of($scheduledShift->jam_pulang)->substr(0, 5)
+        : '--:--';
     $jamMasuk = $presensiHariIni?->jam_masuk?->format('H:i') ?? null;
     $jamPulang = $presensiHariIni?->jam_keluar?->format('H:i') ?? null;
     $sudahMasuk = (bool) $presensiHariIni?->jam_masuk;
     $sudahPulang = (bool) $presensiHariIni?->jam_keluar;
     $statusHariIni = !$sudahMasuk
         ? 'Belum Absen'
-        : ($presensiHariIni?->status === 'telat' ? 'Telat' : 'Tepat Waktu');
+        : (in_array($presensiHariIni?->status, ['telat', 'terlambat'], true) ? 'Telat' : 'Tepat Waktu');
     $statusBadgeClass = !$sudahMasuk
         ? 'bg-slate-100 text-slate-600'
-        : ($presensiHariIni?->status === 'telat' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+        : (in_array($presensiHariIni?->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+    $shiftLabel = isset($scheduledShift) && $scheduledShift?->nama_shift ? $scheduledShift->nama_shift : null;
 @endphp
 
 <div class="min-h-[100dvh] bg-cyan-50 flex justify-center">
@@ -42,6 +47,12 @@
         </header>
 
         <main class="px-4 pt-4 space-y-4">
+            @if(!$shiftLabel)
+                <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
+                    Shift kamu belum diatur oleh admin untuk hari ini. Absen hanya bisa dilakukan setelah ada jadwal shift.
+                </section>
+            @endif
+
             <section class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-white/70 overflow-hidden">
                 <div class="grid grid-cols-2 divide-x divide-slate-100">
                     <div class="p-3 flex items-center gap-3">
@@ -51,6 +62,9 @@
                         <div>
                             <p class="text-[11px] text-slate-500 leading-tight">Jam Masuk</p>
                             <p class="text-sm font-bold text-slate-800 leading-tight">{{ $jamMasuk ?? $jadwalMasuk }}</p>
+                            @if($shiftLabel)
+                                <p class="text-[11px] text-slate-500 leading-tight">{{ $shiftLabel }}</p>
+                            @endif
                         </div>
                     </div>
                     <div class="p-3 flex items-center gap-3">
@@ -59,7 +73,7 @@
                         </div>
                         <div>
                             <p class="text-[11px] text-slate-500 leading-tight">Jam Pulang</p>
-                            <p class="text-sm font-bold text-slate-800 leading-tight">{{ $jamPulang ?? 'Belum Absen' }}</p>
+                            <p class="text-sm font-bold text-slate-800 leading-tight">{{ $jamPulang ?? ($shiftLabel ? $jadwalPulang : 'Belum Dijadwalkan') }}</p>
                         </div>
                     </div>
                 </div>
@@ -137,11 +151,11 @@
                             ? ($itemMasuk . ' - ' . ($itemPulang ?? 'Belum Absen'))
                             : 'Belum Absen';
                         $itemStatus = $itemMasuk
-                            ? (($item->status === 'telat') ? 'Telat' : 'Tepat Waktu')
+                            ? (in_array($item->status, ['telat', 'terlambat'], true) ? 'Telat' : 'Tepat Waktu')
                             : 'Belum Absen';
                         $itemBadge = !$itemMasuk
                             ? 'bg-slate-100 text-slate-600'
-                            : (($item->status === 'telat') ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+                            : (in_array($item->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
                     @endphp
 
                     <div class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">

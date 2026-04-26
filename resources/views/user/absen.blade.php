@@ -4,14 +4,19 @@
 
 @section('content')
 @php
-    $jadwalMasuk = $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_masuk)->substr(0, 5) : '08:00';
-    $jadwalPulang = $workSetting ? \Illuminate\Support\Str::of($workSetting->jam_pulang)->substr(0, 5) : '16:00';
+    $jadwalMasuk = isset($scheduledShift) && $scheduledShift?->jam_masuk
+        ? \Illuminate\Support\Str::of($scheduledShift->jam_masuk)->substr(0, 5)
+        : '--:--';
+    $jadwalPulang = isset($scheduledShift) && $scheduledShift?->jam_pulang
+        ? \Illuminate\Support\Str::of($scheduledShift->jam_pulang)->substr(0, 5)
+        : '--:--';
     $jamMasuk = $presensi?->jam_masuk?->format('H:i') ?? $jadwalMasuk;
     $jamPulang = $presensi?->jam_keluar?->format('H:i') ?? $jadwalPulang;
     $sudahMasuk = (bool) $presensi?->jam_masuk;
     $sudahPulang = (bool) $presensi?->jam_keluar;
     $jenisAbsen = !$presensi ? 'Masuk' : (!$presensi->jam_keluar ? 'Pulang' : 'Selesai');
     $fotoAktif = $presensi?->foto_keluar ?? $presensi?->foto_masuk ?? $presensi?->foto ?? null;
+    $shiftLabel = isset($scheduledShift) && $scheduledShift?->nama_shift ? $scheduledShift->nama_shift : 'Belum Dijadwalkan';
 @endphp
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -72,11 +77,21 @@
                 </div>
             </section>
 
+            @if(!isset($scheduledShift) || !$scheduledShift)
+                <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
+                    Shift kamu belum diatur oleh admin. Hubungi admin untuk assign jadwal shift terlebih dulu.
+                </section>
+            @elseif(empty($canAttend))
+                <section class="bg-sky-50 border border-sky-200 text-sky-900 rounded-2xl p-4 text-sm shadow-sm">
+                    Shift kamu sudah dijadwalkan ({{ $shiftLabel }} {{ $jadwalMasuk }} - {{ $jadwalPulang }}), tapi belum masuk jam absensi.
+                </section>
+            @endif
+
             <section class="grid grid-cols-3 gap-2">
                 <div class="bg-emerald-700 text-white rounded-xl p-3 text-center shadow">
                     <i class="fa-solid fa-user-clock text-sm"></i>
                     <p class="text-[11px] mt-1 opacity-90">Shift</p>
-                    <p class="text-xs font-bold">SHIFT 1</p>
+                    <p class="text-xs font-bold">{{ $shiftLabel }}</p>
                 </div>
                 <div class="bg-emerald-700 text-white rounded-xl p-3 text-center shadow">
                     <i class="fa-solid fa-right-to-bracket text-sm"></i>
@@ -102,11 +117,11 @@
                             id="startVerification"
                             type="button"
                             class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
-                                {{ $sudahPulang ? 'bg-slate-200 text-slate-400' : (!$sudahMasuk ? 'bg-emerald-700 text-white' : 'bg-white text-emerald-800 border border-emerald-100') }}"
-                            @if($sudahPulang) disabled @endif
+                                {{ ($sudahPulang || empty($canAttend)) ? 'bg-slate-200 text-slate-400' : (!$sudahMasuk ? 'bg-emerald-700 text-white' : 'bg-white text-emerald-800 border border-emerald-100') }}"
+                            @if($sudahPulang || empty($canAttend)) disabled @endif
                         >
                             <i class="fa-solid fa-fingerprint"></i>
-                            {{ $sudahPulang ? 'Selesai' : ($jenisAbsen === 'Pulang' ? 'Verifikasi' : 'Masuk') }}
+                            {{ ($sudahPulang || empty($canAttend)) ? 'Selesai' : ($jenisAbsen === 'Pulang' ? 'Verifikasi' : 'Masuk') }}
                         </button>
 
                         <button
