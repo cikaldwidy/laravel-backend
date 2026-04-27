@@ -21,6 +21,9 @@
         ['label'=>'Pulang Cepat', 'value'=>$pulangCepat,  'icon'=>'fa-solid fa-person-running',   'from'=>'#ef4444','to'=>'#dc2626'],
         ['label'=>'Izin',         'value'=>$izin,         'icon'=>'fa-solid fa-file-circle-check','from'=>'#38bdf8','to'=>'#0284c7'],
         ['label'=>'Alpha',        'value'=>$alpha,        'icon'=>'fa-solid fa-user-xmark',       'from'=>'#94a3b8','to'=>'#475569'],
+        ['label'=>'Total Shift Hari Ini', 'value'=>$totalShiftHariIni, 'icon'=>'fa-solid fa-calendar-day', 'from'=>'#06b6d4','to'=>'#0e7490'],
+        ['label'=>'User Masuk Hari Ini', 'value'=>$userMasukHariIni, 'icon'=>'fa-solid fa-user-check', 'from'=>'#6366f1','to'=>'#4338ca'],
+        ['label'=>'Swap Pending', 'value'=>$swapPending, 'icon'=>'fa-solid fa-right-left', 'from'=>'#f97316','to'=>'#c2410c'],
     ];
 @endphp
 

@@ -6,6 +6,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\UserBiodataController;
+use App\Http\Controllers\ShiftController as UserShiftScheduleController;
+use App\Http\Controllers\ShiftSwapController;
 use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\AnnouncementController;
@@ -19,6 +21,7 @@ use App\Http\Controllers\Admin\LeaveRequestController as AdminLeaveRequestContro
 use App\Http\Controllers\Admin\AttendanceHistoryController;
 use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ShiftManagementController;
 use App\Http\Controllers\Admin\UserBiodataController as AdminUserBiodataController;
 
 // ================= USER LOGIN =================
@@ -47,6 +50,13 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::post('/izin', [LeaveRequestController::class, 'store'])->name('leave_requests.store');
     Route::post('/izin/{leaveRequest}/delete', [LeaveRequestController::class, 'destroy'])->name('leave_requests.destroy');
     Route::get('/pengumuman', [AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::get('/jadwal-shift', [UserShiftScheduleController::class, 'index'])->name('user.shifts.index');
+    Route::get('/tukar-shift', [ShiftSwapController::class, 'index'])->name('shift-swaps.index');
+    Route::get('/tukar-shift/create', [ShiftSwapController::class, 'create'])->name('shift-swaps.create');
+    Route::get('/tukar-shift/target-shifts', [ShiftSwapController::class, 'availableTargetShifts'])->name('shift-swaps.target-shifts');
+    Route::post('/tukar-shift', [ShiftSwapController::class, 'store'])->name('shift-swaps.store');
+    Route::post('/tukar-shift/{shiftSwap}/accept', [ShiftSwapController::class, 'targetAccept'])->name('shift-swaps.accept');
+    Route::post('/tukar-shift/{shiftSwap}/reject', [ShiftSwapController::class, 'targetReject'])->name('shift-swaps.reject');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -89,6 +99,14 @@ Route::middleware(['auth', 'role:admin'])
         // Jadwal shift per user per tanggal
         Route::get('/user-shifts', [UserShiftController::class, 'index'])->name('user_shifts.index');
         Route::post('/user-shifts', [UserShiftController::class, 'store'])->name('user_shifts.store');
+        Route::get('/shift-management/schedules', [ShiftManagementController::class, 'schedules'])->name('shift_management.schedules');
+        Route::post('/shift-management/schedules', [ShiftManagementController::class, 'storeSchedule'])->name('shift_management.schedules.store');
+        Route::put('/shift-management/schedules/{shiftSchedule}', [ShiftManagementController::class, 'updateSchedule'])->name('shift_management.schedules.update');
+        Route::delete('/shift-management/schedules/{shiftSchedule}', [ShiftManagementController::class, 'destroySchedule'])->name('shift_management.schedules.destroy');
+        Route::post('/shift-management/schedules/bulk-assign', [ShiftManagementController::class, 'bulkAssign'])->name('shift_management.schedules.bulk_assign');
+        Route::get('/shift-management/swaps', [ShiftManagementController::class, 'swaps'])->name('shift_management.swaps');
+        Route::post('/shift-management/swaps/{shiftSwap}/approve', [ShiftManagementController::class, 'approveSwap'])->name('shift_management.swaps.approve');
+        Route::post('/shift-management/swaps/{shiftSwap}/reject', [ShiftManagementController::class, 'rejectSwap'])->name('shift_management.swaps.reject');
 
         // Biodata user (admin manage)
         Route::get('/biodata', [AdminUserBiodataController::class, 'index'])->name('biodata.index');

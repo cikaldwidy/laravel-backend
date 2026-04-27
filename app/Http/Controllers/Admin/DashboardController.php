@@ -9,6 +9,8 @@ use App\Models\Presensi;
 use App\Models\Unit;
 use App\Models\User;
 use App\Models\UserShift;
+use App\Models\ShiftSchedule;
+use App\Models\ShiftSwap;
 use App\Models\WorkSetting;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -88,6 +90,20 @@ class DashboardController extends Controller
             ->whereDate('tanggal_berakhir', '>=', $tanggal)
             ->count();
 
+        $totalShiftHariIni = ShiftSchedule::query()
+            ->whereDate('tanggal', $tanggal)
+            ->where('status', 'aktif')
+            ->count();
+
+        $userMasukHariIni = Presensi::query()
+            ->whereDate('tanggal', $tanggal)
+            ->distinct('user_id')
+            ->count('user_id');
+
+        $swapPending = ShiftSwap::query()
+            ->where('status', 'pending')
+            ->count();
+
         $chart = collect(range(6, 0))
             ->map(function ($minusDay) {
                 $day = today()->subDays($minusDay)->toDateString();
@@ -111,6 +127,9 @@ class DashboardController extends Controller
             'alpha',
             'units',
             'announcements',
+            'totalShiftHariIni',
+            'userMasukHariIni',
+            'swapPending',
             'chart',
             'presensis',
             'workSetting'

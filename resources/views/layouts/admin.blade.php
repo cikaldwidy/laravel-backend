@@ -97,6 +97,51 @@
         .sidebar-collapsed .sidebar-item:hover .tooltip {
             opacity: 1;
         }
+        .menu-trigger {
+            width: 100%;
+            border: 0;
+            background: transparent;
+        }
+        .menu-caret {
+            transition: transform 0.2s ease;
+        }
+        .menu-trigger[aria-expanded="true"] .menu-caret {
+            transform: rotate(180deg);
+        }
+        .submenu {
+            display: none;
+            margin-top: 0.25rem;
+            margin-left: 0.9rem;
+            padding-left: 0.9rem;
+            border-left: 1px solid rgba(148, 163, 184, 0.35);
+        }
+        .submenu.is-open {
+            display: block;
+        }
+        .submenu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.55rem 0.65rem;
+            border-radius: 0.5rem;
+            color: #cbd5e1;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .submenu-item:hover {
+            background: rgba(71, 85, 105, 0.45);
+            color: #fff;
+        }
+        .submenu-item.active {
+            background: linear-gradient(90deg, #0284c7, #1d4ed8);
+            color: #fff;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+        #sidebar.sidebar-collapsed .submenu,
+        #sidebar.sidebar-collapsed .menu-caret {
+            display: none !important;
+        }
 
         /* Adjust main content margin based on sidebar state */
         #main-content {
@@ -155,7 +200,12 @@
         </div>
 
         <!-- Navigation with Custom Scrollbar - Scrollable Area -->
-        <nav id="sidebar-nav" class="md:px-2 sidebar-scroll overflow-y-auto px-4 py-3 space-y-1" style="height: calc(100vh - 5rem);">
+        @php
+            $masterOpen = request()->routeIs('admin.users.*') || request()->routeIs('admin.units.*') || request()->routeIs('admin.shifts.*') || request()->routeIs('admin.biodata.*') || request()->routeIs('admin.settings.*');
+            $opsOpen = request()->routeIs('admin.presensi.*') || request()->routeIs('admin.user_shifts.*') || request()->routeIs('admin.shift_management.schedules*') || request()->routeIs('admin.shift_management.swaps*') || request()->routeIs('admin.leave_requests.*') || request()->routeIs('admin.histories.*');
+            $infoOpen = request()->routeIs('admin.announcements.*') || request()->routeIs('admin.reports.*');
+        @endphp
+        <nav id="sidebar-nav" class="md:px-2 sidebar-scroll overflow-y-auto px-4 py-3 space-y-2" style="height: calc(100vh - 5rem);">
             <a href="{{ route('admin.dashboard') }}"
                class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.dashboard') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
                 <i class="fas fa-chart-line w-5 flex-shrink-0 text-center"></i>
@@ -163,82 +213,57 @@
                 <span class="tooltip">Dashboard</span>
             </a>
 
-            <a href="{{ route('admin.users.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.users.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-users w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Kelola User</span>
-                <span class="tooltip">Kelola User</span>
-            </a>
+            <div class="menu-group">
+                <button type="button"
+                        data-menu-target="menu-master"
+                        aria-expanded="{{ $masterOpen ? 'true' : 'false' }}"
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $masterOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                    <i class="fas fa-database w-5 flex-shrink-0 text-center"></i>
+                    <span class="sidebar-text flex-1 text-left">Data Master</span>
+                    <i class="fas fa-chevron-down menu-caret text-xs"></i>
+                </button>
+                <div id="menu-master" class="submenu {{ $masterOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.users.index') }}" class="submenu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Kelola User</a>
+                    <a href="{{ route('admin.units.index') }}" class="submenu-item {{ request()->routeIs('admin.units.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Master Unit</a>
+                    <a href="{{ route('admin.shifts.index') }}" class="submenu-item {{ request()->routeIs('admin.shifts.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Master Shift</a>
+                    <a href="{{ route('admin.biodata.index') }}" class="submenu-item {{ request()->routeIs('admin.biodata.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Biodata User</a>
+                    <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Jam Kerja</a>
+                </div>
+            </div>
 
-            <a href="{{ route('admin.units.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.units.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-building w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Master Unit</span>
-                <span class="tooltip">Master Unit</span>
-            </a>
+            <div class="menu-group">
+                <button type="button"
+                        data-menu-target="menu-ops"
+                        aria-expanded="{{ $opsOpen ? 'true' : 'false' }}"
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $opsOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                    <i class="fas fa-clipboard-check w-5 flex-shrink-0 text-center"></i>
+                    <span class="sidebar-text flex-1 text-left">Operasional</span>
+                    <i class="fas fa-chevron-down menu-caret text-xs"></i>
+                </button>
+                <div id="menu-ops" class="submenu {{ $opsOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.presensi.index') }}" class="submenu-item {{ request()->routeIs('admin.presensi.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Presensi</a>
+                    <a href="{{ route('admin.user_shifts.index') }}" class="submenu-item {{ request()->routeIs('admin.user_shifts.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Jadwal Shift</a>
+                    <a href="{{ route('admin.shift_management.schedules') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.schedules*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Manajemen Shift</a>
+                    <a href="{{ route('admin.shift_management.swaps') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.swaps*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Approval Swap</a>
+                    <a href="{{ route('admin.leave_requests.index') }}" class="submenu-item {{ request()->routeIs('admin.leave_requests.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Perizinan</a>
+                    <a href="{{ route('admin.histories.index') }}" class="submenu-item {{ request()->routeIs('admin.histories.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Riwayat</a>
+                </div>
+            </div>
 
-            <a href="{{ route('admin.presensi.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.presensi.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-clipboard-check w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Presensi</span>
-                <span class="tooltip">Presensi</span>
-            </a>
-
-            <a href="{{ route('admin.shifts.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.shifts.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-clock w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Master Shift</span>
-                <span class="tooltip">Master Shift</span>
-            </a>
-
-            <a href="{{ route('admin.user_shifts.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.user_shifts.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-calendar-alt w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Jadwal Shift</span>
-                <span class="tooltip">Jadwal Shift</span>
-            </a>
-
-            <a href="{{ route('admin.biodata.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.biodata.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-id-card w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Biodata User</span>
-                <span class="tooltip">Biodata User</span>
-            </a>
-
-            <a href="{{ route('admin.leave_requests.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.leave_requests.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-file-alt w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Perizinan</span>
-                <span class="tooltip">Perizinan</span>
-            </a>
-
-            <a href="{{ route('admin.histories.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.histories.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-history w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Riwayat</span>
-                <span class="tooltip">Riwayat</span>
-            </a>
-
-            <a href="{{ route('admin.announcements.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.announcements.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-bullhorn w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Pengumuman</span>
-                <span class="tooltip">Pengumuman</span>
-            </a>
-
-            <a href="{{ route('admin.reports.index') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.reports.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-chart-bar w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Laporan</span>
-                <span class="tooltip">Laporan</span>
-            </a>
-
-            <a href="{{ route('admin.settings.work.edit') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.settings.*') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
-                <i class="fas fa-cog w-5 flex-shrink-0 text-center"></i>
-                <span class="sidebar-text">Jam Kerja</span>
-                <span class="tooltip">Jam Kerja</span>
-            </a>
+            <div class="menu-group">
+                <button type="button"
+                        data-menu-target="menu-info"
+                        aria-expanded="{{ $infoOpen ? 'true' : 'false' }}"
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $infoOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                    <i class="fas fa-bullhorn w-5 flex-shrink-0 text-center"></i>
+                    <span class="sidebar-text flex-1 text-left">Info & Laporan</span>
+                    <i class="fas fa-chevron-down menu-caret text-xs"></i>
+                </button>
+                <div id="menu-info" class="submenu {{ $infoOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.announcements.index') }}" class="submenu-item {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Pengumuman</a>
+                    <a href="{{ route('admin.reports.index') }}" class="submenu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Laporan</a>
+                </div>
+            </div>
         </nav>
     </aside>
 
@@ -360,6 +385,41 @@
     // Sidebar collapse toggle (Desktop only)
     const collapseBtn = document.getElementById('collapse-btn');
     const collapseIcon = document.getElementById('collapse-icon');
+    const menuTriggers = document.querySelectorAll('[data-menu-target]');
+
+    function toggleSidebarMenu(trigger) {
+        if (!trigger) {
+            return;
+        }
+
+        if (window.innerWidth >= 768 && sidebar.classList.contains('sidebar-collapsed')) {
+            return;
+        }
+
+        const targetId = trigger.getAttribute('data-menu-target');
+        const targetMenu = document.getElementById(targetId);
+        if (!targetMenu) {
+            return;
+        }
+
+        const shouldOpen = trigger.getAttribute('aria-expanded') !== 'true';
+
+        menuTriggers.forEach((item) => {
+            const itemTargetId = item.getAttribute('data-menu-target');
+            const itemMenu = document.getElementById(itemTargetId);
+            item.setAttribute('aria-expanded', 'false');
+            itemMenu?.classList.remove('is-open');
+        });
+
+        trigger.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        targetMenu.classList.toggle('is-open', shouldOpen);
+    }
+
+    menuTriggers.forEach((trigger) => {
+        trigger.addEventListener('click', function () {
+            toggleSidebarMenu(trigger);
+        });
+    });
 
     function syncDesktopSidebarState() {
         if (window.innerWidth < 768) {

@@ -82,21 +82,21 @@
             <section class="grid grid-cols-4 gap-3">
                 @php
                     $menu = [
-                        ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir],
-                        ['label' => 'Sakit', 'icon' => 'fa-user-injured', 'badge' => 0],
-                        ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => $izin],
-                        ['label' => 'Cuti', 'icon' => 'fa-plane-departure', 'badge' => 0],
-                        ['label' => 'ID Card', 'icon' => 'fa-id-card', 'badge' => 0],
-                        ['label' => 'Istirahat', 'icon' => 'fa-mug-hot', 'badge' => 0],
-                        ['label' => 'Lembur', 'icon' => 'fa-clock', 'badge' => 0],
-                        ['label' => 'Slip Gaji', 'icon' => 'fa-wallet', 'badge' => 0],
-                        ['label' => 'Aktivitas', 'icon' => 'fa-chart-line', 'badge' => 0],
-                        ['label' => 'Kunjungan', 'icon' => 'fa-location-dot', 'badge' => 0],
+                        ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir, 'url' => route('history.index')],
+                        ['label' => 'Sakit', 'icon' => 'fa-user-injured', 'badge' => 0, 'url' => route('leave_requests.index')],
+                        ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => $izin, 'url' => route('leave_requests.index')],
+                        ['label' => 'Cuti', 'icon' => 'fa-plane-departure', 'badge' => 0, 'url' => route('leave_requests.create')],
+                        ['label' => 'ID Card', 'icon' => 'fa-id-card', 'badge' => 0, 'url' => route('profile.index')],
+                        ['label' => 'Istirahat', 'icon' => 'fa-mug-hot', 'badge' => 0, 'url' => '#'],
+                        ['label' => 'Lembur', 'icon' => 'fa-clock', 'badge' => 0, 'url' => '#'],
+                        ['label' => 'Slip Gaji', 'icon' => 'fa-wallet', 'badge' => 0, 'url' => '#'],
+                        ['label' => 'Jadwal', 'icon' => 'fa-calendar-days', 'badge' => 0, 'url' => route('user.shifts.index')],
+                        ['label' => 'Swap Shift', 'icon' => 'fa-right-left', 'badge' => 0, 'url' => route('shift-swaps.index')],
                     ];
                 @endphp
 
                 @foreach($menu as $item)
-                    <a href="#"
+                    <a href="{{ $item['url'] ?? '#' }}"
                        class="relative bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm px-2 py-3 text-center active:scale-[0.99] transition">
                         @if(($item['badge'] ?? 0) > 0)
                             <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
