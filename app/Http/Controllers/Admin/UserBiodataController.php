@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\EmployeeDetail;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
@@ -34,8 +35,9 @@ class UserBiodataController extends Controller
     {
         $profile = $user->userProfile;
         $employeeDetail = $user->employeeDetail;
+        $units = Unit::query()->orderBy('nama_unit')->get();
 
-        return view('admin.biodata.edit', compact('user', 'profile', 'employeeDetail'));
+        return view('admin.biodata.edit', compact('user', 'profile', 'employeeDetail', 'units'));
     }
 
     public function update(Request $request, User $user)
@@ -46,6 +48,7 @@ class UserBiodataController extends Controller
             'tanggal_lahir' => ['required', 'date'],
             'jenis_kelamin' => ['required', 'in:L,P'],
             'nik' => ['nullable', 'regex:/^[0-9]+$/', 'max:32'],
+            'unit_id' => ['nullable', 'exists:units,id'],
             'nip' => ['required', 'string', 'max:50'],
             'departemen' => ['required', 'string', 'max:120'],
             'jabatan' => ['required', 'string', 'max:120'],
@@ -79,6 +82,7 @@ class UserBiodataController extends Controller
         EmployeeDetail::updateOrCreate(
             ['user_id' => $user->id],
             [
+                'unit_id' => $validated['unit_id'] ?? null,
                 'nip' => $validated['nip'],
                 'departemen' => $validated['departemen'],
                 'jabatan' => $validated['jabatan'],
@@ -107,4 +111,3 @@ class UserBiodataController extends Controller
             ->with('success', 'Biodata user berhasil dihapus.');
     }
 }
-

@@ -6,11 +6,19 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\UserBiodataController;
+use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\LeaveRequestController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkSettingController;
 use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\UserShiftController;
+use App\Http\Controllers\Admin\UnitController;
+use App\Http\Controllers\Admin\LeaveRequestController as AdminLeaveRequestController;
+use App\Http\Controllers\Admin\AttendanceHistoryController;
+use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\UserBiodataController as AdminUserBiodataController;
 
 // ================= USER LOGIN =================
@@ -33,6 +41,12 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::post('/absen', [PresensiController::class, 'absen'])->name('absen.store');
 
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
+    Route::get('/izin', [LeaveRequestController::class, 'index'])->name('leave_requests.index');
+    Route::get('/izin/create', [LeaveRequestController::class, 'create'])->name('leave_requests.create');
+    Route::post('/izin', [LeaveRequestController::class, 'store'])->name('leave_requests.store');
+    Route::post('/izin/{leaveRequest}/delete', [LeaveRequestController::class, 'destroy'])->name('leave_requests.destroy');
+    Route::get('/pengumuman', [AnnouncementController::class, 'index'])->name('announcements.index');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -56,6 +70,11 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/users/{id}/update', [UserController::class, 'update'])->name('users.update');
         Route::post('/users/{id}/delete', [UserController::class, 'destroy'])->name('users.destroy');
 
+        Route::get('/units', [UnitController::class, 'index'])->name('units.index');
+        Route::post('/units', [UnitController::class, 'store'])->name('units.store');
+        Route::put('/units/{unit}', [UnitController::class, 'update'])->name('units.update');
+        Route::delete('/units/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
+
         Route::get('/settings/work', [WorkSettingController::class, 'edit'])->name('settings.work.edit');
         Route::post('/settings/work', [WorkSettingController::class, 'update'])->name('settings.work.update');
 
@@ -76,6 +95,20 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/biodata/{user}/edit', [AdminUserBiodataController::class, 'edit'])->name('biodata.edit');
         Route::post('/biodata/{user}', [AdminUserBiodataController::class, 'update'])->name('biodata.update');
         Route::post('/biodata/{user}/delete', [AdminUserBiodataController::class, 'destroy'])->name('biodata.destroy');
+
+        Route::get('/izin', [AdminLeaveRequestController::class, 'index'])->name('leave_requests.index');
+        Route::post('/izin/{leaveRequest}', [AdminLeaveRequestController::class, 'update'])->name('leave_requests.update');
+
+        Route::get('/histories', [AttendanceHistoryController::class, 'index'])->name('histories.index');
+
+        Route::get('/announcements', [AdminAnnouncementController::class, 'index'])->name('announcements.index');
+        Route::post('/announcements', [AdminAnnouncementController::class, 'store'])->name('announcements.store');
+        Route::put('/announcements/{announcement}', [AdminAnnouncementController::class, 'update'])->name('announcements.update');
+        Route::delete('/announcements/{announcement}', [AdminAnnouncementController::class, 'destroy'])->name('announcements.destroy');
+
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/excel', [ReportController::class, 'exportExcel'])->name('reports.excel');
+        Route::get('/reports/pdf', [ReportController::class, 'exportPdf'])->name('reports.pdf');
 });
 
 // ================= LOGOUT =================

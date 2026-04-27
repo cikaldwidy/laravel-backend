@@ -84,7 +84,7 @@
                     $menu = [
                         ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir],
                         ['label' => 'Sakit', 'icon' => 'fa-user-injured', 'badge' => 0],
-                        ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => 0],
+                        ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => $izin],
                         ['label' => 'Cuti', 'icon' => 'fa-plane-departure', 'badge' => 0],
                         ['label' => 'ID Card', 'icon' => 'fa-id-card', 'badge' => 0],
                         ['label' => 'Istirahat', 'icon' => 'fa-mug-hot', 'badge' => 0],
@@ -130,9 +130,36 @@
                         <p class="text-[11px] text-slate-500">Telat</p>
                     </div>
                     <div class="rounded-xl bg-sky-50 p-2">
-                        <p class="text-sm font-extrabold text-sky-700">{{ $totalPresensi }}</p>
-                        <p class="text-[11px] text-slate-500">Total</p>
+                        <p class="text-sm font-extrabold text-sky-700">{{ $izin }}</p>
+                        <p class="text-[11px] text-slate-500">Izin</p>
                     </div>
+                </div>
+            </section>
+
+            @if($approvedLeaveToday)
+                <section class="bg-sky-50 border border-sky-200 text-sky-900 rounded-2xl p-4 text-sm shadow-sm">
+                    Hari ini Anda memiliki izin yang disetujui: <span class="font-bold">{{ ucfirst($approvedLeaveToday->jenis_izin) }}</span>.
+                </section>
+            @endif
+
+            <section class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-700">Pengumuman Aktif</p>
+                        <p class="text-[11px] text-slate-500">Info terbaru untuk user</p>
+                    </div>
+                    <a href="{{ route('announcements.index') }}" class="text-xs text-emerald-700 font-semibold">Lihat semua</a>
+                </div>
+                <div class="mt-3 space-y-3">
+                    @forelse($announcements as $announcement)
+                        <div class="rounded-xl bg-slate-50 p-3">
+                            <p class="text-sm font-bold text-slate-800">{{ $announcement->judul }}</p>
+                            <p class="text-[11px] text-slate-500 mt-1">{{ $announcement->tanggal_mulai->format('d/m/Y') }} - {{ $announcement->tanggal_berakhir->format('d/m/Y') }}</p>
+                            <p class="text-xs text-slate-600 mt-2 line-clamp-2">{{ $announcement->isi }}</p>
+                        </div>
+                    @empty
+                        <p class="text-sm text-slate-500">Belum ada pengumuman aktif.</p>
+                    @endforelse
                 </div>
             </section>
 
@@ -191,20 +218,20 @@
                     <i class="fa-solid fa-house text-lg"></i>
                     <p>Home</p>
                 </a>
-                <a href="#" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('history.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-file-lines text-lg"></i>
                     <p>Histori</p>
                 </a>
                 <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-emerald-700 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg">
                     <i class="fa-solid fa-fingerprint text-xl"></i>
                 </a>
-                <a href="#" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('leave_requests.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-calendar-days text-lg"></i>
-                    <p>Jadwal</p>
+                    <p>Izin</p>
                 </a>
-                <a href="#" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('announcements.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-gear text-lg"></i>
-                    <p>Setting</p>
+                    <p>Info</p>
                 </a>
             </div>
         </nav>
