@@ -10,6 +10,7 @@ class FaceEmbedding extends Model
     protected $fillable = [
         'user_id',
         'embedding',
+        'photo_path',
     ];
 
     protected $casts = [

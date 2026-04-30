@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementContro
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ShiftManagementController;
 use App\Http\Controllers\Admin\UserBiodataController as AdminUserBiodataController;
+use App\Http\Controllers\Admin\FaceDataController;
 
 // ================= USER LOGIN =================
 Route::view('/', 'landing.welcome')->name('landing');
@@ -40,7 +41,6 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/face/verification-progress', [FaceEnrollmentController::class, 'showVerificationProgress'])->name('face.verify.progress');
     Route::get('/face/success', [FaceEnrollmentController::class, 'showSuccess'])->name('face.success');
     Route::get('/absen', [PresensiController::class, 'show'])->name('absen.page');
-    Route::post('/absen/challenge', [PresensiController::class, 'challenge'])->name('absen.challenge');
     Route::post('/absen', [PresensiController::class, 'absen'])->name('absen.store');
 
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
@@ -113,6 +113,11 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/biodata/{user}/edit', [AdminUserBiodataController::class, 'edit'])->name('biodata.edit');
         Route::post('/biodata/{user}', [AdminUserBiodataController::class, 'update'])->name('biodata.update');
         Route::post('/biodata/{user}/delete', [AdminUserBiodataController::class, 'destroy'])->name('biodata.destroy');
+
+        Route::get('/face-data', [FaceDataController::class, 'index'])->name('face_data.index');
+        Route::post('/face-data', [FaceDataController::class, 'store'])->name('face_data.store');
+        Route::put('/face-data/{faceEmbedding}', [FaceDataController::class, 'update'])->name('face_data.update');
+        Route::delete('/face-data/{faceEmbedding}', [FaceDataController::class, 'destroy'])->name('face_data.destroy');
 
         Route::get('/izin', [AdminLeaveRequestController::class, 'index'])->name('leave_requests.index');
         Route::post('/izin/{leaveRequest}', [AdminLeaveRequestController::class, 'update'])->name('leave_requests.update');
