@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
     // ================= LIST =================
     public function index()
     {
-        $users = User::with('employeeDetail.unit')->latest()->get();
+        $users = User::with(['employeeDetail.unit', 'userProfile', 'faceEmbedding'])->latest()->get();
         return view('admin.users.index', compact('users'));
     }
 
@@ -24,18 +25,18 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6',
-            'role' => 'required|in:admin,user'
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:6'],
+            'role' => ['required', Rule::in(['admin', 'user'])],
         ]);
 
         User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+            'role' => $validated['role'],
         ]);
 
         return redirect()->route('admin.users.index')
@@ -53,22 +54,22 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'role' => 'required|in:admin,user',
-            'password' => 'nullable|min:6'
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'role' => ['required', Rule::in(['admin', 'user'])],
+            'password' => ['nullable', 'string', 'min:6'],
         ]);
 
         $data = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'role' => $request->role
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'role' => $validated['role'],
         ];
 
         // 🔥 hanya update password kalau diisi
-        if (!empty($request->password)) {
-            $data['password'] = Hash::make($request->password);
+        if (!empty($validated['password'])) {
+            $data['password'] = Hash::make($validated['password']);
         }
 
         $user->update($data);

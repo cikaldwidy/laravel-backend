@@ -15,24 +15,19 @@ class UserBiodataController extends Controller
     public function index()
     {
         $users = User::query()
+            ->with(['userProfile', 'employeeDetail.unit'])
+            ->where('role', 'user')
             ->orderBy('name')
             ->get();
 
-        $profiles = UserProfile::query()
-            ->pluck('id', 'user_id');
-
-        $details = EmployeeDetail::query()
-            ->pluck('id', 'user_id');
-
         return view('admin.biodata.index', [
             'users' => $users,
-            'profiles' => $profiles,
-            'details' => $details,
         ]);
     }
 
     public function edit(User $user)
     {
+        $user->load(['userProfile', 'employeeDetail.unit']);
         $profile = $user->userProfile;
         $employeeDetail = $user->employeeDetail;
         $units = Unit::query()->orderBy('nama_unit')->get();
