@@ -10,21 +10,22 @@
     100% { transform: translateX(-50%) translateY(0); opacity: 0.55; }
 }
 </style>
-<div class="min-h-screen bg-white">
+<div class="user-page">
+    <div class="user-phone">
 
-    <div class="px-8 md:px-14 lg:px-20 mt-5">
+    <div class="px-4 pt-4">
         <div class="relative p-5">
-            <div class="absolute top-10 left-0 w-full h-[2px] bg-gray-300"></div>
+            <div class="absolute top-10 left-0 w-full h-[2px] bg-emerald-100"></div>
 
             <div class="flex justify-between relative z-10 text-[8px] md:text-sm text-gray-500 tracking-[1px]">
                 <div class="flex flex-col items-center">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold">1</div>
-                    <span class="mt-1 text-blue-600 font-semibold">LOGIN</span>
+                    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-emerald-700 text-white font-bold">1</div>
+                    <span class="mt-1 text-emerald-700 font-semibold">LOGIN</span>
                 </div>
 
                 <div class="flex flex-col items-center">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold">2</div>
-                    <span class="mt-1 text-blue-600 font-semibold">PENDAFTARAN WAJAH</span>
+                    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-emerald-700 text-white font-bold">2</div>
+                    <span class="mt-1 text-emerald-700 font-semibold">PENDAFTARAN WAJAH</span>
                 </div>
 
                 <div class="flex flex-col items-center">
@@ -40,16 +41,16 @@
         </div>
     </div>
 
-    <div class="px-4 md:px-14 lg:px-20 pb-10">
-        <div class="max-w-6xl mx-auto bg-white rounded-md shadow-lg p-4 md:p-6">
+    <div class="px-4 pb-10">
+        <div class="user-card p-4">
             <div class="text-center mb-6">
-                <h1 class="text-xl md:text-2xl font-bold text-gray-700 tracking-[0.4px]">Pendaftaran Wajah</h1>
+                <h1 class="text-xl md:text-2xl font-bold text-emerald-900 tracking-[0.4px]">Pendaftaran Wajah</h1>
                 <p class="text-sm text-gray-400 mt-2">
                     Pastikan wajah Anda berada di dalam frame dan pencahayaan cukup.
                 </p>
             </div>
 
-            <div class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] items-start">
+            <div class="grid gap-4 items-start">
                 <div>
                     <div class="relative rounded-md overflow-hidden bg-slate-100 border border-gray-100 aspect-[4/3]">
                         <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
@@ -63,7 +64,7 @@
                                 <div class="absolute top-1/2 left-[15%] right-[15%] h-px -translate-y-1/2 bg-white/20"></div>
                             </div>
                         </div>
-                        <div class="absolute top-4 left-4 bg-blue-600/90 text-white text-xs px-3 py-2 rounded-full shadow">
+                        <div class="absolute top-4 left-4 bg-emerald-700/90 text-white text-xs px-3 py-2 rounded-full shadow">
                             Kamera aktif
                         </div>
                     </div>
@@ -71,43 +72,43 @@
                     <p id="status" class="mt-4 text-sm text-gray-500 text-center md:text-left">
                         Siapkan kamera untuk mulai enrollment.
                     </p>
-                    <p id="guideInstruction" class="mt-2 text-sm font-semibold text-blue-600 text-center md:text-left">
+                    <p id="guideInstruction" class="mt-2 text-sm font-semibold text-emerald-700 text-center md:text-left">
                         Arahkan wajah ke kamera, lalu kedipkan mata.
                     </p>
 
                     <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <button id="startCamera" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-md font-semibold text-sm shadow transition">
+                        <button id="startCamera" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-3 rounded-xl font-semibold text-sm shadow transition">
                             <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA
                         </button>
-                        <button id="resetSamples" class="border border-red-200 text-red-500 hover:bg-red-50 px-4 py-3 rounded-md font-semibold text-sm transition">
+                        <button id="resetSamples" class="border border-red-200 text-red-500 hover:bg-red-50 px-4 py-3 rounded-xl font-semibold text-sm transition">
                             RESET
                         </button>
                     </div>
                 </div>
 
-                <div class="bg-[#fbfdff] border border-gray-100 rounded-md p-5">
+                <div class="bg-white/70 border border-white rounded-2xl p-4">
                     <h2 class="text-base font-bold text-gray-800">Petunjuk</h2>
                     <div class="mt-4 space-y-4 text-sm text-gray-500">
                         <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
                                 <i class="fa-regular fa-face-smile"></i>
                             </div>
                             <p>Hadapkan wajah ke kamera dan pastikan wajah cukup jelas.</p>
                         </div>
                         <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
                                 <i class="fa-regular fa-lightbulb"></i>
                             </div>
                             <p>Gunakan pencahayaan yang cukup agar deteksi lebih stabil.</p>
                         </div>
                         <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-glasses"></i>
                             </div>
                             <p>Hindari aksesori yang menutupi wajah secara berlebihan.</p>
                         </div>
                         <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
                                 <i class="fa-solid fa-arrows-rotate"></i>
                             </div>
                             <p>Sistem akan mengambil sampel otomatis saat wajah jelas dan kedipan sudah terverifikasi.</p>
@@ -138,6 +139,7 @@
 
             <canvas id="captureCanvas" class="hidden"></canvas>
         </div>
+    </div>
     </div>
 </div>
 
@@ -216,7 +218,7 @@ function updateSampleCount() {
     sampleCount.textContent = `${descriptors.length} / ${REQUIRED_SAMPLES}`;
     sampleDots.forEach((dot, index) => {
         dot.className = index < descriptors.length
-            ? 'w-3 h-3 rounded-full bg-blue-600'
+            ? 'w-3 h-3 rounded-full bg-emerald-700'
             : 'w-3 h-3 rounded-full bg-gray-200';
     });
 }

@@ -3,45 +3,66 @@
 @section('title', 'Riwayat Presensi')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-6">
-    <div class="max-w-4xl mx-auto px-4 space-y-4">
-        <div>
-            <h1 class="text-xl font-bold text-gray-800">Riwayat Presensi</h1>
-            <p class="text-sm text-gray-500">Filter riwayat pribadi berdasarkan tanggal.</p>
-        </div>
+<div class="user-page">
+    <div class="user-phone">
+        @include('user.partials.header', [
+            'title' => 'Riwayat Presensi',
+            'subtitle' => 'Filter dan pantau catatan presensi pribadi.',
+        ])
 
-        <form method="GET" class="bg-white rounded-xl shadow p-4 grid md:grid-cols-3 gap-3">
-            <input type="date" name="date_from" value="{{ request('date_from') }}" class="border rounded px-3 py-2">
-            <input type="date" name="date_to" value="{{ request('date_to') }}" class="border rounded px-3 py-2">
-            <button class="bg-slate-800 text-white rounded px-4 py-2">Filter</button>
-        </form>
+        <main class="px-4 pt-4 space-y-4">
+            <form method="GET" class="user-card p-4 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Dari</label>
+                        <input type="date" name="date_from" value="{{ request('date_from') }}" class="user-field mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Sampai</label>
+                        <input type="date" name="date_to" value="{{ request('date_to') }}" class="user-field mt-1">
+                    </div>
+                </div>
+                <button class="user-btn-primary w-full">
+                    <i class="fa-solid fa-filter"></i>
+                    Filter
+                </button>
+            </form>
 
-        <div class="bg-white rounded-xl shadow overflow-hidden">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="p-3 text-left">Tanggal</th>
-                        <th class="p-3 text-left">Check In</th>
-                        <th class="p-3 text-left">Check Out</th>
-                        <th class="p-3 text-left">Status</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y">
-                    @forelse($histories as $item)
-                        <tr>
-                            <td class="p-3">{{ $item->tanggal->format('d/m/Y') }}</td>
-                            <td class="p-3">{{ $item->jam_masuk?->format('H:i') ?? '-' }}</td>
-                            <td class="p-3">{{ $item->jam_keluar?->format('H:i') ?? '-' }}</td>
-                            <td class="p-3">{{ ucfirst($item->status ?? '-') }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="p-6 text-center text-gray-500">Belum ada riwayat.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+            <section class="space-y-3">
+                @forelse($histories as $item)
+                    @php
+                        $isLate = in_array($item->status, ['telat', 'terlambat'], true);
+                        $badgeClass = $isLate ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+                    @endphp
+                    <article class="user-card p-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                                    <i class="fa-solid fa-fingerprint"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-slate-800">{{ $item->tanggal->translatedFormat('d F Y') }}</p>
+                                    <p class="text-xs text-slate-500">{{ $item->jam_masuk?->format('H:i') ?? '-' }} - {{ $item->jam_keluar?->format('H:i') ?? '-' }}</p>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-bold {{ $badgeClass }}">
+                                {{ ucfirst($item->status ?? '-') }}
+                            </span>
+                        </div>
+                    </article>
+                @empty
+                    <section class="user-card p-6 text-center">
+                        <div class="w-12 h-12 mx-auto rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                            <i class="fa-solid fa-file-lines"></i>
+                        </div>
+                        <p class="mt-3 text-sm font-semibold text-slate-700">Belum ada riwayat.</p>
+                        <p class="text-xs text-slate-500">Data presensi akan muncul setelah kamu absen.</p>
+                    </section>
+                @endforelse
+            </section>
+        </main>
+
+        @include('user.partials.bottom-nav', ['active' => 'history'])
     </div>
 </div>
 @endsection

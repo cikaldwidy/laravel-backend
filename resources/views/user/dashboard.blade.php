@@ -230,7 +230,7 @@
                     <p>Izin</p>
                 </a>
                 <a href="{{ route('announcements.index') }}" class="text-gray-500 text-center text-xs">
-                    <i class="fa-solid fa-gear text-lg"></i>
+                    <i class="fa-solid fa-circle-info text-lg"></i>
                     <p>Info</p>
                 </a>
             </div>

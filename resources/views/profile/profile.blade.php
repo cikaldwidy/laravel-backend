@@ -3,95 +3,97 @@
 @section('title', 'Profil')
 
 @section('content')
-<div class="min-h-[100dvh] bg-gray-50">
-    <div class="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        @if(session('success'))
-            <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
-                {{ session('success') }}
-            </div>
-        @endif
+<div class="user-page">
+    <div class="user-phone">
+        @include('user.partials.header', [
+            'title' => 'ID Card',
+            'subtitle' => 'Biodata dan detail kepegawaian.',
+            'back' => route('dashboard'),
+        ])
 
-        <div class="bg-white rounded-xl shadow-sm border p-5 flex items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-                @php
-                    $foto = $profile?->foto ? asset('storage/' . $profile->foto) : null;
-                @endphp
-                <div class="w-16 h-16 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center border">
-                    @if($foto)
-                        <img src="{{ $foto }}" alt="Foto" class="w-full h-full object-cover">
-                    @else
-                        <i class="fa-solid fa-user text-gray-400 text-2xl"></i>
+        <main class="px-4 pt-4 space-y-4">
+            @if(session('success'))
+                <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 text-sm shadow-sm">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @php($foto = $profile?->foto ? asset('storage/' . $profile->foto) : null)
+
+            <section class="user-card p-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 rounded-2xl bg-emerald-50 overflow-hidden flex items-center justify-center border border-white shadow-sm">
+                        @if($foto)
+                            <img src="{{ $foto }}" alt="Foto" class="w-full h-full object-cover">
+                        @else
+                            <i class="fa-solid fa-user text-emerald-700 text-2xl"></i>
+                        @endif
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <p class="font-extrabold text-slate-800 truncate">{{ $user->name }}</p>
+                        <p class="text-xs text-slate-500 truncate">{{ $user->email }}</p>
+                        <p class="mt-2 inline-flex px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold">
+                            {{ $employeeDetail?->unit?->nama_unit ?? 'User' }}
+                        </p>
+                    </div>
+                    @if(auth()->user()?->role === 'admin')
+                        <a href="{{ route('profile.edit') }}" class="user-header-icon text-emerald-700 bg-white/80 border border-white shadow-sm">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
                     @endif
                 </div>
-                <div>
-                    <p class="font-bold text-gray-800">{{ $user->name }}</p>
-                    <p class="text-sm text-gray-500">{{ $user->email }}</p>
-                </div>
-            </div>
-            @if(auth()->user()?->role === 'admin')
-                <a href="{{ route('profile.edit') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-semibold">
-                    Edit
-                </a>
-            @endif
-        </div>
+            </section>
 
-        <div class="bg-white rounded-xl shadow-sm border p-5 space-y-4">
-            <h2 class="font-bold text-gray-800">Biodata</h2>
+            <section class="user-card p-4 space-y-3">
+                <h2 class="text-sm font-bold text-slate-800">Biodata</h2>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">No. HP</p>
+                        <p class="font-bold text-slate-800">{{ $profile?->no_hp ?? '-' }}</p>
+                    </div>
+                    <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">Jenis Kelamin</p>
+                        <p class="font-bold text-slate-800">{{ $profile?->jenis_kelamin ?? '-' }}</p>
+                    </div>
+                    <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">Tanggal Lahir</p>
+                        <p class="font-bold text-slate-800">{{ $profile?->tanggal_lahir?->format('d/m/Y') ?? '-' }}</p>
+                    </div>
+                    <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">NIK</p>
+                        <p class="font-bold text-slate-800">{{ $profile?->nik ?? '-' }}</p>
+                    </div>
+                    <div class="user-soft-card col-span-2">
+                        <p class="text-[11px] text-slate-500">Alamat</p>
+                        <p class="font-bold text-slate-800 whitespace-pre-line">{{ $profile?->alamat ?? '-' }}</p>
+                    </div>
+                </div>
+            </section>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div>
-                    <p class="text-gray-500">No. HP</p>
-                    <p class="font-semibold text-gray-800">{{ $profile?->no_hp ?? '-' }}</p>
+            <section class="user-card p-4 space-y-3">
+                <h2 class="text-sm font-bold text-slate-800">Kepegawaian</h2>
+                <div class="grid grid-cols-2 gap-3 text-sm">
+                    <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">NIP</p>
+                        <p class="font-bold text-slate-800">{{ $employeeDetail?->nip ?? '-' }}</p>
+                    </div>
+                    <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">Status Kerja</p>
+                        <p class="font-bold text-slate-800">{{ $employeeDetail?->status_kerja ?? '-' }}</p>
+                    </div>
+                    <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">Departemen</p>
+                        <p class="font-bold text-slate-800">{{ $employeeDetail?->departemen ?? '-' }}</p>
+                    </div>
+                    <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">Jabatan</p>
+                        <p class="font-bold text-slate-800">{{ $employeeDetail?->jabatan ?? '-' }}</p>
+                    </div>
                 </div>
-                <div>
-                    <p class="text-gray-500">Jenis Kelamin</p>
-                    <p class="font-semibold text-gray-800">{{ $profile?->jenis_kelamin ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-gray-500">Tanggal Lahir</p>
-                    <p class="font-semibold text-gray-800">{{ $profile?->tanggal_lahir?->format('d/m/Y') ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-gray-500">NIK</p>
-                    <p class="font-semibold text-gray-800">{{ $profile?->nik ?? '-' }}</p>
-                </div>
-                <div class="sm:col-span-2">
-                    <p class="text-gray-500">Alamat</p>
-                    <p class="font-semibold text-gray-800 whitespace-pre-line">{{ $profile?->alamat ?? '-' }}</p>
-                </div>
-            </div>
-        </div>
+            </section>
+        </main>
 
-        <div class="bg-white rounded-xl shadow-sm border p-5 space-y-4">
-            <h2 class="font-bold text-gray-800">Kepegawaian</h2>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div>
-                    <p class="text-gray-500">NIP</p>
-                    <p class="font-semibold text-gray-800">{{ $employeeDetail?->nip ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-gray-500">Status Kerja</p>
-                    <p class="font-semibold text-gray-800">{{ $employeeDetail?->status_kerja ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-gray-500">Departemen</p>
-                    <p class="font-semibold text-gray-800">{{ $employeeDetail?->departemen ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-gray-500">Unit</p>
-                    <p class="font-semibold text-gray-800">{{ $employeeDetail?->unit?->nama_unit ?? '-' }}</p>
-                </div>
-                <div>
-                    <p class="text-gray-500">Jabatan</p>
-                    <p class="font-semibold text-gray-800">{{ $employeeDetail?->jabatan ?? '-' }}</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="text-center text-xs text-gray-400 pt-2">
-            RS Biodata Module
-        </div>
+        @include('user.partials.bottom-nav', ['active' => ''])
     </div>
- </div>
+</div>
 @endsection

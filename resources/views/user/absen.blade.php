@@ -153,46 +153,46 @@
                 </div>
             </section>
 
-            <section class="bg-white rounded-2xl shadow p-4 space-y-3">
+            <section class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4 space-y-3">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs text-gray-500">Status Hari Ini</p>
-                        <p class="font-bold text-gray-800">{{ auth()->user()->name }}</p>
+                        <p class="text-xs text-slate-500">Status Hari Ini</p>
+                        <p class="font-bold text-slate-800">{{ auth()->user()->name }}</p>
                     </div>
                     <span class="px-3 py-1 rounded-full text-xs font-bold {{ $sudahPulang ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
                         {{ $jenisAbsen }}
                     </span>
                 </div>
-                <div class="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                <div class="grid grid-cols-2 gap-3 text-sm text-slate-600">
                     <div>
-                        <p class="text-xs text-gray-400">Radius kantor</p>
-                        <p class="font-semibold text-gray-800">{{ $officeRadius }} meter</p>
+                        <p class="text-xs text-slate-400">Radius kantor</p>
+                        <p class="font-semibold text-slate-800">{{ $officeRadius }} meter</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-400">Threshold wajah</p>
-                        <p class="font-semibold text-gray-800">{{ $faceThreshold }}</p>
+                        <p class="text-xs text-slate-400">Threshold wajah</p>
+                        <p class="font-semibold text-slate-800">{{ $faceThreshold }}</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-400">Sampel</p>
-                        <p id="sampleStatus" class="font-semibold text-gray-800">Belum dimulai</p>
+                        <p class="text-xs text-slate-400">Sampel</p>
+                        <p id="sampleStatus" class="font-semibold text-slate-800">Belum dimulai</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-400">Wajah</p>
-                        <p id="faceStatus" class="font-semibold text-gray-800">Menunggu scan</p>
+                        <p class="text-xs text-slate-400">Wajah</p>
+                        <p id="faceStatus" class="font-semibold text-slate-800">Menunggu scan</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-400">Kedipan</p>
-                        <p id="blinkStatus" class="font-semibold text-gray-800">Belum terverifikasi</p>
+                        <p class="text-xs text-slate-400">Kedipan</p>
+                        <p id="blinkStatus" class="font-semibold text-slate-800">Belum terverifikasi</p>
                     </div>
                 </div>
-                <p id="status" class="text-sm text-gray-500">
+                <p id="status" class="text-sm text-slate-500">
                     {{ $sudahPulang ? 'Absensi hari ini sudah selesai.' : 'Klik Masuk/Verifikasi untuk menyalakan kamera dan GPS.' }}
                 </p>
             </section>
 
-            <section class="bg-white rounded-2xl shadow p-4">
-                <h2 class="font-bold text-gray-800">Liveness Kedipan</h2>
-                <p class="mt-2 text-sm text-gray-600">Hadapkan wajah ke kamera dan kedipkan mata satu kali. Sistem akan mengirim absensi otomatis setelah wajah jelas dan kedipan terverifikasi.</p>
+            <section class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">
+                <h2 class="font-bold text-slate-800">Liveness Kedipan</h2>
+                <p class="mt-2 text-sm text-slate-600">Hadapkan wajah ke kamera dan kedipkan mata satu kali. Sistem akan mengirim absensi otomatis setelah wajah jelas dan kedipan terverifikasi.</p>
             </section>
         </main>
 
@@ -214,7 +214,7 @@
                     <p>Izin</p>
                 </a>
                 <a href="{{ route('announcements.index') }}" class="text-gray-500 text-center text-xs">
-                    <i class="fa-solid fa-gear text-lg"></i>
+                    <i class="fa-solid fa-circle-info text-lg"></i>
                     <p>Info</p>
                 </a>
             </div>

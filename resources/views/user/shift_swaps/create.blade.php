@@ -3,16 +3,22 @@
 @section('title', 'Ajukan Tukar Shift')
 
 @section('content')
-<div class="min-h-dvh bg-slate-50 py-4">
-    <div class="max-w-2xl mx-auto px-4">
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-            <h1 class="text-lg font-bold text-slate-800">Form Tukar Shift</h1>
-            <p class="text-sm text-slate-500">
-                Penukaran shift hanya bisa dilakukan dengan pegawai dalam unit yang sama{{ $unitName ? ', yaitu ' . $unitName : '' }}.
-            </p>
+<div class="user-page">
+    <div class="user-phone">
+        @include('user.partials.header', [
+            'title' => 'Form Tukar Shift',
+            'subtitle' => 'Ajukan penukaran shift dalam unit yang sama.',
+            'back' => route('shift-swaps.index'),
+        ])
+
+        <main class="px-4 pt-4">
+            <section class="user-card p-4 space-y-4">
+                <p class="text-sm text-slate-600">
+                    Penukaran shift hanya bisa dilakukan dengan pegawai dalam unit yang sama{{ $unitName ? ', yaitu ' . $unitName : '' }}.
+                </p>
 
             @if($errors->any())
-                <div class="rounded-md bg-red-100 border border-red-200 text-red-700 px-4 py-3 text-sm">
+                <div class="rounded-2xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
                     <ul class="list-disc pl-5 space-y-1">
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
@@ -25,7 +31,7 @@
                 @csrf
                 <div>
                     <label class="text-xs font-semibold text-slate-600">Shift Saya</label>
-                    <select name="shift_id" id="shift_id" class="w-full border rounded-md px-3 py-2 text-sm" required>
+                    <select name="shift_id" id="shift_id" class="user-field mt-1" required>
                         <option value="">Pilih shift Anda</option>
                         @foreach($myShifts as $shift)
                             <option value="{{ $shift->id }}">{{ $shift->tanggal->format('d/m/Y') }} | {{ $shift->jam_masuk?->format('H:i') }} - {{ $shift->jam_pulang?->format('H:i') }}</option>
@@ -35,7 +41,7 @@
 
                 <div>
                     <label class="text-xs font-semibold text-slate-600">Teman Target</label>
-                    <select name="target_user_id" id="target_user_id" class="w-full border rounded-md px-3 py-2 text-sm" required>
+                    <select name="target_user_id" id="target_user_id" class="user-field mt-1" required>
                         <option value="">Pilih user target</option>
                         @foreach($users as $user)
                             <option value="{{ $user->id }}">{{ $user->name }}</option>
@@ -48,22 +54,28 @@
 
                 <div>
                     <label class="text-xs font-semibold text-slate-600">Shift Target</label>
-                    <select name="target_shift_id" id="target_shift_id" class="w-full border rounded-md px-3 py-2 text-sm" required>
+                    <select name="target_shift_id" id="target_shift_id" class="user-field mt-1" required>
                         <option value="">Pilih shift saya dan user target dulu</option>
                     </select>
                 </div>
 
                 <div>
                     <label class="text-xs font-semibold text-slate-600">Alasan (Opsional)</label>
-                    <textarea name="note" rows="3" class="w-full border rounded-md px-3 py-2 text-sm" placeholder="Contoh: ada keperluan keluarga.">{{ old('note') }}</textarea>
+                    <textarea name="note" rows="3" class="user-field mt-1" placeholder="Contoh: ada keperluan keluarga.">{{ old('note') }}</textarea>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <button class="bg-emerald-600 text-white rounded-md px-4 py-2 text-sm font-semibold">Kirim Request</button>
-                    <a href="{{ route('shift-swaps.index') }}" class="bg-slate-200 text-slate-700 rounded-md px-4 py-2 text-sm font-semibold">Lihat Status</a>
+                <div class="grid grid-cols-2 gap-3">
+                    <a href="{{ route('shift-swaps.index') }}" class="user-btn-secondary">Status</a>
+                    <button class="user-btn-primary">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        Kirim
+                    </button>
                 </div>
             </form>
-        </div>
+            </section>
+        </main>
+
+        @include('user.partials.bottom-nav', ['active' => ''])
     </div>
 </div>
 

@@ -2,3 +2,57 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .user-page {
+        @apply min-h-[100dvh] bg-cyan-50 flex justify-center;
+    }
+
+    .user-phone {
+        @apply w-full max-w-sm min-h-[100dvh] bg-[#dffcff] shadow-2xl relative pb-[calc(6rem+env(safe-area-inset-bottom))];
+    }
+
+    .user-header {
+        @apply h-14 bg-emerald-800 text-white flex items-center px-4 shadow;
+    }
+
+    .user-header-icon {
+        @apply w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center;
+    }
+
+    .user-card {
+        @apply bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm;
+    }
+
+    .user-soft-card {
+        @apply rounded-xl bg-slate-50 p-3;
+    }
+
+    .user-field {
+        @apply w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500;
+    }
+
+    .user-btn-primary {
+        @apply inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl px-4 py-2.5 text-sm font-bold shadow-sm transition;
+    }
+
+    .user-btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 bg-white/80 hover:bg-white text-slate-700 border border-white rounded-xl px-4 py-2.5 text-sm font-bold shadow-sm transition;
+    }
+
+    .user-bottom-nav {
+        @apply fixed bottom-0 left-0 w-full flex justify-center z-50 pb-[env(safe-area-inset-bottom)];
+    }
+
+    .user-bottom-nav-inner {
+        @apply w-full max-w-sm h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl;
+    }
+
+    .user-nav-link {
+        @apply text-gray-500 text-center text-xs;
+    }
+
+    .user-nav-link-active {
+        @apply text-emerald-700 text-center text-xs;
+    }
+}
