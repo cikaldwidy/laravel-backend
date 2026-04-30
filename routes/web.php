@@ -1,16 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\FaceEnrollmentController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PresensiController;
-use App\Http\Controllers\UserDashboardController;
-use App\Http\Controllers\UserBiodataController;
-use App\Http\Controllers\ShiftController as UserShiftScheduleController;
-use App\Http\Controllers\ShiftSwapController;
-use App\Http\Controllers\HistoryController;
-use App\Http\Controllers\LeaveRequestController;
-use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\User\AnnouncementController;
+use App\Http\Controllers\User\FaceEnrollmentController;
+use App\Http\Controllers\User\HistoryController;
+use App\Http\Controllers\User\LeaveRequestController;
+use App\Http\Controllers\User\PresensiController;
+use App\Http\Controllers\User\ShiftController as UserShiftScheduleController;
+use App\Http\Controllers\User\ShiftSwapController;
+use App\Http\Controllers\User\UserBiodataController;
+use App\Http\Controllers\User\UserDashboardController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkSettingController;
