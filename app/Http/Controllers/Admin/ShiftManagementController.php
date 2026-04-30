@@ -225,11 +225,23 @@ class ShiftManagementController extends Controller
                     throw new \RuntimeException('Request swap sudah diproses sebelumnya.');
                 }
 
-                $shiftA = ShiftSchedule::query()->whereKey($swap->shift_id)->lockForUpdate()->first();
-                $shiftB = ShiftSchedule::query()->whereKey($swap->target_shift_id)->lockForUpdate()->first();
+                $shiftA = ShiftSchedule::query()
+                    ->with('user.employeeDetail')
+                    ->whereKey($swap->shift_id)
+                    ->lockForUpdate()
+                    ->first();
+                $shiftB = ShiftSchedule::query()
+                    ->with('user.employeeDetail')
+                    ->whereKey($swap->target_shift_id)
+                    ->lockForUpdate()
+                    ->first();
 
                 if (!$shiftA || !$shiftB) {
                     throw new \RuntimeException('Data shift tidak ditemukan.');
+                }
+
+                if (!$this->usersAreInSameUnit($shiftA->user, $shiftB->user)) {
+                    throw new \RuntimeException('Swap shift hanya bisa disetujui untuk pegawai dalam unit yang sama.');
                 }
 
                 if ($shiftA->tanggal->toDateString() !== $shiftB->tanggal->toDateString()) {
@@ -329,5 +341,13 @@ class ShiftManagementController extends Controller
         }
 
         return Carbon::parse((string) $value)->format('H:i:s');
+    }
+
+    private function usersAreInSameUnit(?User $firstUser, ?User $secondUser): bool
+    {
+        $firstUnitId = $firstUser?->employeeDetail?->unit_id;
+        $secondUnitId = $secondUser?->employeeDetail?->unit_id;
+
+        return $firstUnitId !== null && (int) $firstUnitId === (int) $secondUnitId;
     }
 }

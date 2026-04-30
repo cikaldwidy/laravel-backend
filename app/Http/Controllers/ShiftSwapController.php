@@ -34,6 +34,10 @@ class ShiftSwapController extends Controller
 
     public function create()
     {
+        $currentUser = auth()->user()->loadMissing('employeeDetail.unit');
+        $unitId = $currentUser->employeeDetail?->unit_id;
+        $unitName = $currentUser->employeeDetail?->unit?->nama_unit;
+
         $myShifts = ShiftSchedule::query()
             ->where('user_id', auth()->id())
             ->whereDate('tanggal', '>=', today())
@@ -45,10 +49,15 @@ class ShiftSwapController extends Controller
         $users = User::query()
             ->where('role', 'user')
             ->where('id', '!=', auth()->id())
+            ->when($unitId, function ($query) use ($unitId) {
+                $query->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $unitId));
+            }, function ($query) {
+                $query->whereRaw('1 = 0');
+            })
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        return view('user.shift_swaps.create', compact('myShifts', 'users'));
+        return view('user.shift_swaps.create', compact('myShifts', 'users', 'unitName'));
     }
 
     public function availableTargetShifts(Request $request)
@@ -62,6 +71,23 @@ class ShiftSwapController extends Controller
             ->where('id', $validated['shift_id'])
             ->where('user_id', auth()->id())
             ->firstOrFail();
+
+        $currentUnitId = auth()->user()?->employeeDetail?->unit_id;
+
+        if (!$currentUnitId) {
+            return response()->json([]);
+        }
+
+        $targetUserValid = User::query()
+            ->where('id', $validated['target_user_id'])
+            ->where('role', 'user')
+            ->where('id', '!=', auth()->id())
+            ->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $currentUnitId))
+            ->exists();
+
+        if (!$targetUserValid) {
+            return response()->json([]);
+        }
 
         $items = ShiftSchedule::query()
             ->where('user_id', $validated['target_user_id'])
@@ -96,6 +122,17 @@ class ShiftSwapController extends Controller
 
         if ((int) $targetShift->user_id !== (int) $data['target_user_id']) {
             return back()->withErrors(['target_shift_id' => 'Shift target tidak sesuai user yang dipilih.'])->withInput();
+        }
+
+        $requester = User::query()->with('employeeDetail')->findOrFail(auth()->id());
+        $targetUser = User::query()->with('employeeDetail')->findOrFail($data['target_user_id']);
+
+        if ($targetUser->role !== 'user') {
+            return back()->withErrors(['target_user_id' => 'User target tidak valid untuk tukar shift.'])->withInput();
+        }
+
+        if (!$this->usersAreInSameUnit($requester, $targetUser)) {
+            return back()->withErrors(['target_user_id' => 'Tukar shift hanya bisa dengan pegawai dalam unit yang sama.'])->withInput();
         }
 
         if ($myShift->tanggal->toDateString() !== $targetShift->tanggal->toDateString()) {
@@ -181,5 +218,13 @@ class ShiftSwapController extends Controller
         }
 
         return Carbon::parse((string) $value)->format($format);
+    }
+
+    private function usersAreInSameUnit(User $firstUser, User $secondUser): bool
+    {
+        $firstUnitId = $firstUser->employeeDetail?->unit_id;
+        $secondUnitId = $secondUser->employeeDetail?->unit_id;
+
+        return $firstUnitId !== null && (int) $firstUnitId === (int) $secondUnitId;
     }
 }

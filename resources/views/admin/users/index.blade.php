@@ -3,15 +3,7 @@
 @section('title', 'Akun Pegawai')
 
 @section('content')
-<<<<<<< HEAD
 <div class="space-y-6">
-    @if(session('success'))
-        <div class="bg-green-100 text-green-800 px-4 py-3 rounded">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="bg-red-100 text-red-800 px-4 py-3 rounded">{{ session('error') }}</div>
-    @endif
-
     <div class="bg-white p-6 rounded-xl shadow">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
             <div>
@@ -23,49 +15,6 @@
                 Tambah Akun
             </a>
         </div>
-=======
-
-<div class="bg-white p-6 rounded-xl shadow">
-
-    <div class="flex justify-between mb-4">
-        <h2 class="font-bold text-lg">Data User</h2>
-        <a href="/admin/users/create" class="bg-blue-500 text-white px-4 py-2 rounded">
-            + Tambah
-        </a>
-    </div>
-    <table class="w-full border text-sm">
-        <thead class="bg-gray-100">
-            <tr>
-                <th class="p-2">Nama</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Unit</th>
-                <th>Aksi</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @foreach($users as $u)
-            <tr class="border-t text-center">
-                <td>{{ $u->name }}</td>
-                <td>{{ $u->email }}</td>
-                <td>{{ $u->role }}</td>
-                <td>{{ $u->employeeDetail?->unit?->nama_unit ?? '-' }}</td>
-                <td class="space-x-2">
-                    <a href="/admin/users/{{ $u->id }}/edit" class="text-blue-500">Edit</a>
-                    <a href="{{ route('admin.biodata.edit', $u) }}" class="text-emerald-600">Biodata</a>
-
-                    <form method="POST" action="/admin/users/{{ $u->id }}/delete" class="inline">
-                        @csrf
-                        <button class="text-red-500">Hapus</button>
-                    </form>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
-
-    </table>
->>>>>>> 3eb0695bb80c78413bd0a2ed4851c35906a05df0
 
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -82,8 +31,10 @@
                 <tbody class="divide-y">
                     @forelse($users as $u)
                         @php
-                            $hasProfile = (bool) $u->userProfile;
-                            $hasDetail = (bool) $u->employeeDetail;
+                            $profile = $u->userProfile;
+                            $detail = $u->employeeDetail;
+                            $hasProfile = (bool) $profile;
+                            $hasDetail = (bool) $detail;
                             $biodataComplete = $hasProfile && $hasDetail;
                         @endphp
                         <tr>
@@ -111,7 +62,10 @@
                                 <div class="flex flex-wrap gap-3">
                                     <a href="{{ route('admin.users.edit', $u->id) }}" class="text-blue-600 font-semibold">Edit Akun</a>
                                     @if($u->role === 'user')
-                                        <a href="{{ route('admin.biodata.edit', $u) }}" class="text-emerald-600 font-semibold">Biodata</a>
+                                        <a href="{{ route('admin.biodata.edit', $u) }}" class="text-emerald-600 font-semibold">
+                                            {{ $biodataComplete ? 'Edit Biodata' : 'Lengkapi Biodata' }}
+                                        </a>
+                                        <button type="button" class="text-slate-700 font-semibold" data-toggle-detail="user-detail-{{ $u->id }}">Detail</button>
                                     @endif
                                     <form method="POST" action="{{ route('admin.users.destroy', $u->id) }}" onsubmit="return confirm('Hapus akun ini?')">
                                         @csrf
@@ -120,6 +74,45 @@
                                 </div>
                             </td>
                         </tr>
+                        @if($u->role === 'user')
+                            <tr id="user-detail-{{ $u->id }}" class="hidden bg-gray-50">
+                                <td colspan="6" class="p-4">
+                                    <div class="grid md:grid-cols-3 gap-4 text-sm">
+                                        <div class="bg-white border rounded-lg p-4">
+                                            <p class="text-xs font-semibold text-gray-500 uppercase">Profil</p>
+                                            <div class="mt-3 space-y-2">
+                                                <p><span class="text-gray-500">No. HP:</span> {{ $profile?->no_hp ?? '-' }}</p>
+                                                <p><span class="text-gray-500">NIK:</span> {{ $profile?->nik ?? '-' }}</p>
+                                                <p><span class="text-gray-500">Gender:</span> {{ $profile?->jenis_kelamin === 'L' ? 'Laki-laki' : ($profile?->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}</p>
+                                                <p><span class="text-gray-500">Tanggal lahir:</span> {{ $profile?->tanggal_lahir?->format('d/m/Y') ?? '-' }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="bg-white border rounded-lg p-4">
+                                            <p class="text-xs font-semibold text-gray-500 uppercase">Pekerjaan</p>
+                                            <div class="mt-3 space-y-2">
+                                                <p><span class="text-gray-500">NIP:</span> {{ $detail?->nip ?? '-' }}</p>
+                                                <p><span class="text-gray-500">Unit:</span> {{ $detail?->unit?->nama_unit ?? '-' }}</p>
+                                                <p><span class="text-gray-500">Departemen:</span> {{ $detail?->departemen ?? '-' }}</p>
+                                                <p><span class="text-gray-500">Jabatan:</span> {{ $detail?->jabatan ?? '-' }}</p>
+                                                <p><span class="text-gray-500">Status:</span> {{ $detail?->status_kerja ? ucfirst($detail->status_kerja) : '-' }}</p>
+                                            </div>
+                                        </div>
+                                        <div class="bg-white border rounded-lg p-4">
+                                            <p class="text-xs font-semibold text-gray-500 uppercase">Alamat & Kelengkapan</p>
+                                            <p class="mt-3 text-gray-700">{{ $profile?->alamat ?? '-' }}</p>
+                                            <div class="mt-4 flex flex-wrap gap-2">
+                                                <span class="px-2 py-1 rounded text-xs font-semibold {{ $biodataComplete ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                                    Biodata {{ $biodataComplete ? 'lengkap' : 'belum lengkap' }}
+                                                </span>
+                                                <span class="px-2 py-1 rounded text-xs font-semibold {{ $u->faceEmbedding ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600' }}">
+                                                    Wajah {{ $u->faceEmbedding ? 'terdaftar' : 'belum terdaftar' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
                     @empty
                         <tr>
                             <td colspan="6" class="p-6 text-center text-gray-500">Belum ada akun.</td>
@@ -130,4 +123,13 @@
         </div>
     </div>
 </div>
+
+<script>
+document.querySelectorAll('[data-toggle-detail]').forEach((button) => {
+    button.addEventListener('click', () => {
+        const target = document.getElementById(button.dataset.toggleDetail);
+        target?.classList.toggle('hidden');
+    });
+});
+</script>
 @endsection

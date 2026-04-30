@@ -7,6 +7,9 @@
     <div class="max-w-2xl mx-auto px-4">
         <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
             <h1 class="text-lg font-bold text-slate-800">Form Tukar Shift</h1>
+            <p class="text-sm text-slate-500">
+                Penukaran shift hanya bisa dilakukan dengan pegawai dalam unit yang sama{{ $unitName ? ', yaitu ' . $unitName : '' }}.
+            </p>
 
             @if($errors->any())
                 <div class="rounded-md bg-red-100 border border-red-200 text-red-700 px-4 py-3 text-sm">
@@ -38,10 +41,13 @@
                             <option value="{{ $user->id }}">{{ $user->name }}</option>
                         @endforeach
                     </select>
+                    @if($users->isEmpty())
+                        <p class="mt-1 text-xs text-amber-600">Belum ada pegawai lain dalam unit yang sama.</p>
+                    @endif
                 </div>
 
                 <div>
-                    <label class="text-xs font-semibold text-slate-600">Shift Target (Ajax)</label>
+                    <label class="text-xs font-semibold text-slate-600">Shift Target</label>
                     <select name="target_shift_id" id="target_shift_id" class="w-full border rounded-md px-3 py-2 text-sm" required>
                         <option value="">Pilih shift saya dan user target dulu</option>
                     </select>

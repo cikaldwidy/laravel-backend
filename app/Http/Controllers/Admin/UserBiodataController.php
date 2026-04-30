@@ -14,15 +14,7 @@ class UserBiodataController extends Controller
 {
     public function index()
     {
-        $users = User::query()
-            ->with(['userProfile', 'employeeDetail.unit'])
-            ->where('role', 'user')
-            ->orderBy('name')
-            ->get();
-
-        return view('admin.biodata.index', [
-            'users' => $users,
-        ]);
+        return redirect()->route('admin.users.index');
     }
 
     public function edit(User $user)
@@ -86,7 +78,7 @@ class UserBiodataController extends Controller
         );
 
         return redirect()
-            ->route('admin.biodata.index')
+            ->route('admin.users.index')
             ->with('success', 'Biodata user berhasil disimpan.');
     }
 
@@ -102,7 +94,7 @@ class UserBiodataController extends Controller
         EmployeeDetail::query()->where('user_id', $user->id)->delete();
 
         return redirect()
-            ->route('admin.biodata.index')
+            ->route('admin.users.index')
             ->with('success', 'Biodata user berhasil dihapus.');
     }
 }

@@ -365,8 +365,7 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-employee" class="submenu {{ $employeeOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.users.index') }}" class="submenu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Akun Pegawai</a>
-                    <a href="{{ route('admin.biodata.index') }}" class="submenu-item {{ request()->routeIs('admin.biodata.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Biodata Pegawai</a>
+                    <a href="{{ route('admin.users.index') }}" class="submenu-item {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.biodata.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Akun Pegawai</a>
                     <a href="{{ route('admin.face_data.index') }}" class="submenu-item {{ request()->routeIs('admin.face_data.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Data Wajah</a>
                     <a href="{{ route('admin.units.index') }}" class="submenu-item {{ request()->routeIs('admin.units.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Unit Kerja</a>
                 </div>

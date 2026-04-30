@@ -12,10 +12,6 @@
         <a href="{{ route('admin.biodata.index') }}" class="px-4 py-2 rounded border text-sm font-semibold hover:bg-gray-50">Kembali</a>
     </div>
 
-    @if($errors->any())
-        <div class="bg-red-100 text-red-800 px-4 py-3 rounded">{{ $errors->first() }}</div>
-    @endif
-
     <form method="POST" action="{{ route('admin.biodata.update', $user) }}" enctype="multipart/form-data" class="space-y-6">
         @csrf
 
