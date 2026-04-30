@@ -81,6 +81,10 @@
                 <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
                     Shift kamu belum diatur oleh admin. Hubungi admin untuk assign jadwal shift terlebih dulu.
                 </section>
+            @elseif(isset($approvedLeave) && $approvedLeave)
+                <section class="bg-sky-50 border border-sky-200 text-sky-900 rounded-2xl p-4 text-sm shadow-sm">
+                    Anda memiliki izin yang telah disetujui hari ini: {{ ucfirst($approvedLeave->jenis_izin) }}. Absensi dilewati otomatis.
+                </section>
             @elseif(empty($canAttend))
                 <section class="bg-sky-50 border border-sky-200 text-sky-900 rounded-2xl p-4 text-sm shadow-sm">
                     Shift kamu sudah dijadwalkan ({{ $shiftLabel }} {{ $jadwalMasuk }} - {{ $jadwalPulang }}), tapi belum masuk jam absensi.
@@ -117,11 +121,11 @@
                             id="startVerification"
                             type="button"
                             class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
-                                {{ ($sudahPulang || empty($canAttend)) ? 'bg-slate-200 text-slate-400' : (!$sudahMasuk ? 'bg-emerald-700 text-white' : 'bg-white text-emerald-800 border border-emerald-100') }}"
-                            @if($sudahPulang || empty($canAttend)) disabled @endif
+                                {{ ($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) ? 'bg-slate-200 text-slate-400' : (!$sudahMasuk ? 'bg-emerald-700 text-white' : 'bg-white text-emerald-800 border border-emerald-100') }}"
+                            @if($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) disabled @endif
                         >
                             <i class="fa-solid fa-fingerprint"></i>
-                            {{ ($sudahPulang || empty($canAttend)) ? 'Selesai' : ($jenisAbsen === 'Pulang' ? 'Verifikasi' : 'Masuk') }}
+                            {{ ($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) ? 'Selesai' : ($jenisAbsen === 'Pulang' ? 'Verifikasi' : 'Masuk') }}
                         </button>
 
                         <button
@@ -189,20 +193,20 @@
                     <i class="fa-solid fa-house text-lg"></i>
                     <p>Home</p>
                 </a>
-                <a href="#" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('history.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-file-lines text-lg"></i>
                     <p>Histori</p>
                 </a>
                 <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-emerald-700 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg">
                     <i class="fa-solid fa-fingerprint text-xl"></i>
                 </a>
-                <a href="#" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('leave_requests.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-calendar-days text-lg"></i>
-                    <p>Jadwal</p>
+                    <p>Izin</p>
                 </a>
-                <a href="#" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('announcements.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-gear text-lg"></i>
-                    <p>Setting</p>
+                    <p>Info</p>
                 </a>
             </div>
         </nav>

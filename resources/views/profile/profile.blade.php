@@ -79,6 +79,10 @@
                     <p class="font-semibold text-gray-800">{{ $employeeDetail?->departemen ?? '-' }}</p>
                 </div>
                 <div>
+                    <p class="text-gray-500">Unit</p>
+                    <p class="font-semibold text-gray-800">{{ $employeeDetail?->unit?->nama_unit ?? '-' }}</p>
+                </div>
+                <div>
                     <p class="text-gray-500">Jabatan</p>
                     <p class="font-semibold text-gray-800">{{ $employeeDetail?->jabatan ?? '-' }}</p>
                 </div>

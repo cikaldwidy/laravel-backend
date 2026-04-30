@@ -23,6 +23,7 @@
                 <th class="p-2">Nama</th>
                 <th>Email</th>
                 <th>Role</th>
+                <th>Unit</th>
                 <th>Aksi</th>
             </tr>
         </thead>
@@ -33,6 +34,7 @@
                 <td>{{ $u->name }}</td>
                 <td>{{ $u->email }}</td>
                 <td>{{ $u->role }}</td>
+                <td>{{ $u->employeeDetail?->unit?->nama_unit ?? '-' }}</td>
                 <td class="space-x-2">
                     <a href="/admin/users/{{ $u->id }}/edit" class="text-blue-500">Edit</a>
                     <a href="{{ route('admin.biodata.edit', $u) }}" class="text-emerald-600">Biodata</a>

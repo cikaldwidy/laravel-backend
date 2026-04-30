@@ -86,6 +86,16 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+                <label class="text-sm font-semibold text-gray-700">Unit</label>
+                <select name="unit_id" class="w-full p-2 border rounded mt-1">
+                    <option value="">-- pilih unit --</option>
+                    @foreach($units as $unit)
+                        <option value="{{ $unit->id }}" @selected((string) old('unit_id', $employeeDetail?->unit_id) === (string) $unit->id)>{{ $unit->nama_unit }}</option>
+                    @endforeach
+                </select>
+                @error('unit_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+            </div>
+            <div>
                 <label class="text-sm font-semibold text-gray-700">Departemen</label>
                 <input name="departemen" value="{{ old('departemen', $employeeDetail?->departemen) }}" class="w-full p-2 border rounded mt-1">
                 @error('departemen') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -113,4 +123,3 @@
     </form>
 </div>
 @endsection
-

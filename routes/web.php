@@ -6,11 +6,22 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PresensiController;
 use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\UserBiodataController;
+use App\Http\Controllers\ShiftController as UserShiftScheduleController;
+use App\Http\Controllers\ShiftSwapController;
+use App\Http\Controllers\HistoryController;
+use App\Http\Controllers\LeaveRequestController;
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkSettingController;
 use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\UserShiftController;
+use App\Http\Controllers\Admin\UnitController;
+use App\Http\Controllers\Admin\LeaveRequestController as AdminLeaveRequestController;
+use App\Http\Controllers\Admin\AttendanceHistoryController;
+use App\Http\Controllers\Admin\AnnouncementController as AdminAnnouncementController;
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ShiftManagementController;
 use App\Http\Controllers\Admin\UserBiodataController as AdminUserBiodataController;
 
 // ================= USER LOGIN =================
@@ -33,6 +44,19 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::post('/absen', [PresensiController::class, 'absen'])->name('absen.store');
 
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
+    Route::get('/izin', [LeaveRequestController::class, 'index'])->name('leave_requests.index');
+    Route::get('/izin/create', [LeaveRequestController::class, 'create'])->name('leave_requests.create');
+    Route::post('/izin', [LeaveRequestController::class, 'store'])->name('leave_requests.store');
+    Route::post('/izin/{leaveRequest}/delete', [LeaveRequestController::class, 'destroy'])->name('leave_requests.destroy');
+    Route::get('/pengumuman', [AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::get('/jadwal-shift', [UserShiftScheduleController::class, 'index'])->name('user.shifts.index');
+    Route::get('/tukar-shift', [ShiftSwapController::class, 'index'])->name('shift-swaps.index');
+    Route::get('/tukar-shift/create', [ShiftSwapController::class, 'create'])->name('shift-swaps.create');
+    Route::get('/tukar-shift/target-shifts', [ShiftSwapController::class, 'availableTargetShifts'])->name('shift-swaps.target-shifts');
+    Route::post('/tukar-shift', [ShiftSwapController::class, 'store'])->name('shift-swaps.store');
+    Route::post('/tukar-shift/{shiftSwap}/accept', [ShiftSwapController::class, 'targetAccept'])->name('shift-swaps.accept');
+    Route::post('/tukar-shift/{shiftSwap}/reject', [ShiftSwapController::class, 'targetReject'])->name('shift-swaps.reject');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -56,6 +80,11 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/users/{id}/update', [UserController::class, 'update'])->name('users.update');
         Route::post('/users/{id}/delete', [UserController::class, 'destroy'])->name('users.destroy');
 
+        Route::get('/units', [UnitController::class, 'index'])->name('units.index');
+        Route::post('/units', [UnitController::class, 'store'])->name('units.store');
+        Route::put('/units/{unit}', [UnitController::class, 'update'])->name('units.update');
+        Route::delete('/units/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
+
         Route::get('/settings/work', [WorkSettingController::class, 'edit'])->name('settings.work.edit');
         Route::post('/settings/work', [WorkSettingController::class, 'update'])->name('settings.work.update');
 
@@ -70,12 +99,34 @@ Route::middleware(['auth', 'role:admin'])
         // Jadwal shift per user per tanggal
         Route::get('/user-shifts', [UserShiftController::class, 'index'])->name('user_shifts.index');
         Route::post('/user-shifts', [UserShiftController::class, 'store'])->name('user_shifts.store');
+        Route::get('/shift-management/schedules', [ShiftManagementController::class, 'schedules'])->name('shift_management.schedules');
+        Route::post('/shift-management/schedules', [ShiftManagementController::class, 'storeSchedule'])->name('shift_management.schedules.store');
+        Route::put('/shift-management/schedules/{shiftSchedule}', [ShiftManagementController::class, 'updateSchedule'])->name('shift_management.schedules.update');
+        Route::delete('/shift-management/schedules/{shiftSchedule}', [ShiftManagementController::class, 'destroySchedule'])->name('shift_management.schedules.destroy');
+        Route::post('/shift-management/schedules/bulk-assign', [ShiftManagementController::class, 'bulkAssign'])->name('shift_management.schedules.bulk_assign');
+        Route::get('/shift-management/swaps', [ShiftManagementController::class, 'swaps'])->name('shift_management.swaps');
+        Route::post('/shift-management/swaps/{shiftSwap}/approve', [ShiftManagementController::class, 'approveSwap'])->name('shift_management.swaps.approve');
+        Route::post('/shift-management/swaps/{shiftSwap}/reject', [ShiftManagementController::class, 'rejectSwap'])->name('shift_management.swaps.reject');
 
         // Biodata user (admin manage)
         Route::get('/biodata', [AdminUserBiodataController::class, 'index'])->name('biodata.index');
         Route::get('/biodata/{user}/edit', [AdminUserBiodataController::class, 'edit'])->name('biodata.edit');
         Route::post('/biodata/{user}', [AdminUserBiodataController::class, 'update'])->name('biodata.update');
         Route::post('/biodata/{user}/delete', [AdminUserBiodataController::class, 'destroy'])->name('biodata.destroy');
+
+        Route::get('/izin', [AdminLeaveRequestController::class, 'index'])->name('leave_requests.index');
+        Route::post('/izin/{leaveRequest}', [AdminLeaveRequestController::class, 'update'])->name('leave_requests.update');
+
+        Route::get('/histories', [AttendanceHistoryController::class, 'index'])->name('histories.index');
+
+        Route::get('/announcements', [AdminAnnouncementController::class, 'index'])->name('announcements.index');
+        Route::post('/announcements', [AdminAnnouncementController::class, 'store'])->name('announcements.store');
+        Route::put('/announcements/{announcement}', [AdminAnnouncementController::class, 'update'])->name('announcements.update');
+        Route::delete('/announcements/{announcement}', [AdminAnnouncementController::class, 'destroy'])->name('announcements.destroy');
+
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/excel', [ReportController::class, 'exportExcel'])->name('reports.excel');
+        Route::get('/reports/pdf', [ReportController::class, 'exportPdf'])->name('reports.pdf');
 });
 
 // ================= LOGOUT =================

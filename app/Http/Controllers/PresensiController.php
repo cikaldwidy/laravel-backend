@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Presensi;
+use App\Models\LeaveRequest;
 use App\Models\User;
 use App\Models\UserShift;
 use App\Models\WorkSetting;
@@ -31,6 +32,7 @@ class PresensiController extends Controller
         $activeShift = $activeShiftContext['shift'] ?? null;
         $canAttend = (bool) $activeShiftContext;
         $tanggalPresensi = $activeShiftContext['shift_date'] ?? $now->copy()->startOfDay();
+        $approvedLeave = $this->getApprovedLeaveForDate($user->id, $tanggalPresensi->toDateString());
 
         $presensi = Presensi::where('user_id', $user->id)
             ->whereDate('tanggal', $tanggalPresensi)
@@ -43,6 +45,7 @@ class PresensiController extends Controller
             'activeShift' => $activeShift,
             'scheduledShift' => $scheduledShift,
             'canAttend' => $canAttend,
+            'approvedLeave' => $approvedLeave,
             'faceThreshold' => config('attendance.face_threshold', 0.55),
             'officeRadius' => $setting->radius_meters ?? config('attendance.radius_meters', 100),
             'officeLatitude' => $setting->office_latitude ?? config('attendance.office_latitude'),
@@ -169,6 +172,24 @@ class PresensiController extends Controller
 
         // Tanggal presensi mengikuti tanggal shift agar shift malam setelah tengah malam tetap dianggap shift kemarin.
         $tanggalPresensi = $activeShiftContext['shift_date']->toDateString();
+        $approvedLeave = $this->getApprovedLeaveForDate($user->id, $tanggalPresensi);
+
+        if ($approvedLeave) {
+            Presensi::updateOrCreate(
+                ['user_id' => $user->id, 'tanggal' => $tanggalPresensi],
+                [
+                    'status' => 'izin',
+                    'status_pulang' => null,
+                ]
+            );
+
+            return response()->json([
+                'status' => 'izin',
+                'message' => 'Anda memiliki izin yang sudah disetujui hari ini.',
+                'redirect' => route('dashboard', [], false),
+            ], 409);
+        }
+
         $jamMasukShift = $activeShiftContext['start'];
         $jamPulangShift = $activeShiftContext['end'];
 
@@ -296,6 +317,17 @@ class PresensiController extends Controller
         }
 
         return null;
+    }
+
+    private function getApprovedLeaveForDate(int $userId, string $tanggal): ?LeaveRequest
+    {
+        return LeaveRequest::query()
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
+            ->whereDate('tanggal_mulai', '<=', $tanggal)
+            ->whereDate('tanggal_selesai', '>=', $tanggal)
+            ->latest('approved_at')
+            ->first();
     }
 
     // ================= HELPER =================

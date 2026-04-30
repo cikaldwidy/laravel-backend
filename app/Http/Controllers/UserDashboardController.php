@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Announcement;
+use App\Models\LeaveRequest;
 use App\Models\Presensi;
 use App\Models\UserShift;
 use App\Models\User;
@@ -38,6 +40,7 @@ class UserDashboardController extends Controller
         $hadir = (clone $rekapQuery)->where('status', 'hadir')->count();
         $telat = (clone $rekapQuery)->whereIn('status', ['telat', 'terlambat'])->count();
         $pulangCepat = (clone $rekapQuery)->where('status_pulang', 'pulang_cepat')->count();
+        $izin = (clone $rekapQuery)->where('status', 'izin')->count();
         $totalPresensi = (clone $rekapQuery)->count();
 
         $recentPresensis = (clone $rekapQuery)
@@ -84,17 +87,47 @@ class UserDashboardController extends Controller
             }
         }
 
+        $approvedLeaveToday = LeaveRequest::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->whereDate('tanggal_mulai', '<=', today())
+            ->whereDate('tanggal_selesai', '>=', today())
+            ->latest('approved_at')
+            ->first();
+
+        $announcements = Announcement::query()
+            ->with('unit')
+            ->where('is_published', true)
+            ->whereDate('tanggal_mulai', '<=', today())
+            ->whereDate('tanggal_berakhir', '>=', today())
+            ->where(function ($query) use ($user) {
+                $query->where('target_type', 'all');
+
+                if ($user->employeeDetail?->unit_id) {
+                    $query->orWhere(function ($unitQuery) use ($user) {
+                        $unitQuery->where('target_type', 'unit')
+                            ->where('unit_id', $user->employeeDetail?->unit_id);
+                    });
+                }
+            })
+            ->latest('tanggal_mulai')
+            ->limit(5)
+            ->get();
+
         return view('user.dashboard', compact(
             'presensiHariIni',
             'presensiTerakhir',
             'hadir',
             'telat',
             'pulangCepat',
+            'izin',
             'totalPresensi',
             'workSetting',
             'recentPresensis',
             'activeShift',
-            'scheduledShift'
+            'scheduledShift',
+            'approvedLeaveToday',
+            'announcements'
         ));
     }
 }

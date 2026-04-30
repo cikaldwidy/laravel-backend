@@ -12,7 +12,7 @@ class UserController extends Controller
     // ================= LIST =================
     public function index()
     {
-        $users = User::latest()->get();
+        $users = User::with('employeeDetail.unit')->latest()->get();
         return view('admin.users.index', compact('users'));
     }
 

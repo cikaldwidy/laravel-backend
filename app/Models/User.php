@@ -55,9 +55,29 @@ class User extends Authenticatable
         return $this->hasOne(EmployeeDetail::class);
     }
 
+    public function leaveRequests(): HasMany
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
     public function userShifts(): HasMany
     {
         return $this->hasMany(UserShift::class);
+    }
+
+    public function shiftSchedules(): HasMany
+    {
+        return $this->hasMany(ShiftSchedule::class);
+    }
+
+    public function requestedShiftSwaps(): HasMany
+    {
+        return $this->hasMany(ShiftSwap::class, 'requester_id');
+    }
+
+    public function targetShiftSwaps(): HasMany
+    {
+        return $this->hasMany(ShiftSwap::class, 'target_user_id');
     }
 
     public function hasFaceEnrollment(): bool
