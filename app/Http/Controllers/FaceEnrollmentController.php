@@ -54,6 +54,7 @@ class FaceEnrollmentController extends Controller
             'quality_metrics.min_brightness' => ['required', 'numeric'],
             'quality_metrics.max_brightness' => ['required', 'numeric'],
             'quality_metrics.min_sharpness' => ['required', 'numeric'],
+            'blink_verified' => ['required', 'accepted'],
         ]);
 
         if (

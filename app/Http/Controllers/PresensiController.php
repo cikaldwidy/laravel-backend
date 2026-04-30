@@ -53,28 +53,6 @@ class PresensiController extends Controller
         ]);
     }
 
-    public function challenge(Request $request)
-    {
-        $steps = collect(['center', 'left', 'right'])
-            ->shuffle()
-            ->values()
-            ->all();
-
-        $challenge = [
-            'token' => (string) Str::uuid(),
-            'steps' => $steps,
-            'issued_at' => now()->timestamp,
-        ];
-
-        return response()->json([
-            'token' => $challenge['token'],
-            'steps' => $challenge['steps'],
-            'issued_at' => $challenge['issued_at'],
-        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
-          ->header('Pragma', 'no-cache')
-          ->header('Expires', '0');
-    }
-
     public function absen(Request $request)
     {
         $validated = $request->validate([
@@ -86,9 +64,7 @@ class PresensiController extends Controller
             'quality_metrics' => ['required', 'array'],
             'quality_metrics.brightness' => ['required', 'numeric'],
             'quality_metrics.sharpness' => ['required', 'numeric'],
-            'challenge_token' => ['required', 'string'],
-            'challenge_steps' => ['required', 'array', 'size:3'],
-            'challenge_steps.*' => ['required', 'in:center,left,right'],
+            'blink_verified' => ['required', 'accepted'],
         ]);
 
         /** @var User $user */
@@ -105,20 +81,6 @@ class PresensiController extends Controller
         $officeLatitude = (float) ($setting->office_latitude ?? config('attendance.office_latitude', -6.123456));
         $officeLongitude = (float) ($setting->office_longitude ?? config('attendance.office_longitude', 106.123456));
         $officeRadius = (int) ($setting->radius_meters ?? config('attendance.radius_meters', 100));
-
-        if (!$this->isValidChallenge(
-            $validated['challenge_token'],
-            $validated['challenge_steps']
-        )) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Challenge liveness tidak valid atau sudah kedaluwarsa.',
-                'debug' => [
-                    'server_time' => now()->timestamp,
-                    'steps' => array_values($validated['challenge_steps']),
-                ],
-            ], 422);
-        }
 
         if (!$this->passesQualityGate($validated['quality_metrics'])) {
             return response()->json([
@@ -198,9 +160,9 @@ class PresensiController extends Controller
             ->first();
 
         $photoPath = $this->storeAttendanceImage($validated['image'], $user->id);
-        $challengePayload = [
-            'token' => $validated['challenge_token'],
-            'steps' => $validated['challenge_steps'],
+        $livenessPayload = [
+            'type' => 'blink',
+            'blink_verified' => true,
             'verified_at' => now()->toIso8601String(),
         ];
 
@@ -218,7 +180,7 @@ class PresensiController extends Controller
                 'longitude_masuk' => $validated['lng'],
                 'jarak_masuk' => round($distance, 2),
                 'face_distance_masuk' => round($faceDistance, 6),
-                'liveness_challenge' => $challengePayload,
+                'liveness_challenge' => $livenessPayload,
                 'status' => $statusMasuk,
             ]);
 
@@ -260,7 +222,7 @@ class PresensiController extends Controller
             'longitude_keluar' => $validated['lng'],
             'jarak_keluar' => round($distance, 2),
             'face_distance_keluar' => round($faceDistance, 6),
-            'liveness_challenge' => $challengePayload,
+            'liveness_challenge' => $livenessPayload,
             'status_pulang' => 'normal',
         ]);
 
@@ -330,21 +292,18 @@ class PresensiController extends Controller
             ->first();
     }
 
-    // ================= HELPER =================
-
-    private function isValidChallenge(string $token, array $steps): bool
+    private function getApprovedLeaveForDate(int $userId, string $tanggal): ?LeaveRequest
     {
-        if (empty($token)) {
-            return false;
-        }
-
-        $normalizedSteps = array_values($steps);
-        $expectedSteps = ['center', 'left', 'right'];
-        sort($normalizedSteps);
-        sort($expectedSteps);
-
-        return $normalizedSteps === $expectedSteps;
+        return LeaveRequest::query()
+            ->where('user_id', $userId)
+            ->where('status', 'approved')
+            ->whereDate('tanggal_mulai', '<=', $tanggal)
+            ->whereDate('tanggal_selesai', '>=', $tanggal)
+            ->latest('approved_at')
+            ->first();
     }
+
+    // ================= HELPER =================
 
     private function storeAttendanceImage(string $imageData, int $userId): string
     {

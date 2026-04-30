@@ -32,6 +32,11 @@
         </header>
 
         <main class="px-4 pt-5 space-y-4">
+            <form id="attendanceForm" method="POST" action="{{ route('absen.store') }}" class="hidden">
+                @csrf
+                <input type="hidden" name="blink_verified" id="blinkVerified" value="false">
+            </form>
+
             <section class="bg-slate-950 rounded-2xl overflow-hidden shadow-xl">
                 <div class="relative aspect-[4/3] bg-slate-900">
                     @if($sudahPulang && $fotoAktif)
@@ -168,12 +173,16 @@
                         <p class="font-semibold text-gray-800">{{ $faceThreshold }}</p>
                     </div>
                     <div>
-                        <p class="text-xs text-gray-400">Challenge</p>
-                        <p id="challengeStatus" class="font-semibold text-gray-800">Belum dimulai</p>
+                        <p class="text-xs text-gray-400">Sampel</p>
+                        <p id="sampleStatus" class="font-semibold text-gray-800">Belum dimulai</p>
                     </div>
                     <div>
                         <p class="text-xs text-gray-400">Wajah</p>
                         <p id="faceStatus" class="font-semibold text-gray-800">Menunggu scan</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400">Kedipan</p>
+                        <p id="blinkStatus" class="font-semibold text-gray-800">Belum terverifikasi</p>
                     </div>
                 </div>
                 <p id="status" class="text-sm text-gray-500">
@@ -182,8 +191,8 @@
             </section>
 
             <section class="bg-white rounded-2xl shadow p-4">
-                <h2 class="font-bold text-gray-800">Challenge Liveness</h2>
-                <ol id="challengeList" class="mt-3 space-y-2 text-sm text-gray-600 list-decimal pl-5"></ol>
+                <h2 class="font-bold text-gray-800">Liveness Kedipan</h2>
+                <p class="mt-2 text-sm text-gray-600">Hadapkan wajah ke kamera dan kedipkan mata satu kali. Sistem akan mengirim absensi otomatis setelah wajah jelas dan kedipan terverifikasi.</p>
             </section>
         </main>
 
@@ -217,17 +226,19 @@
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
 const modelBaseUrl = '/face-api/models';
-const challengeUrl = "{{ route('absen.challenge', [], false) }}";
 const submitUrl = "{{ route('absen.store', [], false) }}";
 const dashboardUrl = "{{ route('dashboard', [], false) }}";
+const attendanceForm = document.getElementById('attendanceForm');
+const csrfToken = attendanceForm?.querySelector('input[name="_token"]')?.value || '{{ csrf_token() }}';
+const blinkVerifiedInput = document.getElementById('blinkVerified');
 const video = document.getElementById('video');
 const startVerificationButton = document.getElementById('startVerification');
 const submitAttendanceButton = document.getElementById('submitAttendance');
 const statusText = document.getElementById('status');
-const challengeList = document.getElementById('challengeList');
 const gpsStatus = document.getElementById('gpsStatus');
-const challengeStatus = document.getElementById('challengeStatus');
+const sampleStatus = document.getElementById('sampleStatus');
 const faceStatus = document.getElementById('faceStatus');
+const blinkStatus = document.getElementById('blinkStatus');
 const attendanceMapElement = document.getElementById('attendanceMap');
 const officeLatitude = Number(attendanceMapElement?.dataset.officeLat ?? 0);
 const officeLongitude = Number(attendanceMapElement?.dataset.officeLng ?? 0);
@@ -286,8 +297,6 @@ initializeAttendanceMap();
 let stream;
 let modelsLoaded = false;
 let geolocation = null;
-let challenge = null;
-let completedSteps = [];
 let verificationReady = false;
 let latestDescriptor = null;
 let latestSnapshot = null;
@@ -298,10 +307,18 @@ let qualitySamples = [];
 let trackingFrame = null;
 let processingDetection = false;
 let lastDetectionAt = 0;
+let blinkVerified = false;
+let eyesWereOpen = false;
+let lastEar = null;
+let maxOpenEar = 0;
+const REQUIRED_SAMPLES = 3;
 
 const MIN_BRIGHTNESS = 38;
 const MAX_BRIGHTNESS = 210;
 const MIN_SHARPNESS = 10;
+const BLINK_OPEN_EAR = 0.22;
+const BLINK_CLOSED_EAR = 0.19;
+const BLINK_DROP_RATIO = 0.72;
 
 // ✅ LEBIH CEPAT: inputSize 160 (dari 224), deteksi ~40% lebih cepat
 const detectorOptions = new faceapi.TinyFaceDetectorOptions({
@@ -329,24 +346,30 @@ function updateStatus(message, isError = false) {
     statusText.className = isError ? 'mt-4 text-sm text-red-600' : 'mt-4 text-sm text-slate-600';
 }
 
+function setBlinkVerified(value) {
+    blinkVerified = value;
+    blinkVerifiedInput.value = value ? 'true' : 'false';
+    blinkStatus.textContent = value ? 'Terverifikasi' : 'Belum terverifikasi';
+    blinkStatus.className = value
+        ? 'font-semibold text-emerald-700'
+        : 'font-semibold text-gray-800';
+}
+
 function humanizeStep(step) {
     const labels = {
         center: 'Arahkan wajah lurus ke tengah',
-        left: 'Putar wajah sedikit ke kiri',
-        right: 'Putar wajah sedikit ke kanan',
     };
     return labels[step] || step;
 }
 
 function renderChallenge() {
-    challengeList.innerHTML = '';
-    if (!challenge) return;
-    challenge.steps.forEach((step, index) => {
+    sampleStatus.textContent = `${descriptorSamples.length}/${REQUIRED_SAMPLES}`;
+    return;
+    [].forEach((step, index) => {
         const li = document.createElement('li');
-        const isDone = completedSteps.includes(step);
+        const isDone = false;
         li.textContent = `${index + 1}. ${humanizeStep(step)}${isDone ? ' – selesai' : ''}`;
         li.className = isDone ? 'text-emerald-600 font-semibold' : 'text-slate-600';
-        challengeList.appendChild(li);
     });
 }
 
@@ -357,32 +380,47 @@ async function loadModels() {
 }
 
 async function requestChallenge() {
-    const response = await fetch(challengeUrl, {
-        method: 'POST',
-        cache: 'no-store',
-        credentials: 'same-origin',
-        headers: {
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-        }
-    });
-    if (!response.ok) throw new Error('Challenge liveness gagal dibuat.');
-    challenge = await response.json();
-    completedSteps = [];
-    challengeStatus.textContent = 'Challenge aktif';
-    renderChallenge();
+    sampleStatus.textContent = '0/3';
 }
 
-function getHeadPoseStep(landmarks) {
-    const jaw = landmarks.getJawOutline();
-    const nose = landmarks.getNose();
-    const noseTip = nose[3];
-    const leftJaw = jaw[0];
-    const rightJaw = jaw[16];
-    const ratio = (noseTip.x - leftJaw.x) / (rightJaw.x - leftJaw.x);
-    if (ratio < 0.42) return 'left';
-    if (ratio > 0.58) return 'right';
-    return 'center';
+function distanceBetween(pointA, pointB) {
+    return Math.hypot(pointA.x - pointB.x, pointA.y - pointB.y);
+}
+
+function calculateEyeAspectRatio(eye) {
+    const verticalA = distanceBetween(eye[1], eye[5]);
+    const verticalB = distanceBetween(eye[2], eye[4]);
+    const horizontal = distanceBetween(eye[0], eye[3]);
+
+    if (horizontal === 0) return 0;
+
+    return (verticalA + verticalB) / (2 * horizontal);
+}
+
+function detectBlink(landmarks) {
+    const leftEar = calculateEyeAspectRatio(landmarks.getLeftEye());
+    const rightEar = calculateEyeAspectRatio(landmarks.getRightEye());
+    const ear = (leftEar + rightEar) / 2;
+    lastEar = ear;
+
+    maxOpenEar = Math.max(maxOpenEar, ear);
+
+    if (ear > BLINK_OPEN_EAR) {
+        eyesWereOpen = true;
+        return false;
+    }
+
+    return eyesWereOpen && (ear < BLINK_CLOSED_EAR || (maxOpenEar > 0 && ear <= maxOpenEar * BLINK_DROP_RATIO));
+}
+
+function maybeCompleteVerification() {
+    if (blinkVerified && descriptorSamples.length >= REQUIRED_SAMPLES) {
+        verificationReady = true;
+        submitAttendanceButton.disabled = false;
+        updateStatus('Wajah jelas dan kedipan terverifikasi. Mengirim absensi...');
+        stopTracking();
+        submitAttendance();
+    }
 }
 
 function captureSnapshot() {
@@ -446,7 +484,7 @@ function getFrameQuality(faceBox = null) {
 function isFrameQualityGood(quality) {
     return quality.brightness >= MIN_BRIGHTNESS
         && quality.brightness <= MAX_BRIGHTNESS
-        && quality.sharpness >= MIN_SHARPNESS;
+        && quality.sharpness >= 8;
 }
 
 function averageDescriptors(samples) {
@@ -535,8 +573,7 @@ function trackChallenge() {
     const runDetection = async () => {
         trackingFrame = requestAnimationFrame(runDetection);
 
-        if (!challenge || completedSteps.length === challenge.steps.length) return;
-        if (processingDetection) return;
+        if (processingDetection || isSubmitting) return;
 
         const now = performance.now();
         if (now - lastDetectionAt < DETECTION_INTERVAL) return;
@@ -551,41 +588,43 @@ function trackChallenge() {
                 .withFaceDescriptor();
 
             if (!detection) {
-                faceStatus.textContent = 'Wajah tidak terdeteksi – dekatkan wajah ke kamera';
+                faceStatus.textContent = 'Wajah tidak terdeteksi';
+                updateStatus('Dekatkan wajah ke kamera.', true);
                 return;
             }
 
-            const currentExpectedStep = challenge.steps[completedSteps.length];
-            const currentPose = getHeadPoseStep(detection.landmarks);
             const quality = getFrameQuality(detection.detection.box);
+            const blinkDetected = detectBlink(detection.landmarks);
 
-            faceStatus.textContent = `Wajah terdeteksi (${currentPose})`;
+            faceStatus.textContent = 'Wajah terdeteksi';
 
             if (!isFrameQualityGood(quality)) {
                 updateStatus(`Pencahayaan kurang. Cahaya: ${Math.round(quality.brightness)}, ketajaman: ${Math.round(quality.sharpness)}.`, true);
                 return;
             }
 
-            if (currentPose === currentExpectedStep) {
-                completedSteps.push(currentExpectedStep);
+            if (blinkDetected && !blinkVerified) {
+                setBlinkVerified(true);
+                updateStatus('Kedipan berhasil diverifikasi.');
+            } else if (!blinkVerified && lastEar !== null) {
+                blinkStatus.textContent = `Kedipkan mata (${lastEar.toFixed(2)})`;
+            }
+
+            if (Date.now() - lastCaptureAt >= 500 && descriptorSamples.length < REQUIRED_SAMPLES) {
+                lastCaptureAt = Date.now();
                 descriptorSamples.push(Array.from(detection.descriptor));
                 qualitySamples.push(quality);
                 latestDescriptor = averageDescriptors(descriptorSamples);
                 latestSnapshot = captureSnapshot();
                 latestQualityMetrics = summarizeQuality(qualitySamples);
                 renderChallenge();
-                challengeStatus.textContent = `${completedSteps.length}/${challenge.steps.length} langkah selesai`;
-                updateStatus(`✓ "${humanizeStep(currentExpectedStep)}" selesai.`);
-            } else {
-                // Tampilkan instruksi langkah berikutnya
-                updateStatus(`Sekarang: ${humanizeStep(currentExpectedStep)}`);
+                updateStatus(blinkVerified ? 'Sampel wajah cukup. Menyiapkan absensi...' : 'Wajah jelas. Kedipkan mata satu kali.');
             }
 
-            if (completedSteps.length === challenge.steps.length) {
+            if (blinkVerified && descriptorSamples.length >= REQUIRED_SAMPLES) {
                 verificationReady = true;
                 submitAttendanceButton.disabled = false;
-                challengeStatus.textContent = 'Challenge selesai';
-                updateStatus('Challenge selesai! Mengirim absensi...');
+                updateStatus('Wajah jelas dan kedipan terverifikasi. Mengirim absensi...');
                 stopTracking();
                 submitAttendance();
             }
@@ -612,7 +651,7 @@ async function requestGeolocation() {
 
 async function startVerification() {
     try {
-        updateStatus('Menyiapkan kamera, lokasi, dan challenge...');
+        updateStatus('Menyiapkan kamera, lokasi, dan verifikasi kedipan...');
         isSubmitting = false;
         submitAttendanceButton.disabled = true;
         verificationReady = false;
@@ -621,27 +660,28 @@ async function startVerification() {
         latestQualityMetrics = null;
         descriptorSamples = [];
         qualitySamples = [];
-        completedSteps = [];
-        challenge = null;
-        challengeStatus.textContent = 'Belum dimulai';
+        setBlinkVerified(false);
+        eyesWereOpen = false;
+        lastEar = null;
+        maxOpenEar = 0;
+        lastCaptureAt = 0;
+        sampleStatus.textContent = '0/3';
         faceStatus.textContent = 'Menunggu scan';
         renderChallenge();
         stopTracking();
         stopStream();
 
-        // ✅ Jalankan paralel: model + challenge + GPS + kamera sekaligus
         await startCamera();
         updateStatus('Mempersiapkan sistem...');
         await Promise.all([
             loadModels(),
-            requestChallenge(),
             requestGeolocation(),
         ]);
 
         // startCamera() sudah menyalakan kamera dan menunggu video siap.
 
         trackChallenge();
-        updateStatus(`Ikuti urutan challenge: ${humanizeStep(challenge.steps[0])}`);
+        updateStatus('Hadapkan wajah ke kamera dan kedipkan mata.');
     } catch (error) {
         const overlay = document.getElementById('cameraOverlay');
         if (overlay) {
@@ -654,8 +694,13 @@ async function startVerification() {
 
 async function submitAttendance() {
     if (isSubmitting) return;
-    if (!verificationReady || !latestDescriptor || !latestSnapshot || !geolocation || !challenge) {
+    if (!verificationReady || !latestDescriptor || !latestSnapshot || !geolocation) {
         updateStatus('Verifikasi belum lengkap.', true);
+        return;
+    }
+
+    if (blinkVerifiedInput.value !== 'true') {
+        updateStatus('Verifikasi kedipan belum berhasil.', true);
         return;
     }
 
@@ -670,7 +715,7 @@ async function submitAttendance() {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-CSRF-TOKEN': csrfToken,
             },
             body: JSON.stringify({
                 image: latestSnapshot,
@@ -678,8 +723,7 @@ async function submitAttendance() {
                 quality_metrics: latestQualityMetrics,
                 lat: geolocation.latitude,
                 lng: geolocation.longitude,
-                challenge_token: challenge.token,
-                challenge_steps: completedSteps,
+                blink_verified: blinkVerifiedInput.value,
             }),
         });
 
