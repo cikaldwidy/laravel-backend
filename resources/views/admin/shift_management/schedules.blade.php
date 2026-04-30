@@ -4,22 +4,6 @@
 
 @section('content')
 <div class="space-y-5">
-    @if(session('success'))
-        <div class="rounded-md bg-emerald-100 border border-emerald-200 text-emerald-700 px-4 py-3 text-sm">{{ session('success') }}</div>
-    @endif
-    @if(session('error'))
-        <div class="rounded-md bg-red-100 border border-red-200 text-red-700 px-4 py-3 text-sm">{{ session('error') }}</div>
-    @endif
-    @if($errors->any())
-        <div class="rounded-md bg-red-100 border border-red-200 text-red-700 px-4 py-3 text-sm">
-            <ul class="list-disc pl-5 space-y-1">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     <div class="bg-white rounded-md shadow border border-gray-200 p-4">
         <form method="GET" class="grid md:grid-cols-4 gap-3 items-end">
             <div>

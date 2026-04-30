@@ -156,6 +156,113 @@
         #collapse-btn.is-collapsed {
             transform: translateY(-50%) rotate(180deg);
         }
+        .admin-toast-stack {
+            position: fixed;
+            top: 1.25rem;
+            right: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: min(22rem, calc(100vw - 2rem));
+            z-index: 120;
+            pointer-events: none;
+        }
+        .admin-toast {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.85rem;
+            padding: 0.95rem 1rem;
+            border-radius: 0.375rem;
+            color: #fff;
+            box-shadow: 0 18px 38px rgba(15, 23, 42, 0.18);
+            transform: translate3d(0, -14px, 0);
+            opacity: 0;
+            transition: opacity 0.28s ease, transform 0.28s ease;
+            pointer-events: auto;
+        }
+        .admin-toast.is-visible {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+        .admin-toast.is-hiding {
+            opacity: 0;
+            transform: translate3d(0, -10px, 0);
+        }
+        .admin-toast--success {
+            background: linear-gradient(135deg, #65c26b, #4fae59);
+        }
+        .admin-toast--error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+        .admin-toast--warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        .admin-toast--info {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        .admin-toast__body {
+            width: 100%;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+        }
+        .admin-toast__icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.16);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        .admin-toast__title {
+            font-size: 0.92rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        .admin-toast__message {
+            margin-top: 0.18rem;
+            font-size: 0.78rem;
+            line-height: 1.35;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .admin-toast__close {
+            margin-left: auto;
+            border: 0;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.85);
+            padding: 0;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .admin-toast__progress {
+            width: 100%;
+            height: 0.26rem;
+            border-radius: 0.375rem;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .admin-toast__progress-bar {
+            width: 100%;
+            height: 100%;
+            border-radius: inherit;
+            background: rgba(255, 255, 255, 0.9);
+            transform-origin: left center;
+        }
+        .admin-toast.is-visible .admin-toast__progress-bar {
+            animation: toast-progress var(--toast-duration, 4200ms) linear forwards;
+        }
+        @keyframes toast-progress {
+            from {
+                transform: scaleX(1);
+            }
+            to {
+                transform: scaleX(0);
+            }
+        }
 
         @media (min-width: 768px) {
             #sidebar {
@@ -177,6 +284,39 @@
     </style>
 </head>
 <body class="font-jakarta">
+@php
+    $adminToasts = collect([
+        session('success') ? ['type' => 'success', 'title' => 'Berhasil', 'message' => session('success')] : null,
+        session('error') ? ['type' => 'error', 'title' => 'Gagal', 'message' => session('error')] : null,
+        session('warning') ? ['type' => 'warning', 'title' => 'Perhatian', 'message' => session('warning')] : null,
+        session('info') ? ['type' => 'info', 'title' => 'Informasi', 'message' => session('info')] : null,
+        $errors->any() ? ['type' => 'error', 'title' => 'Validasi Gagal', 'message' => $errors->first()] : null,
+    ])->filter()->values();
+@endphp
+
+@if($adminToasts->isNotEmpty())
+    <div id="admin-toast-stack" class="admin-toast-stack">
+        @foreach($adminToasts as $toast)
+            <div class="admin-toast admin-toast--{{ $toast['type'] }}" data-toast style="--toast-duration: 4200ms;">
+                <div class="admin-toast__body">
+                    <div class="admin-toast__icon">
+                        <i class="fas {{ $toast['type'] === 'success' ? 'fa-check' : ($toast['type'] === 'error' ? 'fa-xmark' : ($toast['type'] === 'warning' ? 'fa-exclamation' : 'fa-info')) }}"></i>
+                    </div>
+                    <div>
+                        <p class="admin-toast__title">{{ $toast['title'] }}</p>
+                        <p class="admin-toast__message">{{ $toast['message'] }}</p>
+                    </div>
+                    <button type="button" class="admin-toast__close" data-toast-close aria-label="Tutup notifikasi">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="admin-toast__progress" aria-hidden="true">
+                    <div class="admin-toast__progress-bar"></div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+@endif
 
 <div class="flex min-h-screen">
     <!-- Sidebar Desktop - Fixed Position -->
@@ -490,6 +630,33 @@
         }
 
         mainContent.style.marginLeft = '0';
+    });
+
+    const toastElements = document.querySelectorAll('[data-toast]');
+
+    function hideToast(toast) {
+        if (!toast || toast.classList.contains('is-hiding')) {
+            return;
+        }
+
+        toast.classList.add('is-hiding');
+        window.setTimeout(() => {
+            toast.remove();
+        }, 260);
+    }
+
+    toastElements.forEach((toast, index) => {
+        const closeButton = toast.querySelector('[data-toast-close]');
+
+        window.setTimeout(() => {
+            toast.classList.add('is-visible');
+        }, 80 + (index * 90));
+
+        window.setTimeout(() => {
+            hideToast(toast);
+        }, 4200 + (index * 300));
+
+        closeButton?.addEventListener('click', () => hideToast(toast));
     });
 </script>
 

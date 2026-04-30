@@ -12,11 +12,6 @@
             + Tambah
         </a>
     </div>
-
-    @if(session('success'))
-        <div class="bg-green-200 p-2 mb-3">{{ session('success') }}</div>
-    @endif
-
     <table class="w-full border text-sm">
         <thead class="bg-gray-100">
             <tr>

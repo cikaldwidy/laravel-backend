@@ -6,23 +6,6 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 <div class="max-w-5xl">
-    @if(session('success'))
-        <div class="mb-4 bg-green-100 text-green-700 border border-green-200 px-4 py-3 rounded-lg">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if($errors->any())
-        <div class="mb-4 bg-red-100 text-red-700 border border-red-200 px-4 py-3 rounded-lg">
-            <p class="font-semibold mb-1">Periksa kembali input berikut:</p>
-            <ul class="list-disc list-inside text-sm">
-                @foreach($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
     <div class="bg-white rounded-lg shadow">
         <div class="p-5 border-b">
             <h2 class="font-bold text-lg text-gray-800">Lokasi Kantor & Jam Default</h2>

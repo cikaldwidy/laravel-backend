@@ -4,10 +4,6 @@
 
 @section('content')
 <div class="space-y-6">
-    @if(session('success'))
-        <div class="bg-green-100 text-green-800 px-4 py-3 rounded">{{ session('success') }}</div>
-    @endif
-
     <form method="GET" class="bg-white p-4 rounded-xl shadow grid md:grid-cols-4 gap-3">
         <select name="status" class="border rounded px-3 py-2">
             <option value="">Semua Status</option>

@@ -10,11 +10,6 @@
             <p class="text-sm text-gray-500">Admin mengelola biodata (create/edit/hapus).</p>
         </div>
     </div>
-
-    @if(session('success'))
-        <div class="bg-green-200 p-2 rounded">{{ session('success') }}</div>
-    @endif
-
     <table class="w-full border text-sm">
         <thead class="bg-gray-100">
             <tr>
@@ -59,4 +54,3 @@
     </table>
 </div>
 @endsection
-
