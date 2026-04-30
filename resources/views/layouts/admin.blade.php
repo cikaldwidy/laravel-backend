@@ -343,9 +343,10 @@
         @php
             $employeeOpen = request()->routeIs('admin.users.*') || request()->routeIs('admin.biodata.*') || request()->routeIs('admin.face_data.*') || request()->routeIs('admin.units.*');
             $scheduleOpen = request()->routeIs('admin.shifts.*') || request()->routeIs('admin.shift_management.schedules*') || request()->routeIs('admin.shift_management.swaps*');
-            $attendanceOpen = request()->routeIs('admin.histories.*') || request()->routeIs('admin.leave_requests.*');
+            $attendanceOpen = request()->routeIs('admin.histories.*') || request()->routeIs('admin.leave_requests.*') || request()->routeIs('admin.features.show');
             $infoOpen = request()->routeIs('admin.announcements.*') || request()->routeIs('admin.reports.*');
             $settingsOpen = request()->routeIs('admin.settings.*');
+            $adminFeatureSettings = \App\Models\FeatureSetting::matrix();
         @endphp
         <nav id="sidebar-nav" class="md:px-2 sidebar-scroll overflow-y-auto px-4 py-3 space-y-2" style="height: calc(100vh - 5rem);">
             <a href="{{ route('admin.dashboard') }}"
@@ -399,6 +400,11 @@
                 <div id="menu-attendance" class="submenu {{ $attendanceOpen ? 'is-open' : '' }}">
                     <a href="{{ route('admin.histories.index') }}" class="submenu-item {{ request()->routeIs('admin.histories.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Riwayat Absensi</a>
                     <a href="{{ route('admin.leave_requests.index') }}" class="submenu-item {{ request()->routeIs('admin.leave_requests.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Perizinan</a>
+                    @foreach(\App\Models\FeatureSetting::FEATURES as $featureKey => $feature)
+                        @if($adminFeatureSettings[$featureKey]['admin'] ?? false)
+                            <a href="{{ route('admin.features.show', $featureKey) }}" class="submenu-item {{ request()->routeIs('admin.features.show') && request()->route('featureKey') === $featureKey ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> {{ $feature['label'] }}</a>
+                        @endif
+                    @endforeach
                 </div>
             </div>
 
@@ -427,7 +433,8 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-settings" class="submenu {{ $settingsOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Jam & Lokasi Kerja</a>
+                    <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.work.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Jam & Lokasi Kerja</a>
+                    <a href="{{ route('admin.settings.features.index') }}" class="submenu-item {{ request()->routeIs('admin.settings.features.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Pengaturan Fitur</a>
                 </div>
             </div>
         </nav>

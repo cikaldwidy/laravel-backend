@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\FeatureSetting;
 use App\Models\LeaveRequest;
 use App\Models\Unit;
 use App\Models\User;
@@ -14,8 +15,13 @@ class LeaveRequestController extends Controller
 {
     public function index(Request $request)
     {
+        if (in_array($request->query('jenis_izin'), ['sakit', 'cuti'], true)) {
+            abort_unless(FeatureSetting::enabled($request->query('jenis_izin'), 'admin'), 403, 'Anda tidak memiliki akses ke fitur ini.');
+        }
+
         $requests = LeaveRequest::query()
             ->with(['user.employeeDetail.unit', 'approver'])
+            ->when($request->filled('jenis_izin'), fn ($query) => $query->where('jenis_izin', $request->jenis_izin))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
             ->when($request->filled('user_id'), fn ($query) => $query->where('user_id', $request->user_id))
             ->when($request->filled('unit_id'), function ($query) use ($request) {

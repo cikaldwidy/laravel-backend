@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\FeatureSetting;
 use App\Models\LeaveRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,9 +26,15 @@ class LeaveRequestController extends Controller
         return view('user.leave_requests.index', compact('requests'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
-        return view('user.leave_requests.create');
+        $selectedJenisIzin = $request->query('jenis_izin');
+
+        if (in_array($selectedJenisIzin, ['sakit', 'cuti'], true)) {
+            abort_unless(FeatureSetting::enabled($selectedJenisIzin, 'user'), 403, 'Anda tidak memiliki akses ke fitur ini.');
+        }
+
+        return view('user.leave_requests.create', compact('selectedJenisIzin'));
     }
 
     public function store(Request $request)
@@ -39,6 +46,10 @@ class LeaveRequestController extends Controller
             'keterangan' => ['required', 'string'],
             'lampiran' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
         ]);
+
+        if (in_array($validated['jenis_izin'], ['sakit', 'cuti'], true)) {
+            abort_unless(FeatureSetting::enabled($validated['jenis_izin'], 'user'), 403, 'Anda tidak memiliki akses ke fitur ini.');
+        }
 
         $lampiranPath = $request->hasFile('lampiran')
             ? $request->file('lampiran')->store('leave-attachments', 'public')

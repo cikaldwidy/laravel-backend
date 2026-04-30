@@ -17,10 +17,14 @@
                 <div>
                     <label class="text-xs font-semibold text-slate-600">Jenis Izin</label>
                     <select name="jenis_izin" class="user-field mt-1">
-                        <option value="sakit">Sakit</option>
-                        <option value="cuti">Cuti</option>
-                        <option value="izin">Izin</option>
-                        <option value="dinas">Dinas Luar</option>
+                        @if(\App\Models\FeatureSetting::enabled('sakit', 'user'))
+                            <option value="sakit" @selected(($selectedJenisIzin ?? old('jenis_izin')) === 'sakit')>Sakit</option>
+                        @endif
+                        @if(\App\Models\FeatureSetting::enabled('cuti', 'user'))
+                            <option value="cuti" @selected(($selectedJenisIzin ?? old('jenis_izin')) === 'cuti')>Cuti</option>
+                        @endif
+                        <option value="izin" @selected(($selectedJenisIzin ?? old('jenis_izin')) === 'izin')>Izin</option>
+                        <option value="dinas" @selected(($selectedJenisIzin ?? old('jenis_izin')) === 'dinas')>Dinas Luar</option>
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-3">

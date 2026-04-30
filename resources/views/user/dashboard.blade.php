@@ -21,6 +21,7 @@
         ? 'bg-slate-100 text-slate-600'
         : (in_array($presensiHariIni?->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
     $shiftLabel = isset($scheduledShift) && $scheduledShift?->nama_shift ? $scheduledShift->nama_shift : null;
+    $featureSettings = \App\Models\FeatureSetting::matrix();
 @endphp
 
 <div class="min-h-[100dvh] bg-cyan-50 flex justify-center">
@@ -83,19 +84,20 @@
                 @php
                     $menu = [
                         ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir, 'url' => route('history.index')],
-                        ['label' => 'Sakit', 'icon' => 'fa-user-injured', 'badge' => 0, 'url' => route('leave_requests.index')],
+                        ['label' => 'Sakit', 'icon' => 'fa-user-injured', 'badge' => 0, 'url' => route('features.show', 'sakit'), 'feature' => 'sakit'],
                         ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => $izin, 'url' => route('leave_requests.index')],
-                        ['label' => 'Cuti', 'icon' => 'fa-plane-departure', 'badge' => 0, 'url' => route('leave_requests.create')],
+                        ['label' => 'Cuti', 'icon' => 'fa-plane-departure', 'badge' => 0, 'url' => route('features.show', 'cuti'), 'feature' => 'cuti'],
                         ['label' => 'ID Card', 'icon' => 'fa-id-card', 'badge' => 0, 'url' => route('profile.index')],
-                        ['label' => 'Istirahat', 'icon' => 'fa-mug-hot', 'badge' => 0, 'url' => '#'],
-                        ['label' => 'Lembur', 'icon' => 'fa-clock', 'badge' => 0, 'url' => '#'],
-                        ['label' => 'Slip Gaji', 'icon' => 'fa-wallet', 'badge' => 0, 'url' => '#'],
+                        ['label' => 'Istirahat', 'icon' => 'fa-mug-hot', 'badge' => 0, 'url' => route('features.show', 'istirahat'), 'feature' => 'istirahat'],
+                        ['label' => 'Lembur', 'icon' => 'fa-clock', 'badge' => 0, 'url' => route('features.show', 'lembur'), 'feature' => 'lembur'],
+                        ['label' => 'Slip Gaji', 'icon' => 'fa-wallet', 'badge' => 0, 'url' => route('features.show', 'slip_gaji'), 'feature' => 'slip_gaji'],
                         ['label' => 'Jadwal', 'icon' => 'fa-calendar-days', 'badge' => 0, 'url' => route('user.shifts.index')],
                         ['label' => 'Swap Shift', 'icon' => 'fa-right-left', 'badge' => 0, 'url' => route('shift-swaps.index')],
                     ];
                 @endphp
 
                 @foreach($menu as $item)
+                    @continue(isset($item['feature']) && !($featureSettings[$item['feature']]['user'] ?? false))
                     <a href="{{ $item['url'] ?? '#' }}"
                        class="relative bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm px-2 py-3 text-center active:scale-[0.99] transition">
                         @if(($item['badge'] ?? 0) > 0)

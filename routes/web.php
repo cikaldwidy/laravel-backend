@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FeaturePageController;
 use App\Http\Controllers\User\AnnouncementController;
 use App\Http\Controllers\User\FaceEnrollmentController;
 use App\Http\Controllers\User\HistoryController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ShiftManagementController;
 use App\Http\Controllers\Admin\UserBiodataController as AdminUserBiodataController;
 use App\Http\Controllers\Admin\FaceDataController;
+use App\Http\Controllers\Admin\FeatureSettingController;
 
 // ================= USER LOGIN =================
 Route::view('/', 'landing.welcome')->name('landing');
@@ -51,6 +53,10 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::post('/izin/{leaveRequest}/delete', [LeaveRequestController::class, 'destroy'])->name('leave_requests.destroy');
     Route::get('/pengumuman', [AnnouncementController::class, 'index'])->name('announcements.index');
     Route::get('/jadwal-shift', [UserShiftScheduleController::class, 'index'])->name('user.shifts.index');
+    Route::get('/fitur/{featureKey}', [FeaturePageController::class, 'user'])
+        ->whereIn('featureKey', ['sakit', 'cuti', 'istirahat', 'lembur', 'slip_gaji'])
+        ->middleware('feature.access:{featureKey}')
+        ->name('features.show');
     Route::get('/tukar-shift', [ShiftSwapController::class, 'index'])->name('shift-swaps.index');
     Route::get('/tukar-shift/create', [ShiftSwapController::class, 'create'])->name('shift-swaps.create');
     Route::get('/tukar-shift/target-shifts', [ShiftSwapController::class, 'availableTargetShifts'])->name('shift-swaps.target-shifts');
@@ -87,6 +93,12 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/settings/work', [WorkSettingController::class, 'edit'])->name('settings.work.edit');
         Route::post('/settings/work', [WorkSettingController::class, 'update'])->name('settings.work.update');
+        Route::get('/settings/features', [FeatureSettingController::class, 'index'])->name('settings.features.index');
+        Route::post('/settings/features', [FeatureSettingController::class, 'update'])->name('settings.features.update');
+        Route::get('/fitur/{featureKey}', [FeaturePageController::class, 'admin'])
+            ->whereIn('featureKey', ['sakit', 'cuti', 'istirahat', 'lembur', 'slip_gaji'])
+            ->middleware('feature.access:{featureKey}')
+            ->name('features.show');
 
         // ===== SHIFT (RS) =====
         Route::get('/shifts', [ShiftController::class, 'index'])->name('shifts.index');
