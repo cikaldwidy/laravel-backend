@@ -199,46 +199,98 @@
             </div>
         </div>
 
-        <nav class="p-4 space-y-2">
+        <!-- Navigation with Custom Scrollbar - Scrollable Area -->
+        @php
+            $employeeOpen = request()->routeIs('admin.users.*') || request()->routeIs('admin.biodata.*') || request()->routeIs('admin.face_data.*') || request()->routeIs('admin.units.*');
+            $scheduleOpen = request()->routeIs('admin.shifts.*') || request()->routeIs('admin.shift_management.schedules*') || request()->routeIs('admin.shift_management.swaps*');
+            $attendanceOpen = request()->routeIs('admin.histories.*') || request()->routeIs('admin.leave_requests.*');
+            $infoOpen = request()->routeIs('admin.announcements.*') || request()->routeIs('admin.reports.*');
+            $settingsOpen = request()->routeIs('admin.settings.*');
+        @endphp
+        <nav id="sidebar-nav" class="md:px-2 sidebar-scroll overflow-y-auto px-4 py-3 space-y-2" style="height: calc(100vh - 5rem);">
             <a href="{{ route('admin.dashboard') }}"
-               class="block p-3 rounded-lg {{ request()->routeIs('admin.dashboard') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
-                Dashboard
+               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.dashboard') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                <i class="fas fa-chart-line w-5 flex-shrink-0 text-center"></i>
+                <span class="sidebar-text">Dashboard</span>
+                <span class="tooltip">Dashboard</span>
             </a>
 
-            <a href="{{ route('admin.users.index') }}"
-               class="block p-3 rounded-lg {{ request()->routeIs('admin.users.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
-                Kelola User
-            </a>
+            <div class="menu-group">
+                <button type="button"
+                        data-menu-target="menu-employee"
+                        aria-expanded="{{ $employeeOpen ? 'true' : 'false' }}"
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $employeeOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                    <i class="fas fa-users w-5 flex-shrink-0 text-center"></i>
+                    <span class="sidebar-text flex-1 text-left">Pegawai</span>
+                    <i class="fas fa-chevron-down menu-caret text-xs"></i>
+                </button>
+                <div id="menu-employee" class="submenu {{ $employeeOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.users.index') }}" class="submenu-item {{ request()->routeIs('admin.users.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Akun Pegawai</a>
+                    <a href="{{ route('admin.biodata.index') }}" class="submenu-item {{ request()->routeIs('admin.biodata.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Biodata Pegawai</a>
+                    <a href="{{ route('admin.face_data.index') }}" class="submenu-item {{ request()->routeIs('admin.face_data.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Data Wajah</a>
+                    <a href="{{ route('admin.units.index') }}" class="submenu-item {{ request()->routeIs('admin.units.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Unit Kerja</a>
+                </div>
+            </div>
 
-            <a href="{{ route('admin.presensi.index') }}"
-               class="block p-3 rounded-lg {{ request()->routeIs('admin.presensi.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
-                Presensi
-            </a>
+            <div class="menu-group">
+                <button type="button"
+                        data-menu-target="menu-schedule"
+                        aria-expanded="{{ $scheduleOpen ? 'true' : 'false' }}"
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $scheduleOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                    <i class="fas fa-calendar-days w-5 flex-shrink-0 text-center"></i>
+                    <span class="sidebar-text flex-1 text-left">Jadwal & Shift</span>
+                    <i class="fas fa-chevron-down menu-caret text-xs"></i>
+                </button>
+                <div id="menu-schedule" class="submenu {{ $scheduleOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.shifts.index') }}" class="submenu-item {{ request()->routeIs('admin.shifts.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Master Shift</a>
+                    <a href="{{ route('admin.shift_management.schedules') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.schedules*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Jadwal Pegawai</a>
+                    <a href="{{ route('admin.shift_management.swaps') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.swaps*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Tukar Shift</a>
+                </div>
+            </div>
 
-            <a href="{{ route('admin.shifts.index') }}"
-               class="block p-3 rounded-lg {{ request()->routeIs('admin.shifts.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
-                Master Shift
-            </a>
+            <div class="menu-group">
+                <button type="button"
+                        data-menu-target="menu-attendance"
+                        aria-expanded="{{ $attendanceOpen ? 'true' : 'false' }}"
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $attendanceOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                    <i class="fas fa-clipboard-check w-5 flex-shrink-0 text-center"></i>
+                    <span class="sidebar-text flex-1 text-left">Absensi & Izin</span>
+                    <i class="fas fa-chevron-down menu-caret text-xs"></i>
+                </button>
+                <div id="menu-attendance" class="submenu {{ $attendanceOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.histories.index') }}" class="submenu-item {{ request()->routeIs('admin.histories.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Riwayat Absensi</a>
+                    <a href="{{ route('admin.leave_requests.index') }}" class="submenu-item {{ request()->routeIs('admin.leave_requests.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Perizinan</a>
+                </div>
+            </div>
 
-            <a href="{{ route('admin.user_shifts.index') }}"
-               class="block p-3 rounded-lg {{ request()->routeIs('admin.user_shifts.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
-                Jadwal Shift
-            </a>
+            <div class="menu-group">
+                <button type="button"
+                        data-menu-target="menu-info"
+                        aria-expanded="{{ $infoOpen ? 'true' : 'false' }}"
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $infoOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                    <i class="fas fa-bullhorn w-5 flex-shrink-0 text-center"></i>
+                    <span class="sidebar-text flex-1 text-left">Info & Laporan</span>
+                    <i class="fas fa-chevron-down menu-caret text-xs"></i>
+                </button>
+                <div id="menu-info" class="submenu {{ $infoOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.announcements.index') }}" class="submenu-item {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Pengumuman</a>
+                    <a href="{{ route('admin.reports.index') }}" class="submenu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Laporan</a>
+                </div>
+            </div>
 
-            <a href="{{ route('admin.biodata.index') }}"
-               class="block p-3 rounded-lg {{ request()->routeIs('admin.biodata.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
-                Biodata User
-            </a>
-
-            <a href="#"
-               class="block p-3 rounded-lg hover:bg-gray-100">
-                Data Wajah
-            </a>
-
-            <a href="{{ route('admin.settings.work.edit') }}"
-               class="block p-3 rounded-lg {{ request()->routeIs('admin.settings.*') ? 'bg-blue-500 text-white' : 'hover:bg-gray-100' }}">
-                Jam Kerja
-            </a>
+            <div class="menu-group">
+                <button type="button"
+                        data-menu-target="menu-settings"
+                        aria-expanded="{{ $settingsOpen ? 'true' : 'false' }}"
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $settingsOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                    <i class="fas fa-gear w-5 flex-shrink-0 text-center"></i>
+                    <span class="sidebar-text flex-1 text-left">Pengaturan</span>
+                    <i class="fas fa-chevron-down menu-caret text-xs"></i>
+                </button>
+                <div id="menu-settings" class="submenu {{ $settingsOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}"><i class="fas fa-circle text-[7px]"></i> Jam & Lokasi Kerja</a>
+                </div>
+            </div>
         </nav>
     </aside>
 

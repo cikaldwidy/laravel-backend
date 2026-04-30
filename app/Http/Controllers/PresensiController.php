@@ -292,17 +292,6 @@ class PresensiController extends Controller
             ->first();
     }
 
-    private function getApprovedLeaveForDate(int $userId, string $tanggal): ?LeaveRequest
-    {
-        return LeaveRequest::query()
-            ->where('user_id', $userId)
-            ->where('status', 'approved')
-            ->whereDate('tanggal_mulai', '<=', $tanggal)
-            ->whereDate('tanggal_selesai', '>=', $tanggal)
-            ->latest('approved_at')
-            ->first();
-    }
-
     // ================= HELPER =================
 
     private function storeAttendanceImage(string $imageData, int $userId): string

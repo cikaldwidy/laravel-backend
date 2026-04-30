@@ -114,6 +114,11 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/biodata/{user}', [AdminUserBiodataController::class, 'update'])->name('biodata.update');
         Route::post('/biodata/{user}/delete', [AdminUserBiodataController::class, 'destroy'])->name('biodata.destroy');
 
+        Route::get('/face-data', [FaceDataController::class, 'index'])->name('face_data.index');
+        Route::post('/face-data', [FaceDataController::class, 'store'])->name('face_data.store');
+        Route::put('/face-data/{faceEmbedding}', [FaceDataController::class, 'update'])->name('face_data.update');
+        Route::delete('/face-data/{faceEmbedding}', [FaceDataController::class, 'destroy'])->name('face_data.destroy');
+
         Route::get('/izin', [AdminLeaveRequestController::class, 'index'])->name('leave_requests.index');
         Route::post('/izin/{leaveRequest}', [AdminLeaveRequestController::class, 'update'])->name('leave_requests.update');
 
