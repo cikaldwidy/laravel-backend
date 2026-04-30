@@ -4,10 +4,6 @@
 
 @section('content')
 <div class="space-y-6">
-    @if(session('success'))
-        <div class="bg-green-100 text-green-800 px-4 py-3 rounded">{{ session('success') }}</div>
-    @endif
-
     <div class="bg-white p-6 rounded-xl shadow">
         <h2 class="text-lg font-bold text-gray-800 mb-4">Buat Pengumuman</h2>
         <form method="POST" action="{{ route('admin.announcements.store') }}" class="grid md:grid-cols-2 gap-4">

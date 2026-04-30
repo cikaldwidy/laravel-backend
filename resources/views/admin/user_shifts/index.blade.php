@@ -4,12 +4,6 @@
 
 @section('content')
 <div class="space-y-4">
-    @if(session('success'))
-        <div class="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
             <h2 class="text-lg font-bold text-gray-800">Jadwal Shift</h2>
@@ -74,4 +68,3 @@
     </form>
 </div>
 @endsection
-

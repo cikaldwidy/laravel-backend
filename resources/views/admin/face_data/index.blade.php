@@ -4,10 +4,6 @@
 
 @section('content')
 <div class="space-y-6">
-    @if(session('success'))
-        <div class="bg-green-100 text-green-800 px-4 py-3 rounded">{{ session('success') }}</div>
-    @endif
-
     <div id="alertBox" class="hidden px-4 py-3 rounded"></div>
 
     <div class="bg-white p-6 rounded-xl shadow">
