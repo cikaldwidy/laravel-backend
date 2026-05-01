@@ -5,8 +5,8 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\Presensi;
 use App\Models\LeaveRequest;
+use App\Models\ShiftSchedule;
 use App\Models\User;
-use App\Models\UserShift;
 use App\Models\WorkSetting;
 use App\Support\ShiftTime;
 use Carbon\Carbon;
@@ -29,7 +29,7 @@ class PresensiController extends Controller
 
         $now = now();
         $activeShiftContext = $this->resolveActiveShift($user, $now);
-        $scheduledShift = $this->getTodayShiftAssignment($user, $now)?->shift;
+        $scheduledShift = $this->getTodayShiftAssignment($user, $now);
         $activeShift = $activeShiftContext['shift'] ?? null;
         $canAttend = (bool) $activeShiftContext;
         $tanggalPresensi = $activeShiftContext['shift_date'] ?? $now->copy()->startOfDay();
@@ -235,10 +235,9 @@ class PresensiController extends Controller
         ]);
     }
 
-    private function getTodayShiftAssignment(User $user, Carbon $now): ?UserShift
+    private function getTodayShiftAssignment(User $user, Carbon $now): ?ShiftSchedule
     {
-        return UserShift::query()
-            ->with('shift')
+        return ShiftSchedule::query()
             ->where('user_id', $user->id)
             ->whereDate('tanggal', $now->toDateString())
             ->first();
@@ -247,9 +246,9 @@ class PresensiController extends Controller
     private function resolveActiveShift(User $user, Carbon $now): ?array
     {
         // Cek shift hari ini dan shift kemarin untuk handle shift lintas hari.
-        $shiftCandidates = UserShift::query()
-            ->with('shift')
+        $shiftCandidates = ShiftSchedule::query()
             ->where('user_id', $user->id)
+            ->where('status', 'aktif')
             ->whereIn('tanggal', [
                 $now->toDateString(),
                 $now->copy()->subDay()->toDateString(),
@@ -258,12 +257,10 @@ class PresensiController extends Controller
             ->get();
 
         foreach ($shiftCandidates as $candidate) {
-            if (!$candidate->shift) {
-                continue;
-            }
-
             $shiftDate = Carbon::parse($candidate->tanggal)->startOfDay();
-            $window = ShiftTime::window($shiftDate, $candidate->shift->jam_masuk, $candidate->shift->jam_pulang, 60, 180);
+            $jamMasuk = $candidate->jam_masuk->format('H:i:s');
+            $jamPulang = $candidate->jam_pulang->format('H:i:s');
+            $window = ShiftTime::window($shiftDate, $jamMasuk, $jamPulang, 60, 180);
 
             if (!$now->between($window['allowed_start'], $window['allowed_end'], true)) {
                 continue;
@@ -271,11 +268,11 @@ class PresensiController extends Controller
 
             return [
                 'assignment' => $candidate,
-                'shift' => $candidate->shift,
+                'shift' => $candidate,
                 'shift_date' => $shiftDate,
                 'start' => $window['start'],
                 'end' => $window['end'],
-                'is_overnight' => ShiftTime::isOvernight($candidate->shift->jam_masuk, $candidate->shift->jam_pulang),
+                'is_overnight' => ShiftTime::isOvernight($jamMasuk, $jamPulang),
             ];
         }
 

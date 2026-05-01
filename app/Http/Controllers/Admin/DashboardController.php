@@ -8,7 +8,6 @@ use App\Models\Announcement;
 use App\Models\Presensi;
 use App\Models\Unit;
 use App\Models\User;
-use App\Models\UserShift;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
 use App\Models\WorkSetting;
@@ -54,8 +53,9 @@ class DashboardController extends Controller
             ->whereDate('tanggal_selesai', '>=', $tanggal)
             ->count();
 
-        $scheduledUserIds = UserShift::query()
+        $scheduledUserIds = ShiftSchedule::query()
             ->whereDate('tanggal', $tanggal)
+            ->where('status', 'aktif')
             ->pluck('user_id')
             ->unique();
 

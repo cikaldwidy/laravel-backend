@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\LeaveRequest;
 use App\Models\Presensi;
+use App\Models\ShiftSchedule;
 use App\Models\Unit;
 use App\Models\User;
-use App\Models\UserShift;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -73,7 +73,7 @@ class ReportController extends Controller
     private function buildRows(Request $request, Carbon $tanggalMulai, Carbon $tanggalSelesai): array
     {
         $users = User::query()
-            ->with(['employeeDetail.unit', 'userShifts.shift', 'leaveRequests'])
+            ->with(['employeeDetail.unit', 'leaveRequests'])
             ->where('role', 'user')
             ->when($request->filled('user_id'), fn ($query) => $query->where('id', $request->user_id))
             ->when($request->filled('unit_id'), function ($query) use ($request) {
@@ -88,8 +88,7 @@ class ReportController extends Controller
             ->get()
             ->keyBy(fn ($item) => $item->user_id . '|' . $item->tanggal->toDateString());
 
-        $shifts = UserShift::query()
-            ->with('shift')
+        $shifts = ShiftSchedule::query()
             ->whereBetween('tanggal', [$tanggalMulai->toDateString(), $tanggalSelesai->toDateString()])
             ->whereIn('user_id', $users->keys())
             ->get()
@@ -117,7 +116,7 @@ class ReportController extends Controller
             foreach ($users as $user) {
                 $key = $user->id . '|' . $cursor->toDateString();
                 $presensi = $presensis->get($key);
-                $shift = $shifts->get($key)?->shift;
+                $shift = $shifts->get($key);
                 $leave = $leaveMap[$key] ?? null;
 
                 if (!$shift && !$presensi && !$leave) {
@@ -129,7 +128,7 @@ class ReportController extends Controller
                     'tanggal' => $cursor->format('Y-m-d'),
                     'nama' => $user->name,
                     'unit' => $user->employeeDetail?->unit?->nama_unit ?? ($user->employeeDetail?->departemen ?? '-'),
-                    'shift' => $shift ? ($shift->nama_shift . ' (' . substr($shift->jam_masuk, 0, 5) . '-' . substr($shift->jam_pulang, 0, 5) . ')') : '-',
+                    'shift' => $shift ? ($shift->nama_shift . ' (' . $shift->jam_masuk->format('H:i') . '-' . $shift->jam_pulang->format('H:i') . ')') : '-',
                     'check_in' => $presensi?->jam_masuk?->format('H:i') ?? '-',
                     'check_out' => $presensi?->jam_keluar?->format('H:i') ?? '-',
                     'status' => $status,

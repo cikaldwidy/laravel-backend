@@ -5,10 +5,10 @@
 @section('content')
 @php
     $jadwalMasuk = isset($scheduledShift) && $scheduledShift?->jam_masuk
-        ? \Illuminate\Support\Str::of($scheduledShift->jam_masuk)->substr(0, 5)
+        ? $scheduledShift->jam_masuk->format('H:i')
         : '--:--';
     $jadwalPulang = isset($scheduledShift) && $scheduledShift?->jam_pulang
-        ? \Illuminate\Support\Str::of($scheduledShift->jam_pulang)->substr(0, 5)
+        ? $scheduledShift->jam_pulang->format('H:i')
         : '--:--';
     $jamMasuk = $presensiHariIni?->jam_masuk?->format('H:i') ?? null;
     $jamPulang = $presensiHariIni?->jam_keluar?->format('H:i') ?? null;
@@ -20,7 +20,9 @@
     $statusBadgeClass = !$sudahMasuk
         ? 'bg-slate-100 text-slate-600'
         : (in_array($presensiHariIni?->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
-    $shiftLabel = isset($scheduledShift) && $scheduledShift?->nama_shift ? $scheduledShift->nama_shift : null;
+    $hasScheduledShift = isset($scheduledShift) && $scheduledShift;
+    $isShiftOff = $hasScheduledShift && $scheduledShift->status === 'libur';
+    $shiftLabel = $hasScheduledShift ? $scheduledShift->nama_shift : null;
     $featureSettings = \App\Models\FeatureSetting::matrix();
 @endphp
 
@@ -48,9 +50,13 @@
         </header>
 
         <main class="px-4 pt-4 space-y-4">
-            @if(!$shiftLabel)
+            @if(!$hasScheduledShift)
                 <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
                     Shift kamu belum diatur oleh admin untuk hari ini. Absen hanya bisa dilakukan setelah ada jadwal shift.
+                </section>
+            @elseif($isShiftOff)
+                <section class="bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl p-4 text-sm shadow-sm">
+                    Hari ini kamu dijadwalkan libur.
                 </section>
             @endif
 

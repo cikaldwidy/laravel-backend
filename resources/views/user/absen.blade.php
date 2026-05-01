@@ -5,10 +5,10 @@
 @section('content')
 @php
     $jadwalMasuk = isset($scheduledShift) && $scheduledShift?->jam_masuk
-        ? \Illuminate\Support\Str::of($scheduledShift->jam_masuk)->substr(0, 5)
+        ? $scheduledShift->jam_masuk->format('H:i')
         : '--:--';
     $jadwalPulang = isset($scheduledShift) && $scheduledShift?->jam_pulang
-        ? \Illuminate\Support\Str::of($scheduledShift->jam_pulang)->substr(0, 5)
+        ? $scheduledShift->jam_pulang->format('H:i')
         : '--:--';
     $jamMasuk = $presensi?->jam_masuk?->format('H:i') ?? $jadwalMasuk;
     $jamPulang = $presensi?->jam_keluar?->format('H:i') ?? $jadwalPulang;
@@ -16,7 +16,9 @@
     $sudahPulang = (bool) $presensi?->jam_keluar;
     $jenisAbsen = !$presensi ? 'Masuk' : (!$presensi->jam_keluar ? 'Pulang' : 'Selesai');
     $fotoAktif = $presensi?->foto_keluar ?? $presensi?->foto_masuk ?? $presensi?->foto ?? null;
-    $shiftLabel = isset($scheduledShift) && $scheduledShift?->nama_shift ? $scheduledShift->nama_shift : 'Belum Dijadwalkan';
+    $hasScheduledShift = isset($scheduledShift) && $scheduledShift;
+    $isShiftOff = $hasScheduledShift && $scheduledShift->status === 'libur';
+    $shiftLabel = $hasScheduledShift ? $scheduledShift->nama_shift : 'Belum Dijadwalkan';
 @endphp
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -85,6 +87,10 @@
             @if(!isset($scheduledShift) || !$scheduledShift)
                 <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
                     Shift kamu belum diatur oleh admin. Hubungi admin untuk assign jadwal shift terlebih dulu.
+                </section>
+            @elseif($isShiftOff)
+                <section class="bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl p-4 text-sm shadow-sm">
+                    Hari ini kamu dijadwalkan libur, jadi absensi tidak dibuka.
                 </section>
             @elseif(isset($approvedLeave) && $approvedLeave)
                 <section class="bg-sky-50 border border-sky-200 text-sky-900 rounded-2xl p-4 text-sm shadow-sm">

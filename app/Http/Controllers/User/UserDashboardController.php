@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\LeaveRequest;
 use App\Models\Presensi;
-use App\Models\UserShift;
+use App\Models\ShiftSchedule;
 use App\Models\User;
 use App\Models\WorkSetting;
 use App\Support\ShiftTime;
@@ -57,17 +57,16 @@ class UserDashboardController extends Controller
         $scheduledShift = null;
         $now = now();
 
-        $todayAssignment = UserShift::query()
-            ->with('shift')
+        $todayAssignment = ShiftSchedule::query()
             ->where('user_id', $user->id)
             ->whereDate('tanggal', $now->toDateString())
             ->first();
 
-        $scheduledShift = $todayAssignment?->shift;
+        $scheduledShift = $todayAssignment;
 
-        $candidates = UserShift::query()
-            ->with('shift')
+        $candidates = ShiftSchedule::query()
             ->where('user_id', $user->id)
+            ->where('status', 'aktif')
             ->whereIn('tanggal', [
                 $now->toDateString(),
                 $now->copy()->subDay()->toDateString(),
@@ -75,15 +74,17 @@ class UserDashboardController extends Controller
             ->get();
 
         foreach ($candidates as $candidate) {
-            if (!$candidate->shift) {
-                continue;
-            }
-
             $shiftDate = Carbon::parse($candidate->tanggal)->startOfDay();
-            $window = ShiftTime::window($shiftDate, $candidate->shift->jam_masuk, $candidate->shift->jam_pulang, 60, 180);
+            $window = ShiftTime::window(
+                $shiftDate,
+                $candidate->jam_masuk->format('H:i:s'),
+                $candidate->jam_pulang->format('H:i:s'),
+                60,
+                180
+            );
 
             if ($now->between($window['allowed_start'], $window['allowed_end'], true)) {
-                $activeShift = $candidate->shift;
+                $activeShift = $candidate;
                 break;
             }
         }

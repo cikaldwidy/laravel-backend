@@ -22,6 +22,15 @@ class ShiftSchedule extends Model
         'jam_pulang' => 'datetime:H:i:s',
     ];
 
+    public function getNamaShiftAttribute(): string
+    {
+        if ($this->status === 'libur') {
+            return 'Libur';
+        }
+
+        return 'Shift ' . $this->jam_masuk?->format('H:i') . ' - ' . $this->jam_pulang?->format('H:i');
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
