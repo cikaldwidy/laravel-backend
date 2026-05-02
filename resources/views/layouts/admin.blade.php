@@ -176,7 +176,7 @@
     }
     .flyout-item:hover { background: rgba(71,85,105,.45); color: #fff; }
     .flyout-item.active {
-        background: linear-gradient(90deg,#0284c7,#1d4ed8);
+        background: rgba(71,85,105,.45);
         color: #fff;
     }
  
@@ -202,9 +202,8 @@
     }
     .submenu-item:hover { background: rgba(71,85,105,.45); color: #fff; }
     .submenu-item.active {
-        background: linear-gradient(90deg,#0284c7,#1d4ed8);
+        background: rgba(71,85,105,.45);
         color: #fff;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
     }
     .submenu-marker {
         width: .5rem;
