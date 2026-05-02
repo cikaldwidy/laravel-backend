@@ -76,6 +76,8 @@
  
     /* ===== SIDEBAR ITEM (expanded) ===== */
     .sidebar-item {
+        width: 100%;
+        box-sizing: border-box;
         transition: background .2s ease, color .2s ease;
     }
  
@@ -131,7 +133,7 @@
         left: calc(var(--sidebar-collapsed-width) + .6rem);
         top: 0;                   /* di-set via JS */
         min-width: 200px;
-        background: #1e293b;
+        background: #1f2937;
         border-radius: 0 .5rem .5rem 0;
         box-shadow: 4px 4px 24px rgba(0,0,0,.35);
         z-index: 200;
@@ -163,59 +165,67 @@
         color: #94a3b8;
         border-bottom: 1px solid rgba(148,163,184,.15);
     }
+    .flyout-item + .flyout-item {
+        margin-top: .45rem;
+    }
     .flyout-item {
         display: flex;
         align-items: center;
         gap: .6rem;
         padding: .55rem 1rem;
-        color: #cbd5e1;
+        color: #94a3b8;
         font-size: .85rem;
         font-weight: 500;
         text-decoration: none;
-        transition: background .15s ease, color .15s ease;
+        transition: color .15s ease, text-decoration-color .15s ease;
     }
-    .flyout-item:hover { background: rgba(71,85,105,.45); color: #fff; }
-    .flyout-item.active {
-        background: rgba(71,85,105,.45);
+    .flyout-item:hover {
         color: #fff;
+        text-decoration: underline;
+        text-underline-offset: .2rem;
+        text-decoration-thickness: 1.5px;
+    }
+    .flyout-item.active {
+        color: #fff;
+        text-decoration: underline;
+        text-underline-offset: .2rem;
+        text-decoration-thickness: 1.5px;
     }
  
     /* ===== SUBMENU (expanded state) ===== */
     .submenu {
         display: none;
-        margin-top: .25rem;
+        margin-top: .35rem;
         margin-left: .9rem;
         padding-left: .9rem;
         border-left: 1px solid rgba(148,163,184,.35);
     }
     .submenu.is-open { display: block; }
+    .submenu-item + .submenu-item {
+        margin-top: .45rem;
+    }
     .submenu-item {
         display: flex;
         align-items: center;
-        gap: .65rem;
         padding: .55rem .65rem;
         border-radius: .5rem;
-        color: #cbd5e1;
+        color: #94a3b8;
         font-size: 14px;
         font-weight: 500;
-        transition: background .2s ease, color .2s ease;
+        text-decoration: none;
+        transition: color .2s ease, text-decoration-color .2s ease;
     }
-    .submenu-item:hover { background: rgba(71,85,105,.45); color: #fff; }
-    .submenu-item.active {
-        background: rgba(71,85,105,.45);
+    .submenu-item:hover {
         color: #fff;
+        text-decoration: underline;
+        text-underline-offset: .2rem;
+        text-decoration-thickness: 1.5px;
     }
-    .submenu-marker {
-        width: .5rem;
-        height: .5rem;
-        border-radius: .22rem;
-        background: rgba(191, 219, 254, .9);
-        flex-shrink: 0;
-        box-shadow: 0 0 0 1px rgba(255,255,255,.08);
-    }
-    .submenu-item:hover .submenu-marker,
-    .submenu-item.active .submenu-marker {
-        background: rgba(255,255,255,.95);
+    .submenu-item.active {
+        color: #fff;
+        text-decoration: underline;
+        text-underline-offset: .2rem;
+        text-decoration-thickness: 1.5px;
     }
  
     /* menu caret */
@@ -357,9 +367,9 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-organization" class="submenu {{ $organizationOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.departments.index') }}" class="submenu-item {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Master Departemen</a>
-                    <a href="{{ route('admin.units.index') }}" class="submenu-item {{ request()->routeIs('admin.units.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Unit Kerja</a>
-                    <a href="{{ route('admin.positions.index') }}" class="submenu-item {{ request()->routeIs('admin.positions.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Master Jabatan</a>
+                    <a href="{{ route('admin.departments.index') }}" class="submenu-item {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">Master Departemen</a>
+                    <a href="{{ route('admin.units.index') }}" class="submenu-item {{ request()->routeIs('admin.units.*') ? 'active' : '' }}">Unit Kerja</a>
+                    <a href="{{ route('admin.positions.index') }}" class="submenu-item {{ request()->routeIs('admin.positions.*') ? 'active' : '' }}">Master Jabatan</a>
                 </div>
             </div>
 
@@ -373,8 +383,8 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-employee" class="submenu {{ $employeeOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.users.index') }}" class="submenu-item {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.biodata.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Akun Pegawai</a>
-                    <a href="{{ route('admin.face_data.index') }}" class="submenu-item {{ request()->routeIs('admin.face_data.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Data Wajah</a>
+                    <a href="{{ route('admin.users.index') }}" class="submenu-item {{ request()->routeIs('admin.users.*') || request()->routeIs('admin.biodata.*') ? 'active' : '' }}">Akun Pegawai</a>
+                    <a href="{{ route('admin.face_data.index') }}" class="submenu-item {{ request()->routeIs('admin.face_data.*') ? 'active' : '' }}">Data Wajah</a>
                 </div>
             </div>
 
@@ -390,9 +400,9 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-schedule" class="submenu {{ $scheduleOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.shifts.index') }}" class="submenu-item {{ request()->routeIs('admin.shifts.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Master Shift</a>
-                    <a href="{{ route('admin.shift_management.schedules') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.schedules*') ? 'active' : '' }}"><span class="submenu-marker"></span> Jadwal Pegawai</a>
-                    <a href="{{ route('admin.shift_management.swaps') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.swaps*') ? 'active' : '' }}"><span class="submenu-marker"></span> Tukar Shift</a>
+                    <a href="{{ route('admin.shifts.index') }}" class="submenu-item {{ request()->routeIs('admin.shifts.*') ? 'active' : '' }}">Master Shift</a>
+                    <a href="{{ route('admin.shift_management.schedules') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.schedules*') ? 'active' : '' }}">Jadwal Pegawai</a>
+                    <a href="{{ route('admin.shift_management.swaps') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.swaps*') ? 'active' : '' }}">Tukar Shift</a>
                 </div>
             </div>
 
@@ -406,11 +416,11 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-attendance" class="submenu {{ $attendanceOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.histories.index') }}" class="submenu-item {{ request()->routeIs('admin.histories.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Riwayat Absensi</a>
-                    <a href="{{ route('admin.leave_requests.index') }}" class="submenu-item {{ request()->routeIs('admin.leave_requests.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Perizinan</a>
+                    <a href="{{ route('admin.histories.index') }}" class="submenu-item {{ request()->routeIs('admin.histories.*') ? 'active' : '' }}">Riwayat Absensi</a>
+                    <a href="{{ route('admin.leave_requests.index') }}" class="submenu-item {{ request()->routeIs('admin.leave_requests.*') ? 'active' : '' }}">Perizinan</a>
                     @foreach(\App\Models\FeatureSetting::FEATURES as $featureKey => $feature)
                         @if($adminFeatureSettings[$featureKey]['admin'] ?? false)
-                            <a href="{{ route('admin.features.show', $featureKey) }}" class="submenu-item {{ request()->routeIs('admin.features.show') && request()->route('featureKey') === $featureKey ? 'active' : '' }}"><span class="submenu-marker"></span> {{ $feature['label'] }}</a>
+                            <a href="{{ route('admin.features.show', $featureKey) }}" class="submenu-item {{ request()->routeIs('admin.features.show') && request()->route('featureKey') === $featureKey ? 'active' : '' }}">{{ $feature['label'] }}</a>
                         @endif
                     @endforeach
                 </div>
@@ -426,8 +436,8 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-info" class="submenu {{ $infoOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.announcements.index') }}" class="submenu-item {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Pengumuman</a>
-                    <a href="{{ route('admin.reports.index') }}" class="submenu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Laporan</a>
+                    <a href="{{ route('admin.announcements.index') }}" class="submenu-item {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}">Pengumuman</a>
+                    <a href="{{ route('admin.reports.index') }}" class="submenu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">Laporan</a>
                 </div>
             </div>
 
@@ -441,8 +451,8 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-settings" class="submenu {{ $settingsOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.work.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Jam & Lokasi Kerja</a>
-                    <a href="{{ route('admin.settings.features.index') }}" class="submenu-item {{ request()->routeIs('admin.settings.features.*') ? 'active' : '' }}"><span class="submenu-marker"></span> Pengaturan Fitur</a>
+                    <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.work.*') ? 'active' : '' }}">Jam & Lokasi Kerja</a>
+                    <a href="{{ route('admin.settings.features.index') }}" class="submenu-item {{ request()->routeIs('admin.settings.features.*') ? 'active' : '' }}">Pengaturan Fitur</a>
                 </div>
             </div>
         </nav>
@@ -465,8 +475,8 @@
                     <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
-                      <div class="hidden md:flex px-6 text-md text-gray-600 tracking-[.3px]">
-                        <a href="#" class="hover:text-blue-700">Home</a>
+                      <div class="hidden md:flex px-6 text-md text-gray-600 tracking-[.2px]">
+                        <a href="{{ route('admin.dashboard') }}" class="hover:underline hover:text-gray-800 font-medium">Dashboard</a>
                         <span class="mx-2">/</span>
                         <span class="text-gray-900 font-medium">@yield('title', 'Dashboard')</span>
                     </div>
