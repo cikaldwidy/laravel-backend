@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\ShiftManagementController;
 use App\Http\Controllers\Admin\UserBiodataController as AdminUserBiodataController;
 use App\Http\Controllers\Admin\FaceDataController;
 use App\Http\Controllers\Admin\FeatureSettingController;
+use App\Http\Controllers\Admin\NotificationController;
 
 // ================= USER LOGIN =================
 Route::view('/', 'landing.welcome')->name('landing');
@@ -80,6 +81,7 @@ Route::middleware(['auth', 'role:admin'])
     ->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/presensi', [DashboardController::class, 'index'])->name('presensi.index');
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');

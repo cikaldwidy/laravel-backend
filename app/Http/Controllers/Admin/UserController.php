@@ -11,10 +11,69 @@ use Illuminate\Validation\Rule;
 class UserController extends Controller
 {
     // ================= LIST =================
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['employeeDetail.department', 'employeeDetail.unit', 'employeeDetail.position', 'userProfile', 'faceEmbedding'])->latest()->get();
-        return view('admin.users.index', compact('users'));
+        $users = User::query()
+            ->with(['employeeDetail.department', 'employeeDetail.unit', 'employeeDetail.position', 'userProfile', 'faceEmbedding'])
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = trim($request->search);
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%')
+                        ->orWhereHas('employeeDetail', function ($detail) use ($search) {
+                            $detail->where('nip', 'like', '%' . $search . '%')
+                                ->orWhere('departemen', 'like', '%' . $search . '%')
+                                ->orWhere('jabatan', 'like', '%' . $search . '%')
+                                ->orWhereHas('unit', fn ($unit) => $unit->where('nama_unit', 'like', '%' . $search . '%'))
+                                ->orWhereHas('department', fn ($department) => $department->where('nama_departemen', 'like', '%' . $search . '%'))
+                                ->orWhereHas('position', fn ($position) => $position->where('nama_jabatan', 'like', '%' . $search . '%'));
+                        })
+                        ->orWhereHas('userProfile', function ($profile) use ($search) {
+                            $profile->where('nik', 'like', '%' . $search . '%')
+                                ->orWhere('no_hp', 'like', '%' . $search . '%');
+                        });
+                });
+            })
+            ->when($request->filled('role'), fn ($query) => $query->where('role', $request->role))
+            ->when($request->filled('unit'), function ($query) use ($request) {
+                $query->whereHas('employeeDetail', function ($detail) use ($request) {
+                    $detail->whereHas('unit', fn ($unit) => $unit->where('nama_unit', $request->unit))
+                        ->orWhereHas('department', fn ($department) => $department->where('nama_departemen', $request->unit));
+                });
+            })
+            ->when($request->filled('biodata'), function ($query) use ($request) {
+                match ($request->biodata) {
+                    'lengkap' => $query->whereHas('userProfile')->whereHas('employeeDetail'),
+                    'sebagian' => $query->where(function ($q) {
+                        $q->where(function ($sub) {
+                            $sub->whereHas('userProfile')->whereDoesntHave('employeeDetail');
+                        })->orWhere(function ($sub) {
+                            $sub->whereDoesntHave('userProfile')->whereHas('employeeDetail');
+                        });
+                    }),
+                    'belum' => $query->whereDoesntHave('userProfile')->whereDoesntHave('employeeDetail'),
+                    default => null,
+                };
+            })
+            ->when($request->filled('wajah'), function ($query) use ($request) {
+                $request->wajah === 'terdaftar'
+                    ? $query->whereHas('faceEmbedding')
+                    : $query->whereDoesntHave('faceEmbedding');
+            })
+            ->latest()
+            ->get();
+
+        $units = User::query()
+            ->with(['employeeDetail.department', 'employeeDetail.unit'])
+            ->get()
+            ->map(fn ($user) => $user->employeeDetail?->unit?->nama_unit ?? $user->employeeDetail?->department?->nama_departemen)
+            ->filter()
+            ->unique()
+            ->sort()
+            ->values();
+
+        return view('admin.users.index', compact('users', 'units'));
     }
 
     // ================= CREATE =================

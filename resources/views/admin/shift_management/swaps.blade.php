@@ -5,7 +5,7 @@
 @section('content')
 <div class="space-y-5">
     <div class="bg-white rounded-md shadow border border-gray-200 p-4">
-        <form method="GET" class="flex flex-wrap gap-2 items-end">
+        <form method="GET" data-auto-filter class="flex flex-wrap gap-2 items-end">
             <div>
                 <label class="text-xs font-semibold text-gray-600">Filter Status</label>
                 <select name="status" class="border rounded-md px-3 py-2 text-sm">
@@ -15,7 +15,6 @@
                     <option value="rejected" @selected($status === 'rejected')>Rejected</option>
                 </select>
             </div>
-            <button class="bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-semibold">Apply</button>
             <a href="{{ route('admin.shift_management.swaps') }}" class="bg-gray-200 text-gray-700 rounded-md px-4 py-2 text-sm font-semibold">Reset</a>
         </form>
     </div>

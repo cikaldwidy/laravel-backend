@@ -16,6 +16,63 @@
             </a>
         </div>
 
+        <form method="GET" data-auto-filter class="mb-5 grid md:grid-cols-5 gap-3">
+            <div class="md:col-span-2">
+                <label class="block text-xs font-semibold text-gray-500 mb-2">Cari Pegawai</label>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                    <input
+                        type="search"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Nama, email, NIP, unit..."
+                        class="w-full border border-gray-200 rounded-md pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-gray-500 transition text-gray-700"
+                    >
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-2">Role</label>
+                <select name="role" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 transition bg-white text-gray-700">
+                    <option value="">Semua Role</option>
+                    <option value="user" @selected(request('role') === 'user')>User</option>
+                    <option value="admin" @selected(request('role') === 'admin')>Admin</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-2">Unit</label>
+                <select name="unit" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 transition bg-white text-gray-700">
+                    <option value="">Semua Unit</option>
+                    @foreach($units as $unit)
+                        <option value="{{ $unit }}" @selected(request('unit') === $unit)>{{ $unit }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-2">Biodata</label>
+                <select name="biodata" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 transition bg-white text-gray-700">
+                    <option value="">Semua</option>
+                    <option value="lengkap" @selected(request('biodata') === 'lengkap')>Lengkap</option>
+                    <option value="sebagian" @selected(request('biodata') === 'sebagian')>Sebagian</option>
+                    <option value="belum" @selected(request('biodata') === 'belum')>Belum ada</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-2">Wajah</label>
+                <select name="wajah" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 transition bg-white text-gray-700">
+                    <option value="">Semua</option>
+                    <option value="terdaftar" @selected(request('wajah') === 'terdaftar')>Terdaftar</option>
+                    <option value="belum" @selected(request('wajah') === 'belum')>Belum</option>
+                </select>
+            </div>
+            @if(request()->hasAny(['search', 'role', 'unit', 'biodata', 'wajah']))
+                <div class="md:col-span-5">
+                    <a href="{{ route('admin.users.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md hover:bg-gray-100 transition border border-gray-300">
+                        <i class="fas fa-xmark text-xs"></i> Reset
+                    </a>
+                </div>
+            @endif
+        </form>
+
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50 text-gray-600">

@@ -131,5 +131,31 @@
 </head>
 <body class="bg-gray-100 font-jakarta">
         @yield('content')
+        <script>
+            document.querySelectorAll('[data-auto-filter]').forEach((form) => {
+                let timer;
+                let isSubmitting = false;
+
+                const submitForm = (delay = 0) => {
+                    clearTimeout(timer);
+                    timer = setTimeout(() => {
+                        if (isSubmitting) return;
+                        isSubmitting = true;
+                        form.requestSubmit();
+                    }, delay);
+                };
+
+                form.querySelectorAll('input, select').forEach((field) => {
+                    if (field.type === 'hidden') return;
+
+                    if (field.tagName === 'SELECT' || ['date', 'month', 'checkbox', 'radio'].includes(field.type)) {
+                        field.addEventListener('change', () => submitForm());
+                        return;
+                    }
+
+                    field.addEventListener('input', () => submitForm(450));
+                });
+            });
+        </script>
 </body>
 </html>

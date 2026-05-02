@@ -123,7 +123,7 @@
     {{-- Filter Bar --}}
     <div class="bg-white rounded-md border border-gray-200 shadow-sm p-4">
         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Filter & Pencarian</p>
-        <form method="GET" action="{{ route('admin.departments.index') }}" class="flex flex-wrap gap-3 items-end">
+        <form method="GET" action="{{ route('admin.departments.index') }}" data-auto-filter class="flex flex-wrap gap-3 items-end">
             {{-- Search --}}
             <div class="flex-1 min-w-48">
                 <label class="block text-xs text-gray-500 mb-2">Cari departemen</label>
@@ -148,11 +148,6 @@
                 </select>
             </div>
 
-            <button type="submit"
-                class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2 rounded-md transition shadow-sm">
-                <i class="fas fa-filter text-xs"></i>
-                Filter
-            </button>
             @if(request('search') || request('relasi'))
                 <a href="{{ route('admin.departments.index') }}"
                     class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md hover:bg-gray-100 transition border border-gray-300">

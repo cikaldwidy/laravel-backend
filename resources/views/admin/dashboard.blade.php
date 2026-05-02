@@ -14,16 +14,16 @@
     ];
 
     $cards = [
-        ['label'=>'Total Pegawai',   'value'=>$totalUser,    'icon'=>'fa-solid fa-users',           'from'=>'#3b82f6','to'=>'#2563eb'],
-        ['label'=>'Presensi',     'value'=>$totalPresensi,'icon'=>'fa-solid fa-clipboard-list',   'from'=>'#10b981','to'=>'#059669'],
-        ['label'=>'Hadir',        'value'=>$hadir,        'icon'=>'fa-solid fa-circle-check',     'from'=>'#22c55e','to'=>'#16a34a'],
-        ['label'=>'Telat',        'value'=>$telat,        'icon'=>'fa-solid fa-clock',            'from'=>'#f59e0b','to'=>'#d97706'],
-        ['label'=>'Pulang Cepat', 'value'=>$pulangCepat,  'icon'=>'fa-solid fa-person-running',   'from'=>'#ef4444','to'=>'#dc2626'],
-        ['label'=>'Izin',         'value'=>$izin,         'icon'=>'fa-solid fa-file-circle-check','from'=>'#38bdf8','to'=>'#0284c7'],
-        ['label'=>'Alpha',        'value'=>$alpha,        'icon'=>'fa-solid fa-user-xmark',       'from'=>'#94a3b8','to'=>'#475569'],
-        ['label'=>'Total Shift Hari Ini', 'value'=>$totalShiftHariIni, 'icon'=>'fa-solid fa-calendar-day', 'from'=>'#06b6d4','to'=>'#0e7490'],
-        ['label'=>'User Masuk Hari Ini', 'value'=>$userMasukHariIni, 'icon'=>'fa-solid fa-user-check', 'from'=>'#6366f1','to'=>'#4338ca'],
-        ['label'=>'Swap Pending', 'value'=>$swapPending, 'icon'=>'fa-solid fa-right-left', 'from'=>'#f97316','to'=>'#c2410c'],
+        ['label'=>'Total Pegawai', 'value'=>$totalUser, 'icon'=>'fa-solid fa-users', 'tone'=>'bg-slate-950 text-white'],
+        ['label'=>'Presensi', 'value'=>$totalPresensi, 'icon'=>'fa-solid fa-clipboard-list', 'tone'=>'bg-emerald-50 text-emerald-700'],
+        ['label'=>'Hadir', 'value'=>$hadir, 'icon'=>'fa-solid fa-circle-check', 'tone'=>'bg-green-50 text-green-700'],
+        ['label'=>'Telat', 'value'=>$telat, 'icon'=>'fa-solid fa-clock', 'tone'=>'bg-amber-50 text-amber-700'],
+        ['label'=>'Pulang Cepat', 'value'=>$pulangCepat, 'icon'=>'fa-solid fa-person-running', 'tone'=>'bg-red-50 text-red-700'],
+        ['label'=>'Izin', 'value'=>$izin, 'icon'=>'fa-solid fa-file-circle-check', 'tone'=>'bg-sky-50 text-sky-700'],
+        ['label'=>'Alpha', 'value'=>$alpha, 'icon'=>'fa-solid fa-user-xmark', 'tone'=>'bg-slate-100 text-slate-700'],
+        ['label'=>'Total Shift Hari Ini', 'value'=>$totalShiftHariIni, 'icon'=>'fa-solid fa-calendar-day', 'tone'=>'bg-cyan-50 text-cyan-700'],
+        ['label'=>'User Masuk Hari Ini', 'value'=>$userMasukHariIni, 'icon'=>'fa-solid fa-user-check', 'tone'=>'bg-indigo-50 text-indigo-700'],
+        ['label'=>'Swap Pending', 'value'=>$swapPending, 'icon'=>'fa-solid fa-right-left', 'tone'=>'bg-orange-50 text-orange-700'],
     ];
 @endphp
 
@@ -37,16 +37,16 @@
     {{-- ══════════════════════════════════════
          ROW 1 — 7 Stat Cards
     ══════════════════════════════════════ --}}
-    <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
         @foreach($cards as $card)
-        <div class="relative overflow-hidden rounded-md p-3 text-white shadow flex flex-row gap-3 bg-white border border-gray-200">
+        <div class="relative overflow-hidden bg-white border border-white/70 p-4 flex items-center gap-4 min-h-[104px]">
             {{-- Icon --}}
-            <div class="w-16 h-16 rounded-md flex items-center justify-center text-lg" style="background:linear-gradient(135deg,{{ $card['to']}})">
-                <i class="{{ $card['icon'] }} text-3xl"></i>
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-lg {{ $card['tone'] }}">
+                <i class="{{ $card['icon'] }}"></i>
             </div>
-            <div class="flex flex-col gap-5 justify-center flex-grow">
-                <p class="text-sm font-medium capitalize text-gray-900 tracking-[.2px]" style="opacity:.82">{{ $card['label'] }}</p>
-                <p class="text-md font-extrabold leading-none text-gray-700">{{ $card['value'] }}</p>
+            <div class="min-w-0">
+                <p class="text-sm font-semibold text-slate-500 truncate">{{ $card['label'] }}</p>
+                <p class="mt-2 text-2xl font-extrabold leading-none text-slate-950">{{ $card['value'] }}</p>
             </div>
         </div>
         @endforeach
@@ -57,33 +57,33 @@
     ══════════════════════════════════════ --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-        <div class="rounded-md shadow flex items-center gap-4 p-3 bg-sky-600">
-            <div class="w-12 h-12 rounded-md flex items-center justify-center text-sky-600 bg-white shrink-0 text-xl">
+        <div class="bg-white border border-white/70 flex items-center gap-4 p-5">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-slate-950 bg-slate-100 shrink-0 text-xl">
                 <i class="fa-solid fa-building"></i>
             </div>
             <div>
-                <p class="text-md capitalize uppercase tracking-[.2px] text-white">Total Unit</p>
-                <p class="text-lg font-bold text-white">{{ $units }}</p>
+                <p class="text-sm font-semibold text-slate-500">Total Unit</p>
+                <p class="mt-1 text-2xl font-extrabold text-slate-950">{{ $units }}</p>
             </div>
         </div>
 
-        <div class="rounded-md shadow flex items-center gap-4 p-3 bg-emerald-600">
-            <div class="w-12 h-12 rounded-md flex items-center justify-center text-emerald-600 bg-white shrink-0 text-xl">
+        <div class="bg-white border border-white/70 flex items-center gap-4 p-5">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-emerald-700 bg-emerald-50 shrink-0 text-xl">
                 <i class="fa-solid fa-bullhorn"></i>
             </div>
             <div>
-                <p class="text-md capitalize uppercase tracking-[.2px] text-white">Pengumuman</p>
-                <p class="text-lg font-bold text-white">{{ $announcements }}</p>
+                <p class="text-sm font-semibold text-slate-500">Pengumuman</p>
+                <p class="mt-1 text-2xl font-extrabold text-slate-950">{{ $announcements }}</p>
             </div>
         </div>
 
-        <div class="rounded-md shadow flex items-center gap-4 p-3 bg-amber-600">
-            <div class="w-12 h-12 rounded-md flex items-center justify-center text-amber-600 bg-white shrink-0 text-base mt-0.5">
+        <div class="bg-slate-950 border border-slate-800 flex items-center gap-4 p-5 text-white">
+            <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-slate-950 bg-white shrink-0 text-base mt-0.5">
                 <i class="fa-solid fa-bell"></i>
             </div>
             <div>
-                <p class="text-md capitalize uppercase tracking-[.2px] text-white">Notifikasi Admin</p>
-                <p class="text-xs text-white mt-1 leading-relaxed">
+                <p class="text-sm font-bold text-white">Notifikasi Admin</p>
+                <p class="text-xs text-slate-300 mt-1 leading-relaxed">
                     <strong>{{ $telat }}</strong> pegawai telat &nbsp;·&nbsp;
                     <strong>{{ $alpha }}</strong> pegawai belum hadir &nbsp;·&nbsp;
                     <strong>{{ $izin }}</strong> pegawai izin hari ini.
@@ -99,10 +99,10 @@
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
         {{-- Chart Card --}}
-        <div class="lg:col-span-2 bg-white rounded-md shadow p-5 border border-gray-200">
+        <div class="lg:col-span-2 bg-white p-6 border border-white/70">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-base font-bold text-gray-700 tracking-[.2px]">
-                    <i class="fa-solid fa-chart-area mr-1.5 text-blue-500"></i> Grafik Kehadiran 7 Hari
+                <h2 class="text-lg font-extrabold text-slate-950 tracking-[.2px]">
+                    Grafik Kehadiran 7 Hari
                 </h2>
                 <div class="flex items-center gap-4">
                     <span class="flex items-center gap-1.5 text-xs text-gray-500">
@@ -122,28 +122,27 @@
         </div>
 
         {{-- Lokasi Card --}}
-        <div class="rounded-md shadow p-5 text-white flex flex-col justify-between"
-             style="background:linear-gradient(135deg,#1e3a8a,#2563eb)">
+        <div class="bg-slate-950 p-6 text-white flex flex-col justify-between border border-slate-800">
             <div class="space-y-4">
-                <p class="text-sm  uppercase tracking-[.2px] flex items-center gap-2">
+                <p class="text-sm uppercase tracking-[.2px] flex items-center gap-2 text-slate-200">
                     <i class="fa-solid fa-location-dot"></i> Lokasi & Jam Kerja
                 </p>
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest" style="opacity:.7">Koordinat GPS</p>
-                    <p class="text-md font-bold mt-1">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Koordinat GPS</p>
+                    <p class="text-lg font-bold mt-1">
                         {{ $workSetting?->office_latitude ?? config('attendance.office_latitude') }},
                         {{ $workSetting?->office_longitude ?? config('attendance.office_longitude') }}
                     </p>
                 </div>
                 <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest" style="opacity:.7">Radius</p>
-                    <p class="text-md font-bold mt-1">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Radius</p>
+                    <p class="text-lg font-bold mt-1">
                         {{ $workSetting?->radius_meters ?? config('attendance.radius_meters', 100) }}<span class="opacity-70 text-sm"> Meter</span>
                     </p>
                 </div>
             </div>
             <a href="{{ route('admin.settings.work.edit') }}"
-               class="flex items-center justify-center gap-2 rounded-md px-4 py-3 text-md font-bold text-white no-underline transition bg-white bg-opacity-30 hover:bg-opacity-40">
+               class="mt-6 flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-bold text-slate-950 no-underline transition bg-white hover:bg-slate-100">
                 <i class="fa-solid fa-gear"></i> Atur Lokasi</a>
         </div>
 
@@ -163,14 +162,10 @@
                     {{ \Carbon\Carbon::parse($tanggal)->translatedFormat('l, d F Y') }}
                 </p>
             </div>
-            <form method="GET" action="{{ route('admin.dashboard') }}" class="flex items-center gap-2">
+            <form method="GET" action="{{ route('admin.dashboard') }}" data-auto-filter class="flex items-center gap-2">
                 <input type="date" name="tanggal" value="{{ $tanggal }}"
                        class="border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700
                               focus:outline-none focus:border-blue-400">
-                <button type="submit"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md text-sm font-semibold transition-colors flex items-center gap-2">
-                    <i class="fa-solid fa-filter text-xs"></i> Filter
-                </button>
             </form>
         </div>
 

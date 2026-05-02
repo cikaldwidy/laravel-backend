@@ -5,7 +5,7 @@
 @section('content')
 <div class="space-y-5">
     <div class="bg-white rounded-md shadow border border-gray-200 p-4">
-        <form method="GET" class="grid md:grid-cols-4 gap-3 items-end">
+        <form method="GET" data-auto-filter class="grid md:grid-cols-4 gap-3 items-end">
             <div>
                 <label class="text-xs font-semibold text-gray-600">Tanggal</label>
                 <input type="date" name="tanggal" value="{{ $tanggal }}" class="w-full border rounded-md px-3 py-2 text-sm">
@@ -20,7 +20,6 @@
                 </select>
             </div>
             <div class="md:col-span-2 flex gap-2">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-semibold">Filter Monitoring</button>
                 <a href="{{ route('admin.shift_management.schedules') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-semibold">Reset</a>
             </div>
         </form>

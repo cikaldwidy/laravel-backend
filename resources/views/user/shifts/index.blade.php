@@ -15,14 +15,28 @@
                 <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 text-sm shadow-sm">{{ session('success') }}</div>
             @endif
 
-            <form method="GET" class="user-card p-4 flex items-end gap-3">
-                <div class="flex-1">
-                    <label class="text-[11px] font-semibold text-slate-500">Bulan</label>
-                    <input type="month" name="month" value="{{ $month }}" class="user-field mt-1">
+            <form method="GET" data-auto-filter class="user-card p-4 space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Cari</label>
+                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari status atau jam..." class="user-field mt-1">
                 </div>
-                <button class="user-btn-primary px-3">
-                    <i class="fa-solid fa-filter"></i>
-                </button>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Bulan</label>
+                        <input type="month" name="month" value="{{ $month }}" class="user-field mt-1">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Status</label>
+                        <select name="status" class="user-field mt-1">
+                            <option value="">Semua</option>
+                            <option value="aktif" @selected(request('status') === 'aktif')>Aktif</option>
+                            <option value="libur" @selected(request('status') === 'libur')>Libur</option>
+                        </select>
+                    </div>
+                </div>
+                @if(request()->hasAny(['search', 'status']))
+                    <a href="{{ route('user.shifts.index', ['month' => $month]) }}" class="user-btn-secondary w-full">Reset</a>
+                @endif
             </form>
 
             <section class="grid grid-cols-2 gap-3">

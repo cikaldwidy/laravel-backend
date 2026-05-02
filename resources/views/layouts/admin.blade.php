@@ -24,12 +24,27 @@
     :root {
         --sidebar-expanded-width: 16rem;
         --sidebar-collapsed-width: 4.5rem;
+        --admin-bg: #bdc9ce;
+        --admin-surface: #f8fafb;
+        --admin-card: #ffffff;
+        --admin-ink: #071225;
+        --admin-muted: #6b7280;
+        --admin-border: rgba(7, 18, 37, .08);
+        --admin-navy: #071225;
+    }
+
+    body {
+        background: var(--admin-bg);
+        color: var(--admin-ink);
     }
  
     /* ===== SIDEBAR ===== */
     #sidebar {
         transition: width .3s ease, transform .3s ease;
         width: var(--sidebar-expanded-width);
+        background: var(--admin-surface) !important;
+        border: 1px solid rgba(255,255,255,.72);
+        box-shadow: inset 0 0 0 1px rgba(7,18,37,.04), 0 18px 42px rgba(7,18,37,.10);
     }
     #sidebar.sidebar-collapsed { width: var(--sidebar-collapsed-width); }
  
@@ -61,7 +76,7 @@
         transform: translateY(-50%);
         padding: .45rem .7rem;
         border-radius: .5rem;
-        background: #1e293b;
+        background: var(--admin-navy);
         color: #fff;
         font-size: .8rem;
         line-height: 1;
@@ -78,7 +93,22 @@
     .sidebar-item {
         width: 100%;
         box-sizing: border-box;
-        transition: background .2s ease, color .2s ease;
+        border-radius: 9999px !important;
+        color: #4b5563 !important;
+        transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .sidebar-item:hover {
+        background: rgba(7, 18, 37, .06) !important;
+        color: var(--admin-ink) !important;
+    }
+    .sidebar-item.active,
+    .menu-trigger[aria-expanded="true"] {
+        background: var(--admin-navy) !important;
+        color: #fff !important;
+        box-shadow: 0 12px 24px rgba(7,18,37,.18);
+    }
+    .sidebar-item i {
+        color: currentColor !important;
     }
  
     /* ===== COLLAPSED: sembunyikan submenu & caret ===== */
@@ -133,9 +163,10 @@
         left: calc(var(--sidebar-collapsed-width) + .6rem);
         top: 0;                   /* di-set via JS */
         min-width: 200px;
-        background: #1f2937;
-        border-radius: 0 .5rem .5rem 0;
-        box-shadow: 4px 4px 24px rgba(0,0,0,.35);
+        background: #fff;
+        border: 1px solid var(--admin-border);
+        border-radius: 1rem;
+        box-shadow: 0 18px 36px rgba(7,18,37,.18);
         z-index: 200;
         overflow: hidden;
  
@@ -162,8 +193,8 @@
         font-weight: 700;
         letter-spacing: .08em;
         text-transform: uppercase;
-        color: #94a3b8;
-        border-bottom: 1px solid rgba(148,163,184,.15);
+        color: var(--admin-muted);
+        border-bottom: 1px solid var(--admin-border);
     }
     .flyout-item + .flyout-item {
         margin-top: .45rem;
@@ -173,23 +204,19 @@
         align-items: center;
         gap: .6rem;
         padding: .55rem 1rem;
-        color: #94a3b8;
+        color: #4b5563;
         font-size: .85rem;
         font-weight: 500;
         text-decoration: none;
         transition: color .15s ease, text-decoration-color .15s ease;
     }
     .flyout-item:hover {
-        color: #fff;
-        text-decoration: underline;
-        text-underline-offset: .2rem;
-        text-decoration-thickness: 1.5px;
+        color: var(--admin-ink);
+        background: rgba(7,18,37,.05);
     }
     .flyout-item.active {
-        color: #fff;
-        text-decoration: underline;
-        text-underline-offset: .2rem;
-        text-decoration-thickness: 1.5px;
+        color: var(--admin-ink);
+        background: rgba(7,18,37,.08);
     }
  
     /* ===== SUBMENU (expanded state) ===== */
@@ -198,7 +225,7 @@
         margin-top: .35rem;
         margin-left: .9rem;
         padding-left: .9rem;
-        border-left: 1px solid rgba(148,163,184,.35);
+        border-left: 1px solid rgba(7,18,37,.10);
     }
     .submenu.is-open { display: block; }
     .submenu-item + .submenu-item {
@@ -209,23 +236,21 @@
         align-items: center;
         padding: .55rem .65rem;
         border-radius: .5rem;
-        color: #94a3b8;
+        color: #6b7280;
         font-size: 14px;
         font-weight: 500;
         text-decoration: none;
         transition: color .2s ease, text-decoration-color .2s ease;
     }
     .submenu-item:hover {
-        color: #fff;
-        text-decoration: underline;
-        text-underline-offset: .2rem;
-        text-decoration-thickness: 1.5px;
+        color: var(--admin-ink);
+        background: rgba(7,18,37,.05);
+        text-decoration: none;
     }
     .submenu-item.active {
-        color: #fff;
-        text-decoration: underline;
-        text-underline-offset: .2rem;
-        text-decoration-thickness: 1.5px;
+        color: var(--admin-ink);
+        background: rgba(7,18,37,.08);
+        text-decoration: none;
     }
  
     /* menu caret */
@@ -238,6 +263,87 @@
  
     /* ===== COLLAPSE BUTTON ===== */
     #collapse-btn { transition: left .3s ease, background-color .2s ease; }
+
+    #sidebar .brand-wrapper {
+        background: transparent !important;
+    }
+    #sidebar .brand-wrapper .w-10 {
+        background: var(--admin-navy) !important;
+        color: #fff !important;
+        border-radius: .9rem !important;
+        box-shadow: 0 10px 22px rgba(7,18,37,.15);
+    }
+    #sidebar .brand-wrapper .w-10 span {
+        color: #fff !important;
+        font-size: 1rem !important;
+    }
+    #sidebar .brand-text h1 {
+        color: var(--admin-ink) !important;
+        font-weight: 800;
+    }
+    #sidebar > .h-20 {
+        border-color: rgba(7,18,37,.10) !important;
+    }
+
+    #collapse-btn {
+        background: var(--admin-navy) !important;
+        border: 4px solid var(--admin-bg);
+        box-shadow: 0 14px 28px rgba(7,18,37,.22);
+    }
+
+    #main-content > header {
+        margin: .4rem .4rem 0;
+        border: 1px solid rgba(255,255,255,.72) !important;
+        border-radius: 1rem;
+        background: rgba(255,255,255,.92) !important;
+        box-shadow: 0 16px 36px rgba(7,18,37,.08);
+    }
+    #main-content > .flex-1 {
+        background: var(--admin-bg) !important;
+    }
+    main .bg-white {
+        border: 1px solid rgba(255,255,255,.76);
+        border-radius: 1rem !important;
+        box-shadow: 0 16px 36px rgba(7,18,37,.08) !important;
+    }
+    main .shadow,
+    main .shadow-sm,
+    main .shadow-md,
+    main .shadow-xl,
+    main .shadow-2xl {
+        box-shadow: 0 16px 36px rgba(7,18,37,.08) !important;
+    }
+    main table thead,
+    main .bg-gray-50 {
+        background: #f5f7f8 !important;
+    }
+    main input,
+    main select,
+    main textarea {
+        border-color: rgba(7,18,37,.10) !important;
+        border-radius: .9rem !important;
+        background-color: #f8fafb;
+    }
+    main input:focus,
+    main select:focus,
+    main textarea:focus {
+        border-color: var(--admin-navy) !important;
+        box-shadow: 0 0 0 3px rgba(7,18,37,.10) !important;
+    }
+    main .bg-blue-600,
+    main .bg-blue-700,
+    main .hover\:bg-blue-700:hover {
+        background: var(--admin-navy) !important;
+    }
+    main .text-blue-600,
+    main .text-blue-700 {
+        color: var(--admin-navy) !important;
+    }
+    main .rounded-xl,
+    main .rounded-lg,
+    main .rounded-md {
+        border-radius: 1rem !important;
+    }
  
     /* ===== TOAST ===== */
     .admin-toast-stack {
@@ -280,6 +386,10 @@
     @media (max-width:767px) {
         #sidebar, #sidebar.sidebar-collapsed { width: min(18rem, calc(100vw - 2rem)); }
         #main-content, #sidebar.sidebar-collapsed ~ #main-content { margin-left:0 !important; }
+        #main-content > header {
+            margin: 0;
+            border-radius: 0 0 1rem 1rem;
+        }
     }
     </style>
 </head>
@@ -318,6 +428,30 @@
     </div>
 @endif
 
+@php
+    $adminPageTitle = trim($__env->yieldContent('title', 'Dashboard'));
+    $adminSection = match (true) {
+        request()->routeIs('admin.dashboard') => 'Dashboard',
+        request()->routeIs('admin.departments.*'),
+        request()->routeIs('admin.units.*'),
+        request()->routeIs('admin.positions.*') => 'Struktur Organisasi',
+        request()->routeIs('admin.users.*'),
+        request()->routeIs('admin.biodata.*'),
+        request()->routeIs('admin.face_data.*') => 'Pegawai',
+        request()->routeIs('admin.shifts.*'),
+        request()->routeIs('admin.shift_management.schedules*'),
+        request()->routeIs('admin.shift_management.swaps*') => 'Jadwal & Shift',
+        request()->routeIs('admin.histories.*'),
+        request()->routeIs('admin.leave_requests.*'),
+        request()->routeIs('admin.features.show') => 'Absensi & Izin',
+        request()->routeIs('admin.announcements.*'),
+        request()->routeIs('admin.reports.*'),
+        request()->routeIs('admin.notifications.*') => 'Info & Laporan',
+        request()->routeIs('admin.settings.*') => 'Pengaturan',
+        default => 'Admin',
+    };
+@endphp
+
 <div class="flex min-h-screen">
     <!-- Sidebar Desktop - Fixed Position -->
     <aside id="sidebar" class="w-64 bg-gray-800 shadow-2xl fixed left-0 top-0 h-screen z-40 transform -translate-x-full md:translate-x-0 transition-all duration-300">
@@ -345,9 +479,11 @@
             $organizationOpen = request()->routeIs('admin.units.*') || request()->routeIs('admin.departments.*') || request()->routeIs('admin.positions.*');
             $scheduleOpen = request()->routeIs('admin.shifts.*') || request()->routeIs('admin.shift_management.schedules*') || request()->routeIs('admin.shift_management.swaps*');
             $attendanceOpen = request()->routeIs('admin.histories.*') || request()->routeIs('admin.leave_requests.*') || request()->routeIs('admin.features.show');
-            $infoOpen = request()->routeIs('admin.announcements.*') || request()->routeIs('admin.reports.*');
+            $infoOpen = request()->routeIs('admin.announcements.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.notifications.*');
             $settingsOpen = request()->routeIs('admin.settings.*');
             $adminFeatureSettings = \App\Models\FeatureSetting::matrix();
+            $adminNotifications = app(\App\Services\AdminNotificationService::class)->items(5);
+            $adminNotificationCount = app(\App\Services\AdminNotificationService::class)->count();
         @endphp
         <nav id="sidebar-nav" class="md:px-2 sidebar-scroll overflow-y-auto px-4 py-3 space-y-2" style="height: calc(100vh - 5rem);">
             <a href="{{ route('admin.dashboard') }}"
@@ -436,6 +572,7 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-info" class="submenu {{ $infoOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.notifications.index') }}" class="submenu-item {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">Notifikasi</a>
                     <a href="{{ route('admin.announcements.index') }}" class="submenu-item {{ request()->routeIs('admin.announcements.*') ? 'active' : '' }}">Pengumuman</a>
                     <a href="{{ route('admin.reports.index') }}" class="submenu-item {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">Laporan</a>
                 </div>
@@ -469,40 +606,57 @@
     <main id="main-content" class="flex-1 flex flex-col min-h-screen ml-0 md:ml-64 transition-all duration-300">
         <!-- Header - Sticky -->
         <header class="bg-white border-b border-gray-200 sticky top-0 z-20">
-            <div class="px-4 md:px-6 py-3 flex justify-between items-center">
-                <div class="flex items-center gap-4">
+            <div class="px-4 md:px-6 py-4 flex justify-between items-center gap-4">
+                <div class="flex items-center gap-4 flex-1">
                     <!-- Mobile Menu Button -->
                     <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
-                      <div class="hidden md:flex px-6 text-md text-gray-600 tracking-[.2px]">
-                        <a href="{{ route('admin.dashboard') }}" class="hover:underline hover:text-gray-800 font-medium">Dashboard</a>
-                        <span class="mx-2">/</span>
-                        <span class="text-gray-900 font-medium">@yield('title', 'Dashboard')</span>
+                    <div class="hidden md:flex shrink-0 text-sm text-gray-500 tracking-[.2px]">
+                        {{ now()->translatedFormat('l, d F') }}
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 md:gap-6">
-                    <!-- Search Button -->
-                    <button class="hidden md:block text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-search text-lg"></i>
-                    </button>
+                <div class="flex items-center gap-3 md:gap-4">
+                    <div class="relative group">
+                        <button class="relative w-10 h-10 rounded-2xl bg-white border border-slate-100 text-slate-700 hover:bg-slate-50 flex items-center justify-center shadow-sm transition">
+                            <i class="fa-solid fa-bell"></i>
+                            @if($adminNotificationCount > 0)
+                                <span class="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                    {{ $adminNotificationCount > 99 ? '99+' : $adminNotificationCount }}
+                                </span>
+                            @endif
+                        </button>
 
-                    <!-- Notifications -->
-                    <button class="relative text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-bell text-lg"></i>
-                        <span class="p-2.5 absolute -top-1 -right-2 bg-red-500 text-white text-[10px] rounded-full w-3 h-3 flex items-center justify-center">
-                            3
-                        </span>
-                    </button>
+                        <div class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden">
+                            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-bold text-slate-900">Notifikasi</p>
+                                    <p class="text-xs text-slate-500">{{ $adminNotificationCount }} aktivitas perlu dicek</p>
+                                </div>
+                                <a href="{{ route('admin.notifications.index') }}" class="text-xs font-bold text-slate-950">Lihat semua</a>
+                            </div>
 
-                    <!-- Messages -->
-                    <button class="hidden md:block relative text-gray-600 hover:text-gray-900">
-                        <i class="fas fa-envelope text-lg"></i>
-                        <span class="p-2.5 absolute -top-1 -right-2 bg-yellow-500 text-white text-[10px] rounded-full w-3 h-3 flex items-center justify-center">
-                            15
-                        </span>
-                    </button>
+                            <div class="max-h-80 overflow-y-auto">
+                                @forelse($adminNotifications as $notification)
+                                    <a href="{{ $notification['url'] }}" class="flex items-start gap-3 p-4 hover:bg-slate-50 border-b border-slate-100 transition">
+                                        <span class="w-10 h-10 rounded-2xl inline-flex items-center justify-center shrink-0 {{ $notification['tone'] }}">
+                                            <i class="{{ $notification['icon'] }} text-sm"></i>
+                                        </span>
+                                        <span class="min-w-0">
+                                            <span class="block text-sm font-bold text-slate-900 truncate">{{ $notification['title'] }}</span>
+                                            <span class="block text-xs text-slate-500 mt-1">{{ $notification['message'] }}</span>
+                                        </span>
+                                    </a>
+                                @empty
+                                    <div class="p-6 text-center">
+                                        <p class="text-sm font-bold text-slate-800">Tidak ada notifikasi</p>
+                                        <p class="text-xs text-slate-500 mt-1">Semua aktivitas penting aman.</p>
+                                    </div>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- User Profile Dropdown -->
                     <div class="relative group">
@@ -769,6 +923,31 @@ document.querySelectorAll('[data-toast]').forEach((toast, index) => {
     setTimeout(() => toast.classList.add('is-visible'), 80 + index * 90);
     setTimeout(() => hide(), 4200 + index * 300);
     closeBtn?.addEventListener('click', hide);
+});
+
+document.querySelectorAll('[data-auto-filter]').forEach((form) => {
+    let timer;
+    let isSubmitting = false;
+
+    const submitForm = (delay = 0) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            if (isSubmitting) return;
+            isSubmitting = true;
+            form.requestSubmit();
+        }, delay);
+    };
+
+    form.querySelectorAll('input, select').forEach((field) => {
+        if (field.type === 'hidden') return;
+
+        if (field.tagName === 'SELECT' || ['date', 'checkbox', 'radio'].includes(field.type)) {
+            field.addEventListener('change', () => submitForm());
+            return;
+        }
+
+        field.addEventListener('input', () => submitForm(450));
+    });
 });
 </script>
 

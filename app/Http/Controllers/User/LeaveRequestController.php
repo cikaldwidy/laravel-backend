@@ -17,6 +17,17 @@ class LeaveRequestController extends Controller
 
         $requests = LeaveRequest::query()
             ->where('user_id', $user->id)
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = trim($request->search);
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('jenis_izin', 'like', '%' . $search . '%')
+                        ->orWhere('keterangan', 'like', '%' . $search . '%')
+                        ->orWhere('catatan_admin', 'like', '%' . $search . '%');
+                });
+            })
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
+            ->when($request->filled('jenis_izin'), fn ($query) => $query->where('jenis_izin', $request->jenis_izin))
             ->when($request->filled('date_from'), fn ($query) => $query->whereDate('tanggal_selesai', '>=', $request->date_from))
             ->when($request->filled('date_to'), fn ($query) => $query->whereDate('tanggal_mulai', '<=', $request->date_to))
             ->latest('tanggal_mulai')

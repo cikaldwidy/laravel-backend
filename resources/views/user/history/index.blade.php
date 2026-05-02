@@ -11,7 +11,23 @@
         ])
 
         <main class="px-4 pt-4 space-y-4">
-            <form method="GET" class="user-card p-4 space-y-3">
+            <form method="GET" data-auto-filter class="user-card p-4 space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Cari</label>
+                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari status presensi..." class="user-field mt-1">
+                </div>
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Status</label>
+                    <select name="status" class="user-field mt-1">
+                        <option value="">Semua Status</option>
+                        <option value="hadir" @selected(request('status') === 'hadir')>Hadir</option>
+                        <option value="normal" @selected(request('status') === 'normal')>Normal</option>
+                        <option value="telat" @selected(request('status') === 'telat')>Telat</option>
+                        <option value="terlambat" @selected(request('status') === 'terlambat')>Terlambat</option>
+                        <option value="izin" @selected(request('status') === 'izin')>Izin</option>
+                        <option value="pulang_cepat" @selected(request('status') === 'pulang_cepat')>Pulang Cepat</option>
+                    </select>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-[11px] font-semibold text-slate-500">Dari</label>
@@ -22,10 +38,9 @@
                         <input type="date" name="date_to" value="{{ request('date_to') }}" class="user-field mt-1">
                     </div>
                 </div>
-                <button class="user-btn-primary w-full">
-                    <i class="fa-solid fa-filter"></i>
-                    Filter
-                </button>
+                @if(request()->hasAny(['search', 'status', 'date_from', 'date_to']))
+                    <a href="{{ route('history.index') }}" class="user-btn-secondary w-full">Reset</a>
+                @endif
             </form>
 
             <section class="space-y-3">

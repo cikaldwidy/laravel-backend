@@ -25,6 +25,16 @@ class ShiftController extends Controller
         $schedules = ShiftSchedule::query()
             ->where('user_id', auth()->id())
             ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])
+            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = trim($request->search);
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('status', 'like', '%' . $search . '%')
+                        ->orWhere('jam_masuk', 'like', '%' . $search . '%')
+                        ->orWhere('jam_pulang', 'like', '%' . $search . '%');
+                });
+            })
             ->orderBy('tanggal')
             ->orderBy('jam_masuk')
             ->get();

@@ -18,7 +18,32 @@
                 </div>
             @endif
 
-            <form method="GET" class="user-card p-4 space-y-3">
+            <form method="GET" data-auto-filter class="user-card p-4 space-y-3">
+                <div>
+                    <label class="text-[11px] font-semibold text-slate-500">Cari</label>
+                    <input type="search" name="search" value="{{ request('search') }}" placeholder="Cari jenis, keterangan, catatan..." class="user-field mt-1">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Jenis</label>
+                        <select name="jenis_izin" class="user-field mt-1">
+                            <option value="">Semua Jenis</option>
+                            <option value="sakit" @selected(request('jenis_izin') === 'sakit')>Sakit</option>
+                            <option value="cuti" @selected(request('jenis_izin') === 'cuti')>Cuti</option>
+                            <option value="izin" @selected(request('jenis_izin') === 'izin')>Izin</option>
+                            <option value="dinas" @selected(request('jenis_izin') === 'dinas')>Dinas Luar</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-semibold text-slate-500">Status</label>
+                        <select name="status" class="user-field mt-1">
+                            <option value="">Semua Status</option>
+                            <option value="pending" @selected(request('status') === 'pending')>Pending</option>
+                            <option value="approved" @selected(request('status') === 'approved')>Approved</option>
+                            <option value="rejected" @selected(request('status') === 'rejected')>Rejected</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-[11px] font-semibold text-slate-500">Dari</label>
@@ -29,10 +54,9 @@
                         <input type="date" name="date_to" value="{{ request('date_to') }}" class="user-field mt-1">
                     </div>
                 </div>
-                <button class="user-btn-primary w-full">
-                    <i class="fa-solid fa-filter"></i>
-                    Filter
-                </button>
+                @if(request()->hasAny(['search', 'jenis_izin', 'status', 'date_from', 'date_to']))
+                    <a href="{{ route('leave_requests.index') }}" class="user-btn-secondary w-full">Reset</a>
+                @endif
             </form>
 
             <section class="space-y-3">

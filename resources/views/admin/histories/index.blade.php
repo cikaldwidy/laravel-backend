@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="space-y-6">
-    <form method="GET" class="bg-white p-4 rounded-xl shadow grid md:grid-cols-4 gap-3">
+    <form method="GET" data-auto-filter class="bg-white p-4 rounded-xl shadow grid md:grid-cols-3 gap-3">
         <select name="user_id" class="border rounded px-3 py-2">
             <option value="">Semua User</option>
             @foreach($users as $user)
@@ -18,7 +18,6 @@
             @endforeach
         </select>
         <input type="date" name="tanggal" value="{{ request('tanggal') }}" class="border rounded px-3 py-2">
-        <button class="bg-blue-600 text-white rounded px-4 py-2 font-semibold">Filter</button>
     </form>
 
     <div class="bg-white rounded-xl shadow overflow-x-auto">

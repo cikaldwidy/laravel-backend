@@ -22,6 +22,15 @@ class ShiftSwapController extends Controller
                 $q->where('requester_id', auth()->id())
                     ->orWhere('target_user_id', auth()->id());
             })
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = trim($request->search);
+
+                $query->where(function ($q) use ($search) {
+                    $q->where('note', 'like', '%' . $search . '%')
+                        ->orWhereHas('requester', fn ($user) => $user->where('name', 'like', '%' . $search . '%'))
+                        ->orWhereHas('targetUser', fn ($user) => $user->where('name', 'like', '%' . $search . '%'));
+                });
+            })
             ->latest();
 
         if (in_array($status, ['pending', 'approved', 'rejected'], true)) {

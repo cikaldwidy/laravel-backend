@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="space-y-6">
-    <form method="GET" class="bg-white p-4 rounded-xl shadow grid md:grid-cols-4 gap-3">
+    <form method="GET" data-auto-filter class="bg-white p-4 rounded-xl shadow grid md:grid-cols-4 gap-3">
         <select name="status" class="border rounded px-3 py-2">
             <option value="">Semua Status</option>
             @foreach(['pending','approved','rejected'] as $status)
@@ -24,7 +24,6 @@
             @endforeach
         </select>
         <input type="date" name="tanggal" value="{{ request('tanggal') }}" class="border rounded px-3 py-2">
-        <button class="bg-blue-600 text-white rounded px-4 py-2 font-semibold md:col-span-4">Filter</button>
     </form>
 
     <div class="bg-white rounded-xl shadow overflow-x-auto">
