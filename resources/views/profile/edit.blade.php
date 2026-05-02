@@ -63,6 +63,17 @@
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
+                    @php
+                        $departmentOptions = $departments->map(fn ($department) => [
+                            'id' => $department->id,
+                            'name' => $department->nama_departemen,
+                            'units' => $department->units->map(fn ($unit) => ['id' => $unit->id, 'name' => $unit->nama_unit])->values(),
+                            'positions' => $department->positions->map(fn ($position) => ['id' => $position->id, 'name' => $position->nama_jabatan])->values(),
+                        ])->values();
+                        $selectedDepartmentId = old('department_id', $employeeDetail?->department_id);
+                        $selectedUnitId = old('unit_id', $employeeDetail?->unit_id);
+                        $selectedPositionId = old('position_id', $employeeDetail?->position_id);
+                    @endphp
                     <div>
                         <label class="text-xs font-semibold text-slate-600">NIP</label>
                         <input name="nip" value="{{ old('nip', $employeeDetail?->nip) }}" class="user-field mt-1">
@@ -83,13 +94,27 @@
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-xs font-semibold text-slate-600">Departemen</label>
-                        <input name="departemen" value="{{ old('departemen', $employeeDetail?->departemen) }}" class="user-field mt-1">
-                        @error('departemen') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        <select name="department_id" id="department_id" class="user-field mt-1">
+                            <option value="">Pilih departemen</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department->id }}" @selected((string) $selectedDepartmentId === (string) $department->id)>{{ $department->nama_departemen }}</option>
+                            @endforeach
+                        </select>
+                        @error('department_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">Unit</label>
+                        <select name="unit_id" id="unit_id" class="user-field mt-1">
+                            <option value="">Pilih unit</option>
+                        </select>
+                        @error('unit_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-slate-600">Jabatan</label>
-                        <input name="jabatan" value="{{ old('jabatan', $employeeDetail?->jabatan) }}" class="user-field mt-1">
-                        @error('jabatan') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                        <select name="position_id" id="position_id" class="user-field mt-1">
+                            <option value="">Pilih jabatan</option>
+                        </select>
+                        @error('position_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
@@ -116,4 +141,41 @@
         @include('user.partials.bottom-nav', ['active' => ''])
     </div>
 </div>
+<script>
+const departmentOptions = @json($departmentOptions);
+const departmentSelect = document.getElementById('department_id');
+const unitSelect = document.getElementById('unit_id');
+const positionSelect = document.getElementById('position_id');
+const selectedUnitId = @json((string) $selectedUnitId);
+const selectedPositionId = @json((string) $selectedPositionId);
+
+function fillDependentOptions(select, items, selectedValue, placeholder) {
+    select.innerHTML = '';
+
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = placeholder;
+    select.appendChild(placeholderOption);
+
+    items.forEach((item) => {
+        const option = document.createElement('option');
+        option.value = String(item.id);
+        option.textContent = item.name;
+        option.selected = String(selectedValue) === String(item.id);
+        select.appendChild(option);
+    });
+}
+
+function syncDepartmentRelations(useStoredSelection = false) {
+    const selectedDepartment = departmentOptions.find((department) => String(department.id) === departmentSelect.value);
+    const unitValue = useStoredSelection ? selectedUnitId : unitSelect.value;
+    const positionValue = useStoredSelection ? selectedPositionId : positionSelect.value;
+
+    fillDependentOptions(unitSelect, selectedDepartment?.units ?? [], unitValue, 'Pilih unit');
+    fillDependentOptions(positionSelect, selectedDepartment?.positions ?? [], positionValue, 'Pilih jabatan');
+}
+
+departmentSelect?.addEventListener('change', () => syncDepartmentRelations(false));
+syncDepartmentRelations(true);
+</script>
 @endsection

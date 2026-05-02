@@ -73,7 +73,7 @@ class ReportController extends Controller
     private function buildRows(Request $request, Carbon $tanggalMulai, Carbon $tanggalSelesai): array
     {
         $users = User::query()
-            ->with(['employeeDetail.unit', 'leaveRequests'])
+            ->with(['employeeDetail.department', 'employeeDetail.unit', 'leaveRequests'])
             ->where('role', 'user')
             ->when($request->filled('user_id'), fn ($query) => $query->where('id', $request->user_id))
             ->when($request->filled('unit_id'), function ($query) use ($request) {
@@ -127,7 +127,7 @@ class ReportController extends Controller
                 $rows[] = [
                     'tanggal' => $cursor->format('Y-m-d'),
                     'nama' => $user->name,
-                    'unit' => $user->employeeDetail?->unit?->nama_unit ?? ($user->employeeDetail?->departemen ?? '-'),
+                    'unit' => $user->employeeDetail?->unit?->nama_unit ?? ($user->employeeDetail?->department?->nama_departemen ?? $user->employeeDetail?->departemen ?? '-'),
                     'shift' => $shift ? ($shift->nama_shift . ' (' . $shift->jam_masuk->format('H:i') . '-' . $shift->jam_pulang->format('H:i') . ')') : '-',
                     'check_in' => $presensi?->jam_masuk?->format('H:i') ?? '-',
                     'check_out' => $presensi?->jam_keluar?->format('H:i') ?? '-',

@@ -47,7 +47,7 @@
                                     {{ ucfirst($u->role) }}
                                 </span>
                             </td>
-                            <td class="p-3">{{ $u->employeeDetail?->unit?->nama_unit ?? '-' }}</td>
+                            <td class="p-3">{{ $u->employeeDetail?->unit?->nama_unit ?? $u->employeeDetail?->department?->nama_departemen ?? '-' }}</td>
                             <td class="p-3">
                                 <span class="px-2 py-1 rounded text-xs font-semibold {{ $biodataComplete ? 'bg-green-100 text-green-700' : (($hasProfile || $hasDetail) ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
                                     {{ $biodataComplete ? 'Lengkap' : (($hasProfile || $hasDetail) ? 'Sebagian' : 'Belum ada') }}
@@ -92,8 +92,8 @@
                                             <div class="mt-3 space-y-2">
                                                 <p><span class="text-gray-500">NIP:</span> {{ $detail?->nip ?? '-' }}</p>
                                                 <p><span class="text-gray-500">Unit:</span> {{ $detail?->unit?->nama_unit ?? '-' }}</p>
-                                                <p><span class="text-gray-500">Departemen:</span> {{ $detail?->departemen ?? '-' }}</p>
-                                                <p><span class="text-gray-500">Jabatan:</span> {{ $detail?->jabatan ?? '-' }}</p>
+                                                <p><span class="text-gray-500">Departemen:</span> {{ $detail?->department?->nama_departemen ?? $detail?->departemen ?? '-' }}</p>
+                                                <p><span class="text-gray-500">Jabatan:</span> {{ $detail?->position?->nama_jabatan ?? $detail?->jabatan ?? '-' }}</p>
                                                 <p><span class="text-gray-500">Status:</span> {{ $detail?->status_kerja ? ucfirst($detail->status_kerja) : '-' }}</p>
                                             </div>
                                         </div>

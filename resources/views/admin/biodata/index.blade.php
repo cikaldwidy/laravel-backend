@@ -41,7 +41,7 @@
                         </td>
                         <td class="p-3">
                             <div>{{ $detail?->unit?->nama_unit ?? '-' }}</div>
-                            <div class="text-xs text-gray-500">{{ $detail?->jabatan ?? '-' }}</div>
+                            <div class="text-xs text-gray-500">{{ $detail?->position?->nama_jabatan ?? $detail?->jabatan ?? '-' }}</div>
                         </td>
                         <td class="p-3">
                             <span class="px-2 py-1 rounded text-xs font-semibold {{ $badge }}">{{ $status }}</span>

@@ -44,7 +44,7 @@
                 @forelse($requests as $item)
                     <tr>
                         <td class="p-3">{{ $item->user?->name }}</td>
-                        <td class="p-3">{{ $item->user?->employeeDetail?->unit?->nama_unit ?? $item->user?->employeeDetail?->departemen ?? '-' }}</td>
+                        <td class="p-3">{{ $item->user?->employeeDetail?->unit?->nama_unit ?? $item->user?->employeeDetail?->department?->nama_departemen ?? $item->user?->employeeDetail?->departemen ?? '-' }}</td>
                         <td class="p-3">{{ ucfirst($item->jenis_izin) }}</td>
                         <td class="p-3">{{ $item->tanggal_mulai->format('d/m/Y') }} - {{ $item->tanggal_selesai->format('d/m/Y') }}</td>
                         <td class="p-3">{{ ucfirst($item->status) }}</td>

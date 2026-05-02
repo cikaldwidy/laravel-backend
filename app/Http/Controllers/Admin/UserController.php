@@ -13,7 +13,7 @@ class UserController extends Controller
     // ================= LIST =================
     public function index()
     {
-        $users = User::with(['employeeDetail.unit', 'userProfile', 'faceEmbedding'])->latest()->get();
+        $users = User::with(['employeeDetail.department', 'employeeDetail.unit', 'employeeDetail.position', 'userProfile', 'faceEmbedding'])->latest()->get();
         return view('admin.users.index', compact('users'));
     }
 

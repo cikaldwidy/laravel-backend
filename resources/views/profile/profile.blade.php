@@ -33,7 +33,7 @@
                         <p class="font-extrabold text-slate-800 truncate">{{ $user->name }}</p>
                         <p class="text-xs text-slate-500 truncate">{{ $user->email }}</p>
                         <p class="mt-2 inline-flex px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold">
-                            {{ $employeeDetail?->unit?->nama_unit ?? 'User' }}
+                            {{ $employeeDetail?->unit?->nama_unit ?? $employeeDetail?->department?->nama_departemen ?? 'User' }}
                         </p>
                     </div>
                     @if(auth()->user()?->role === 'admin')
@@ -83,11 +83,15 @@
                     </div>
                     <div class="user-soft-card">
                         <p class="text-[11px] text-slate-500">Departemen</p>
-                        <p class="font-bold text-slate-800">{{ $employeeDetail?->departemen ?? '-' }}</p>
+                        <p class="font-bold text-slate-800">{{ $employeeDetail?->department?->nama_departemen ?? $employeeDetail?->departemen ?? '-' }}</p>
+                    </div>
+                    <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">Unit</p>
+                        <p class="font-bold text-slate-800">{{ $employeeDetail?->unit?->nama_unit ?? '-' }}</p>
                     </div>
                     <div class="user-soft-card">
                         <p class="text-[11px] text-slate-500">Jabatan</p>
-                        <p class="font-bold text-slate-800">{{ $employeeDetail?->jabatan ?? '-' }}</p>
+                        <p class="font-bold text-slate-800">{{ $employeeDetail?->position?->nama_jabatan ?? $employeeDetail?->jabatan ?? '-' }}</p>
                     </div>
                 </div>
             </section>

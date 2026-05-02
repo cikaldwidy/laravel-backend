@@ -37,7 +37,7 @@
                 @forelse($histories as $item)
                     <tr>
                         <td class="p-3">{{ $item->user?->name ?? '-' }}</td>
-                        <td class="p-3">{{ $item->user?->employeeDetail?->unit?->nama_unit ?? $item->user?->employeeDetail?->departemen ?? '-' }}</td>
+                        <td class="p-3">{{ $item->user?->employeeDetail?->unit?->nama_unit ?? $item->user?->employeeDetail?->department?->nama_departemen ?? $item->user?->employeeDetail?->departemen ?? '-' }}</td>
                         <td class="p-3">{{ $item->tanggal->format('d/m/Y') }}</td>
                         <td class="p-3">{{ $item->jam_masuk?->format('H:i') ?? '-' }}</td>
                         <td class="p-3">{{ $item->jam_keluar?->format('H:i') ?? '-' }}</td>

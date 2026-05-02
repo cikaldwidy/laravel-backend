@@ -17,6 +17,8 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\WorkSettingController;
 use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\UserShiftController;
+use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\UnitController;
 use App\Http\Controllers\Admin\LeaveRequestController as AdminLeaveRequestController;
 use App\Http\Controllers\Admin\AttendanceHistoryController;
@@ -90,6 +92,15 @@ Route::middleware(['auth', 'role:admin'])
         Route::post('/units', [UnitController::class, 'store'])->name('units.store');
         Route::put('/units/{unit}', [UnitController::class, 'update'])->name('units.update');
         Route::delete('/units/{unit}', [UnitController::class, 'destroy'])->name('units.destroy');
+        Route::get('/departments', [DepartmentController::class, 'index'])->name('departments.index');
+        Route::post('/departments', [DepartmentController::class, 'store'])->name('departments.store');
+        Route::delete('/departments/bulk-delete', [DepartmentController::class, 'bulkDelete'])->name('departments.bulk-delete');
+        Route::put('/departments/{department}', [DepartmentController::class, 'update'])->name('departments.update');
+        Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
+        Route::get('/positions', [PositionController::class, 'index'])->name('positions.index');
+        Route::post('/positions', [PositionController::class, 'store'])->name('positions.store');
+        Route::put('/positions/{position}', [PositionController::class, 'update'])->name('positions.update');
+        Route::delete('/positions/{position}', [PositionController::class, 'destroy'])->name('positions.destroy');
 
         Route::get('/settings/work', [WorkSettingController::class, 'edit'])->name('settings.work.edit');
         Route::post('/settings/work', [WorkSettingController::class, 'update'])->name('settings.work.update');

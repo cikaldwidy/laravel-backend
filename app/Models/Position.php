@@ -6,11 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Unit extends Model
+class Position extends Model
 {
     protected $fillable = [
         'department_id',
-        'nama_unit',
+        'nama_jabatan',
     ];
 
     public function department(): BelongsTo
@@ -21,10 +21,5 @@ class Unit extends Model
     public function employeeDetails(): HasMany
     {
         return $this->hasMany(EmployeeDetail::class);
-    }
-
-    public function announcements(): HasMany
-    {
-        return $this->hasMany(Announcement::class);
     }
 }
