@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="space-y-6">
-    <div class="bg-white p-6 rounded-xl shadow max-w-2xl">
+    <div class="bg-white p-6 rounded-xl shadow max-w-2xl mx-auto">
         <h2 class="text-lg font-bold text-gray-800 mb-4">Tambah Unit</h2>
         <form method="POST" action="{{ route('admin.units.store') }}" class="grid md:grid-cols-[0.85fr_1.15fr_auto] gap-3">
             @csrf

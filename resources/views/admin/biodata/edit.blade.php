@@ -3,7 +3,7 @@
 @section('title', 'Edit Biodata Pegawai')
 
 @section('content')
-<div class="bg-white p-6 rounded-xl shadow max-w-5xl space-y-5">
+<div class="bg-white p-6 rounded-xl shadow max-w-5xl mx-auto space-y-5">
     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
         <div>
             <h2 class="font-bold text-lg text-gray-800">Biodata: {{ $user->name }}</h2>

@@ -5,7 +5,7 @@
 @section('content')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-<div class="max-w-5xl">
+<div class="max-w-5xl mx-auto">
     <div class="bg-white rounded-lg shadow">
         <div class="p-5 border-b">
             <h2 class="font-bold text-lg text-gray-800">Lokasi Kantor & Jam Default</h2>

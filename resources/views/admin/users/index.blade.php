@@ -8,7 +8,7 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
             <div>
                 <h2 class="font-bold text-lg text-gray-800">Akun Pegawai</h2>
-                <p class="text-sm text-gray-500">Kelola akses login, role, dan status kelengkapan data pegawai.</p>
+                <p class="text-sm text-gray-500">Kelola akses login dan status kelengkapan data pegawai.</p>
             </div>
             <a href="{{ route('admin.users.create') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold text-sm inline-flex items-center gap-2">
                 <i class="fa-solid fa-plus"></i>
@@ -16,8 +16,8 @@
             </a>
         </div>
 
-        <form method="GET" data-auto-filter class="mb-5 grid md:grid-cols-5 gap-3">
-            <div class="md:col-span-2">
+        <form method="GET" data-auto-filter class="mb-5 grid md:grid-cols-4 gap-3">
+            <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-2">Cari Pegawai</label>
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
@@ -29,14 +29,6 @@
                         class="w-full border border-gray-200 rounded-md pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-gray-500 transition text-gray-700"
                     >
                 </div>
-            </div>
-            <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-2">Role</label>
-                <select name="role" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 transition bg-white text-gray-700">
-                    <option value="">Semua Role</option>
-                    <option value="user" @selected(request('role') === 'user')>User</option>
-                    <option value="admin" @selected(request('role') === 'admin')>Admin</option>
-                </select>
             </div>
             <div>
                 <label class="block text-xs font-semibold text-gray-500 mb-2">Unit</label>
@@ -64,8 +56,8 @@
                     <option value="belum" @selected(request('wajah') === 'belum')>Belum</option>
                 </select>
             </div>
-            @if(request()->hasAny(['search', 'role', 'unit', 'biodata', 'wajah']))
-                <div class="md:col-span-5">
+            @if(request()->hasAny(['search', 'unit', 'biodata', 'wajah']))
+                <div class="md:col-span-4">
                     <a href="{{ route('admin.users.index') }}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md hover:bg-gray-100 transition border border-gray-300">
                         <i class="fas fa-xmark text-xs"></i> Reset
                     </a>
@@ -78,7 +70,6 @@
                 <thead class="bg-gray-50 text-gray-600">
                     <tr>
                         <th class="p-3 text-left">Pegawai</th>
-                        <th class="p-3 text-left">Role</th>
                         <th class="p-3 text-left">Unit</th>
                         <th class="p-3 text-left">Biodata</th>
                         <th class="p-3 text-left">Wajah</th>
@@ -99,11 +90,6 @@
                                 <div class="font-semibold text-gray-800">{{ $u->name }}</div>
                                 <div class="text-xs text-gray-500">{{ $u->email }}</div>
                             </td>
-                            <td class="p-3">
-                                <span class="px-2 py-1 rounded text-xs font-semibold {{ $u->role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700' }}">
-                                    {{ ucfirst($u->role) }}
-                                </span>
-                            </td>
                             <td class="p-3">{{ $u->employeeDetail?->unit?->nama_unit ?? $u->employeeDetail?->department?->nama_departemen ?? '-' }}</td>
                             <td class="p-3">
                                 <span class="px-2 py-1 rounded text-xs font-semibold {{ $biodataComplete ? 'bg-green-100 text-green-700' : (($hasProfile || $hasDetail) ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
@@ -118,12 +104,10 @@
                             <td class="p-3">
                                 <div class="flex flex-wrap gap-3">
                                     <a href="{{ route('admin.users.edit', $u->id) }}" class="text-blue-600 font-semibold">Edit Akun</a>
-                                    @if($u->role === 'user')
-                                        <a href="{{ route('admin.biodata.edit', $u) }}" class="text-emerald-600 font-semibold">
-                                            {{ $biodataComplete ? 'Edit Biodata' : 'Lengkapi Biodata' }}
-                                        </a>
-                                        <button type="button" class="text-slate-700 font-semibold" data-toggle-detail="user-detail-{{ $u->id }}">Detail</button>
-                                    @endif
+                                    <a href="{{ route('admin.biodata.edit', $u) }}" class="text-emerald-600 font-semibold">
+                                        {{ $biodataComplete ? 'Edit Biodata' : 'Lengkapi Biodata' }}
+                                    </a>
+                                    <button type="button" class="text-slate-700 font-semibold" data-toggle-detail="user-detail-{{ $u->id }}">Detail</button>
                                     <form method="POST" action="{{ route('admin.users.destroy', $u->id) }}" onsubmit="return confirm('Hapus akun ini?')">
                                         @csrf
                                         <button class="text-red-600 font-semibold" @disabled($u->id === auth()->id())>Hapus</button>
@@ -131,9 +115,8 @@
                                 </div>
                             </td>
                         </tr>
-                        @if($u->role === 'user')
-                            <tr id="user-detail-{{ $u->id }}" class="hidden bg-gray-50">
-                                <td colspan="6" class="p-4">
+                        <tr id="user-detail-{{ $u->id }}" class="hidden bg-gray-50">
+                                <td colspan="5" class="p-4">
                                     <div class="grid md:grid-cols-3 gap-4 text-sm">
                                         <div class="bg-white border rounded-lg p-4">
                                             <p class="text-xs font-semibold text-gray-500 uppercase">Profil</p>
@@ -168,11 +151,10 @@
                                         </div>
                                     </div>
                                 </td>
-                            </tr>
-                        @endif
+                        </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="p-6 text-center text-gray-500">Belum ada akun.</td>
+                            <td colspan="5" class="p-6 text-center text-gray-500">Belum ada akun pegawai.</td>
                         </tr>
                     @endforelse
                 </tbody>

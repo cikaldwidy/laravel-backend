@@ -14,6 +14,7 @@ use App\Http\Controllers\User\UserBiodataController;
 use App\Http\Controllers\User\UserDashboardController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\AdminAccountController;
 use App\Http\Controllers\Admin\WorkSettingController;
 use App\Http\Controllers\Admin\ShiftController;
 use App\Http\Controllers\Admin\UserShiftController;
@@ -106,6 +107,12 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/settings/work', [WorkSettingController::class, 'edit'])->name('settings.work.edit');
         Route::post('/settings/work', [WorkSettingController::class, 'update'])->name('settings.work.update');
+        Route::get('/settings/admin-accounts', [AdminAccountController::class, 'index'])->name('settings.admin_accounts.index');
+        Route::get('/settings/admin-accounts/create', [AdminAccountController::class, 'create'])->name('settings.admin_accounts.create');
+        Route::post('/settings/admin-accounts', [AdminAccountController::class, 'store'])->name('settings.admin_accounts.store');
+        Route::get('/settings/admin-accounts/{adminAccount}/edit', [AdminAccountController::class, 'edit'])->name('settings.admin_accounts.edit');
+        Route::put('/settings/admin-accounts/{adminAccount}', [AdminAccountController::class, 'update'])->name('settings.admin_accounts.update');
+        Route::delete('/settings/admin-accounts/{adminAccount}', [AdminAccountController::class, 'destroy'])->name('settings.admin_accounts.destroy');
         Route::get('/settings/features', [FeatureSettingController::class, 'index'])->name('settings.features.index');
         Route::post('/settings/features', [FeatureSettingController::class, 'update'])->name('settings.features.update');
         Route::get('/fitur/{featureKey}', [FeaturePageController::class, 'admin'])

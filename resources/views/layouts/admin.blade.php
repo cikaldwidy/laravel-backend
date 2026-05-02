@@ -588,6 +588,7 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-settings" class="submenu {{ $settingsOpen ? 'is-open' : '' }}">
+                    <a href="{{ route('admin.settings.admin_accounts.index') }}" class="submenu-item {{ request()->routeIs('admin.settings.admin_accounts.*') ? 'active' : '' }}">Akun Admin</a>
                     <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.work.*') ? 'active' : '' }}">Jam & Lokasi Kerja</a>
                     <a href="{{ route('admin.settings.features.index') }}" class="submenu-item {{ request()->routeIs('admin.settings.features.*') ? 'active' : '' }}">Pengaturan Fitur</a>
                 </div>
@@ -679,11 +680,11 @@
                                 <p class="text-sm font-semibold text-gray-800">{{ auth()->user()->name }}</p>
                                 <p class="text-xs text-gray-500">{{ auth()->user()->email }}</p>
                             </div>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                            <a href="{{ route('admin.settings.admin_accounts.edit', auth()->user()) }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                 <i class="fas fa-user-circle w-4"></i>
                                 Profile
                             </a>
-                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                            <a href="{{ route('admin.settings.admin_accounts.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
                                 <i class="fas fa-cog w-4"></i>
                                 Settings
                             </a>

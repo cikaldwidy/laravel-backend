@@ -15,6 +15,7 @@ class UserController extends Controller
     {
         $users = User::query()
             ->with(['employeeDetail.department', 'employeeDetail.unit', 'employeeDetail.position', 'userProfile', 'faceEmbedding'])
+            ->where('role', 'user')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = trim($request->search);
 
@@ -35,7 +36,6 @@ class UserController extends Controller
                         });
                 });
             })
-            ->when($request->filled('role'), fn ($query) => $query->where('role', $request->role))
             ->when($request->filled('unit'), function ($query) use ($request) {
                 $query->whereHas('employeeDetail', function ($detail) use ($request) {
                     $detail->whereHas('unit', fn ($unit) => $unit->where('nama_unit', $request->unit))
@@ -88,14 +88,13 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
-            'role' => ['required', Rule::in(['admin', 'user'])],
         ]);
 
         User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
+            'role' => 'user',
         ]);
 
         return redirect()->route('admin.users.index')
@@ -105,25 +104,23 @@ class UserController extends Controller
     // ================= EDIT =================
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::query()->where('role', 'user')->findOrFail($id);
         return view('admin.users.edit', compact('user'));
     }
 
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::query()->where('role', 'user')->findOrFail($id);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'role' => ['required', Rule::in(['admin', 'user'])],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
         $data = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'role' => $validated['role'],
         ];
 
         // 🔥 hanya update password kalau diisi
@@ -140,7 +137,7 @@ class UserController extends Controller
     // ================= DELETE =================
     public function destroy($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::query()->where('role', 'user')->findOrFail($id);
 
         // 🔥 CEGAH HAPUS DIRI SENDIRI
         if ($user->id == auth()->id()) {

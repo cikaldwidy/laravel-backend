@@ -3,7 +3,7 @@
 @section('title', 'Tambah Shift')
 
 @section('content')
-<div class="max-w-xl">
+<div class="max-w-xl mx-auto">
     <div class="bg-white rounded-lg shadow p-6 space-y-4">
         <div>
             <h2 class="text-lg font-bold text-gray-800">Tambah Shift</h2>
@@ -40,4 +40,3 @@
     </div>
 </div>
 @endsection
-
