@@ -537,7 +537,8 @@
                 </button>
                 <div id="menu-schedule" class="submenu {{ $scheduleOpen ? 'is-open' : '' }}">
                     <a href="{{ route('admin.shifts.index') }}" class="submenu-item {{ request()->routeIs('admin.shifts.*') ? 'active' : '' }}">Master Shift</a>
-                    <a href="{{ route('admin.shift_management.schedules') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.schedules*') ? 'active' : '' }}">Jadwal Pegawai</a>
+                    <a href="{{ route('admin.shift_management.schedules') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.schedules') ? 'active' : '' }}">Jadwal Pegawai</a>
+                    <a href="{{ route('admin.shift_management.schedules.create') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.schedules.create') ? 'active' : '' }}">Tambah Jadwal</a>
                     <a href="{{ route('admin.shift_management.swaps') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.swaps*') ? 'active' : '' }}">Tukar Shift</a>
                 </div>
             </div>
