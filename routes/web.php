@@ -132,10 +132,13 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/user-shifts', [UserShiftController::class, 'index'])->name('user_shifts.index');
         Route::post('/user-shifts', [UserShiftController::class, 'store'])->name('user_shifts.store');
         Route::get('/shift-management/schedules', [ShiftManagementController::class, 'schedules'])->name('shift_management.schedules');
+        Route::get('/shift-management/schedules/create', [ShiftManagementController::class, 'createSchedule'])->name('shift_management.schedules.create');
         Route::post('/shift-management/schedules', [ShiftManagementController::class, 'storeSchedule'])->name('shift_management.schedules.store');
         Route::put('/shift-management/schedules/{shiftSchedule}', [ShiftManagementController::class, 'updateSchedule'])->name('shift_management.schedules.update');
         Route::delete('/shift-management/schedules/{shiftSchedule}', [ShiftManagementController::class, 'destroySchedule'])->name('shift_management.schedules.destroy');
         Route::post('/shift-management/schedules/bulk-assign', [ShiftManagementController::class, 'bulkAssign'])->name('shift_management.schedules.bulk_assign');
+        Route::get('/shift-management/schedules/import-template', [ShiftManagementController::class, 'downloadImportTemplate'])->name('shift_management.schedules.import_template');
+        Route::post('/shift-management/schedules/import-unit', [ShiftManagementController::class, 'importUnitSchedules'])->name('shift_management.schedules.import_unit');
         Route::get('/shift-management/swaps', [ShiftManagementController::class, 'swaps'])->name('shift_management.swaps');
         Route::post('/shift-management/swaps/{shiftSwap}/approve', [ShiftManagementController::class, 'approveSwap'])->name('shift_management.swaps.approve');
         Route::post('/shift-management/swaps/{shiftSwap}/reject', [ShiftManagementController::class, 'rejectSwap'])->name('shift_management.swaps.reject');

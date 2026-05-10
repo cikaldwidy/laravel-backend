@@ -3,186 +3,152 @@
 @section('title', 'Manajemen Shift')
 
 @section('content')
-<div class="space-y-5">
-    <div class="bg-white rounded-md shadow border border-gray-200 p-4">
-        <form method="GET" data-auto-filter class="grid md:grid-cols-4 gap-3 items-end">
+<style>
+    #main-content,
+    #main-content > .flex-1,
+    .schedule-page,
+    .schedule-table-card {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+
+    .schedule-table-scroll {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .schedule-table {
+        width: max-content;
+    }
+</style>
+@php
+    $scheduleTableMinWidth = 240 + (count($scheduleMatrix['dates']) * 44) + 160;
+@endphp
+<div class="schedule-page space-y-5 w-full min-w-0 max-w-full overflow-x-hidden">
+    <div class="bg-white rounded-md shadow border border-gray-200 p-4 w-full min-w-0">
+        <form method="GET" data-auto-filter class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-end w-full min-w-0">
             <div>
                 <label class="text-xs font-semibold text-gray-600">Tanggal</label>
-                <input type="date" name="tanggal" value="{{ $tanggal }}" class="w-full border rounded-md px-3 py-2 text-sm">
+                <input type="date" name="tanggal" value="{{ $tanggal }}" class="w-full min-w-0 border rounded-md px-3 py-2 text-sm">
             </div>
             <div>
-                <label class="text-xs font-semibold text-gray-600">User</label>
-                <select name="user_id" class="w-full border rounded-md px-3 py-2 text-sm">
-                    <option value="">Semua User</option>
-                    @foreach($users as $user)
-                        <option value="{{ $user->id }}" @selected((string)request('user_id') === (string)$user->id)>{{ $user->name }}</option>
+                <label class="text-xs font-semibold text-gray-600">Unit</label>
+                <select name="unit_id" class="w-full min-w-0 border rounded-md px-3 py-2 text-sm">
+                    <option value="">Semua Unit</option>
+                    @foreach($units as $unit)
+                        <option value="{{ $unit->id }}" @selected((string)request('unit_id') === (string)$unit->id)>{{ $unit->nama_unit }}</option>
                     @endforeach
                 </select>
             </div>
-            <div class="md:col-span-2 flex gap-2">
+            <div>
+                <label class="text-xs font-semibold text-gray-600">User</label>
+                <select name="user_id" class="w-full min-w-0 border rounded-md px-3 py-2 text-sm">
+                    <option value="">Semua User</option>
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}" @selected((string)request('user_id') === (string)$user->id)>{{ $user->name }}{{ $user->employeeDetail?->unit?->nama_unit ? ' - '.$user->employeeDetail->unit->nama_unit : '' }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="flex gap-2">
+                <a href="{{ route('admin.shift_management.schedules.create', ['tanggal' => $tanggal]) }}" class="bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-semibold">Tambah Jadwal</a>
                 <a href="{{ route('admin.shift_management.schedules') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-semibold">Reset</a>
             </div>
         </form>
     </div>
 
-    <div class="grid lg:grid-cols-2 gap-4">
-        <div class="bg-white rounded-md shadow border border-gray-200 p-4">
-            <h2 class="text-sm font-bold text-gray-700 mb-4">Tambah / Assign Shift Per User</h2>
-            <form action="{{ route('admin.shift_management.schedules.store') }}" method="POST" class="space-y-3">
-                @csrf
-                <div>
-                    <label class="text-xs font-semibold text-gray-600">User</label>
-                    <select name="user_id" class="w-full border rounded-md px-3 py-2 text-sm" required>
-                        <option value="">Pilih user</option>
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}">{{ $user->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Tanggal</label>
-                        <input type="date" name="tanggal" class="w-full border rounded-md px-3 py-2 text-sm" value="{{ $tanggal }}" required>
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Status</label>
-                        <select name="status" class="w-full border rounded-md px-3 py-2 text-sm" required>
-                            <option value="aktif">Aktif</option>
-                            <option value="libur">Libur</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-xs font-semibold text-gray-600">Template Shift (opsional)</label>
-                    <select name="shift_id" class="w-full border rounded-md px-3 py-2 text-sm">
-                        <option value="">Manual</option>
-                        @foreach($shiftTemplates as $shift)
-                            <option value="{{ $shift->id }}">{{ $shift->nama_shift }} ({{ \Illuminate\Support\Str::of($shift->jam_masuk)->substr(0,5) }} - {{ \Illuminate\Support\Str::of($shift->jam_pulang)->substr(0,5) }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Jam Masuk Manual</label>
-                        <input type="time" name="jam_masuk" class="w-full border rounded-md px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Jam Pulang Manual</label>
-                        <input type="time" name="jam_pulang" class="w-full border rounded-md px-3 py-2 text-sm">
-                    </div>
-                </div>
-                <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-semibold">Simpan Jadwal</button>
-            </form>
-        </div>
-
-        <div class="bg-white rounded-md shadow border border-gray-200 p-4">
-            <h2 class="text-sm font-bold text-gray-700 mb-4">Bulk Assign Shift</h2>
-            <form action="{{ route('admin.shift_management.schedules.bulk_assign') }}" method="POST" class="space-y-3">
-                @csrf
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Tanggal</label>
-                        <input type="date" name="tanggal" class="w-full border rounded-md px-3 py-2 text-sm" value="{{ $tanggal }}" required>
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Status</label>
-                        <select name="status" class="w-full border rounded-md px-3 py-2 text-sm" required>
-                            <option value="aktif">Aktif</option>
-                            <option value="libur">Libur</option>
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="text-xs font-semibold text-gray-600">Template Shift (opsional)</label>
-                    <select name="shift_id" class="w-full border rounded-md px-3 py-2 text-sm">
-                        <option value="">Manual</option>
-                        @foreach($shiftTemplates as $shift)
-                            <option value="{{ $shift->id }}">{{ $shift->nama_shift }} ({{ \Illuminate\Support\Str::of($shift->jam_masuk)->substr(0,5) }} - {{ \Illuminate\Support\Str::of($shift->jam_pulang)->substr(0,5) }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Jam Masuk Manual</label>
-                        <input type="time" name="jam_masuk" class="w-full border rounded-md px-3 py-2 text-sm">
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-gray-600">Jam Pulang Manual</label>
-                        <input type="time" name="jam_pulang" class="w-full border rounded-md px-3 py-2 text-sm">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="text-xs font-semibold text-gray-600">Pilih User (bisa banyak)</label>
-                    <select name="user_ids[]" multiple size="8" class="w-full border rounded-md px-3 py-2 text-sm" required>
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}">{{ $user->name }}</option>
-                        @endforeach
-                    </select>
-                    <p class="text-xs text-gray-500 mt-1">Tip: tahan Ctrl / Cmd untuk pilih banyak user.</p>
-                </div>
-
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-semibold">Bulk Assign</button>
-            </form>
+    <div class="bg-white rounded-md shadow border border-gray-200 p-4">
+        <div class="flex flex-wrap items-center gap-3 text-xs">
+            <div class="font-bold text-slate-800">Ringkasan Jadwal {{ $scheduleMatrix['period_label'] }}</div>
+            <span class="inline-flex items-center gap-2 border border-slate-100 rounded-full px-3 py-1">
+                <span class="inline-flex w-8 h-6 items-center justify-center rounded font-bold bg-emerald-600 text-white">M</span>
+                <span class="text-slate-600">Masuk</span>
+            </span>
+            <span class="inline-flex items-center gap-2 border border-slate-100 rounded-full px-3 py-1">
+                <span class="inline-flex w-8 h-6 items-center justify-center rounded font-bold bg-red-600 text-white">L</span>
+                <span class="text-slate-600">Libur</span>
+            </span>
+            <span class="inline-flex items-center gap-2 border border-slate-100 rounded-full px-3 py-1">
+                <span class="inline-flex w-8 h-6 items-center justify-center rounded font-bold bg-slate-100 text-slate-400">-</span>
+                <span class="text-slate-600">Belum dijadwalkan</span>
+            </span>
         </div>
     </div>
 
-    <div class="bg-white rounded-md shadow border border-gray-200 overflow-x-auto">
-        <table class="min-w-full text-sm">
-            <thead class="bg-gray-50">
-                <tr class="text-left text-xs uppercase tracking-wide text-gray-500">
-                    <th class="px-4 py-3">User</th>
-                    <th class="px-4 py-3">Tanggal</th>
-                    <th class="px-4 py-3">Jam</th>
-                    <th class="px-4 py-3">Status</th>
-                    <th class="px-4 py-3">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($schedules as $schedule)
-                    @php
-                        $statusClass = $schedule->status === 'aktif' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-700';
-                    @endphp
-                    <tr class="border-t border-gray-100 align-top">
-                        <td class="px-4 py-3 font-semibold text-gray-700">{{ $schedule->user->name ?? '-' }}</td>
-                        <td class="px-4 py-3 text-gray-600">{{ $schedule->tanggal->format('d/m/Y') }}</td>
-                        <td class="px-4 py-3 text-gray-600">{{ $schedule->jam_masuk?->format('H:i') ?? '00:00' }} - {{ $schedule->jam_pulang?->format('H:i') ?? '00:00' }}</td>
-                        <td class="px-4 py-3"><span class="px-2 py-1 rounded-full text-xs font-semibold {{ $statusClass }}">{{ ucfirst($schedule->status) }}</span></td>
-                        <td class="px-4 py-3">
-                            <div class="flex flex-col gap-2">
-                                <form action="{{ route('admin.shift_management.schedules.update', $schedule) }}" method="POST" class="grid md:grid-cols-6 gap-2">
-                                    @csrf
-                                    @method('PUT')
-                                    <select name="user_id" class="border rounded-md px-2 py-1 text-xs" required>
-                                        @foreach($users as $user)
-                                            <option value="{{ $user->id }}" @selected($schedule->user_id === $user->id)>{{ $user->name }}</option>
-                                        @endforeach
-                                    </select>
-                                    <input type="date" name="tanggal" value="{{ $schedule->tanggal->toDateString() }}" class="border rounded-md px-2 py-1 text-xs" required>
-                                    <select name="status" class="border rounded-md px-2 py-1 text-xs" required>
-                                        <option value="aktif" @selected($schedule->status === 'aktif')>Aktif</option>
-                                        <option value="libur" @selected($schedule->status === 'libur')>Libur</option>
-                                    </select>
-                                    <input type="time" name="jam_masuk" value="{{ $schedule->jam_masuk?->format('H:i') }}" class="border rounded-md px-2 py-1 text-xs">
-                                    <input type="time" name="jam_pulang" value="{{ $schedule->jam_pulang?->format('H:i') }}" class="border rounded-md px-2 py-1 text-xs">
-                                    <input type="hidden" name="shift_id" value="">
-                                    <button class="bg-blue-600 text-white rounded-md px-2 py-1 text-xs">Update</button>
-                                </form>
-                                <form action="{{ route('admin.shift_management.schedules.destroy', $schedule) }}" method="POST" onsubmit="return confirm('Hapus jadwal ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="bg-red-600 text-white rounded-md px-2 py-1 text-xs">Hapus</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-400">Belum ada jadwal pada tanggal ini.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
+    @forelse($scheduleMatrix['unit_groups'] as $unitGroup)
+        <div class="schedule-table-card bg-white rounded-md shadow border border-gray-200 overflow-hidden w-full min-w-0 max-w-full">
+            <div class="px-3 py-2 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                    <h2 class="font-bold text-xs text-slate-900 leading-tight">Unit {{ $unitGroup['unit'] }}</h2>
+                    <p class="text-[10px] text-slate-500 leading-tight">{{ count($unitGroup['employees']) }} pegawai</p>
+                </div>
+                <div class="text-[10px] text-slate-500 leading-tight">
+                    Masuk {{ $unitGroup['total_masuk'] }} &middot; Libur {{ $unitGroup['total_libur'] }}
+                </div>
+            </div>
+            <div class="schedule-table-scroll pb-1">
+                <table class="schedule-table text-xs border-collapse table-fixed" style="width: {{ $scheduleTableMinWidth }}px; min-width: {{ $scheduleTableMinWidth }}px;">
+                    <thead>
+                        <tr class="bg-teal-100 text-slate-900">
+                            <th class="p-2 border border-slate-300 text-left align-middle w-60 sticky left-0 z-10 bg-teal-100" rowspan="2">Nama / Tanggal</th>
+                            @foreach($scheduleMatrix['dates'] as $date)
+                                <th class="p-2 border border-slate-300 text-center w-11">{{ $date->translatedFormat('D') }}</th>
+                            @endforeach
+                            <th class="p-2 border border-slate-300 text-center bg-teal-600 text-white w-20" rowspan="2">Masuk</th>
+                            <th class="p-2 border border-slate-300 text-center bg-teal-600 text-white w-20" rowspan="2">Libur</th>
+                        </tr>
+                        <tr class="bg-teal-100 text-slate-900">
+                            @foreach($scheduleMatrix['dates'] as $date)
+                                <th class="p-2 border border-slate-300 text-center w-11">{{ $date->format('j') }}</th>
+                            @endforeach
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($unitGroup['employees'] as $employee)
+                            <tr>
+                                <td class="p-2 border border-slate-300 font-semibold whitespace-nowrap sticky left-0 z-10 bg-white">{{ $employee['name'] }}</td>
+                                @foreach($scheduleMatrix['dates'] as $date)
+                                    @php($cell = $employee['cells'][$date->toDateString()])
+                                    <td class="p-1 border border-slate-300 text-center w-11">
+                                        <span title="{{ $cell['title'] }}" class="inline-flex w-8 h-7 items-center justify-center rounded font-bold {{ $cell['class'] }}">{{ $cell['label'] }}</span>
+                                    </td>
+                                @endforeach
+                                <td class="p-2 border border-slate-300 text-center font-semibold w-20">{{ $employee['total_masuk'] }}</td>
+                                <td class="p-2 border border-slate-300 text-center font-semibold w-20">{{ $employee['total_libur'] }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-teal-600 text-white">
+                            <td class="p-2 border border-slate-300 font-bold sticky left-0 z-10 bg-teal-600">Total Masuk</td>
+                            @foreach($scheduleMatrix['dates'] as $date)
+                                <td class="p-2 border border-slate-300 text-center font-bold">{{ $unitGroup['daily_totals'][$date->toDateString()]['masuk'] }}</td>
+                            @endforeach
+                            <td class="p-2 border border-slate-300 text-center font-bold">{{ $unitGroup['total_masuk'] }}</td>
+                            <td class="p-2 border border-slate-300"></td>
+                        </tr>
+                        <tr>
+                            <td class="p-2 border border-slate-300 bg-teal-50 font-semibold sticky left-0 z-10">Total Libur</td>
+                            @foreach($scheduleMatrix['dates'] as $date)
+                                <td class="p-2 border border-slate-300 text-center">{{ $unitGroup['daily_totals'][$date->toDateString()]['libur'] }}</td>
+                            @endforeach
+                            <td class="p-2 border border-slate-300"></td>
+                            <td class="p-2 border border-slate-300 text-center font-semibold">{{ $unitGroup['total_libur'] }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    @empty
+        <div class="bg-white rounded-md shadow border border-gray-200 p-6 text-center text-sm text-gray-500">
+            Belum ada pegawai untuk ditampilkan.
+        </div>
+    @endforelse
+
 </div>
 @endsection
