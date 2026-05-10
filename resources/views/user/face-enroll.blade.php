@@ -10,136 +10,133 @@
     100% { transform: translateX(-50%) translateY(0); opacity: 0.55; }
 }
 </style>
-<div class="user-page">
-    <div class="user-phone">
 
-    <div class="px-4 pt-4">
-        <div class="relative p-5">
-            <div class="absolute top-10 left-0 w-full h-[2px] bg-emerald-100"></div>
+<div class="px-8 md:px-14 lg:px-20 mt-5">
+    <div class="relative p-5">
+        <div class="absolute top-10 left-0 w-full h-[2px] bg-gray-300"></div>
 
-            <div class="flex justify-between relative z-10 text-[8px] md:text-sm text-gray-500 tracking-[1px]">
-                <div class="flex flex-col items-center">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-emerald-700 text-white font-bold">1</div>
-                    <span class="mt-1 text-emerald-700 font-semibold">LOGIN</span>
-                </div>
+        <div class="flex justify-between relative z-10 text-[8px] md:text-sm text-gray-500 tracking-[1px]">
+            <div class="flex flex-col items-center">
+                <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold">1</div>
+                <span class="mt-1 text-blue-600 font-semibold">LOGIN</span>
+            </div>
 
-                <div class="flex flex-col items-center">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-emerald-700 text-white font-bold">2</div>
-                    <span class="mt-1 text-emerald-700 font-semibold">PENDAFTARAN WAJAH</span>
-                </div>
+            <div class="flex flex-col items-center">
+                <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold">2</div>
+                <span class="mt-1 text-blue-600 font-semibold">PENDAFTARAN WAJAH</span>
+            </div>
 
-                <div class="flex flex-col items-center">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300">3</div>
-                    <span class="mt-1">VERIFIKASI</span>
-                </div>
+            <div class="flex flex-col items-center">
+                <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300">3</div>
+                <span class="mt-1">VERIFIKASI</span>
+            </div>
 
-                <div class="flex flex-col items-center">
-                    <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300">4</div>
-                    <span class="mt-1">BERHASIL</span>
-                </div>
+            <div class="flex flex-col items-center">
+                <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300">4</div>
+                <span class="mt-1">BERHASIL</span>
             </div>
         </div>
     </div>
+</div>
 
-    <div class="px-4 pb-10">
-        <div class="user-card p-4">
-            <div class="text-center mb-6">
-                <h1 class="text-xl md:text-2xl font-bold text-emerald-900 tracking-[0.4px]">Pendaftaran Wajah</h1>
-                <p class="text-sm text-gray-400 mt-2">
-                    Pastikan wajah Anda berada di dalam frame dan pencahayaan cukup.
-                </p>
+<div class="flex flex-1 items-center justify-center px-8 md:px-14 lg:px-20 py-7">
+    <div class="w-full bg-white rounded-md shadow-lg p-2 md:p-5 flex flex-col md:flex-row gap-8">
+        <div class="md:w-1/2 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-8">
+            <img src="{{ asset('img/img-login.jpg') }}" class="w-[200px] h-auto mb-4">
+            <h2 class="text-3xl font-bold text-gray-700 tracking-[.5px]">
+                Pendaftaran Wajah
+            </h2>
+            <p class="text-gray-400 text-sm mt-2 max-w-xs">
+                Pastikan wajah berada di dalam frame, pencahayaan cukup, dan ikuti instruksi kedipan untuk menyimpan sampel.
+            </p>
+
+            <div class="mt-8 w-full max-w-sm bg-gray-50 border border-gray-100 rounded-lg p-4 text-left">
+                <h3 class="text-base font-bold text-gray-700">Petunjuk</h3>
+                <div class="mt-4 space-y-3 text-sm text-gray-500">
+                    <p class="flex gap-3">
+                        <span class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <i class="fa-regular fa-face-smile"></i>
+                        </span>
+                        <span>Hadapkan wajah ke kamera dan pastikan posisi berada di tengah bingkai.</span>
+                    </p>
+                    <p class="flex gap-3">
+                        <span class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <i class="fa-regular fa-lightbulb"></i>
+                        </span>
+                        <span>Gunakan pencahayaan cukup agar sistem dapat membaca wajah dengan stabil.</span>
+                    </p>
+                    <p class="flex gap-3">
+                        <span class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                        </span>
+                        <span>Sampel akan tersimpan otomatis setelah wajah jelas dan kedipan terverifikasi.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="md:w-1/2">
+            <h3 class="text-xl font-bold text-gray-700 mb-3 tracking-[.5px]">
+                Scan Wajah
+            </h3>
+
+            <div class="relative rounded-md overflow-hidden bg-slate-100 border border-gray-100 aspect-[4/3]">
+                <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                <div class="absolute inset-5 border-4 border-white rounded-2xl pointer-events-none"></div>
+                <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+                    <div id="headGuide" class="relative w-64 h-64 md:w-80 md:h-80 transition-transform duration-500 ease-out">
+                        <div id="headFrameGlow" class="absolute inset-2 rounded-full bg-red-500/10 blur-md transition-all duration-300"></div>
+                        <div id="headFrame" class="absolute inset-4 rounded-full border-[6px] border-red-400/90 shadow-[0_0_0_10px_rgba(248,113,113,0.12)] transition-all duration-300"></div>
+                        <div id="scanLine" class="absolute top-[15%] bottom-[15%] left-1/2 w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-cyan-200 to-transparent opacity-90" style="animation: face-scan-line 2.4s ease-in-out infinite;"></div>
+                        <div class="absolute left-1/2 top-[15%] bottom-[15%] w-px -translate-x-1/2 bg-cyan-100/60"></div>
+                        <div class="absolute top-1/2 left-[15%] right-[15%] h-px -translate-y-1/2 bg-white/20"></div>
+                    </div>
+                </div>
+                <div class="absolute top-4 left-4 bg-blue-600/90 text-white text-xs px-3 py-2 rounded-full shadow">
+                    Kamera aktif
+                </div>
             </div>
 
-            <div class="grid gap-4 items-start">
-                <div>
-                    <div class="relative rounded-md overflow-hidden bg-slate-100 border border-gray-100 aspect-[4/3]">
-                        <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                        <div class="absolute inset-5 border-4 border-white rounded-2xl pointer-events-none"></div>
-                        <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                            <div id="headGuide" class="relative w-64 h-64 md:w-80 md:h-80 transition-transform duration-500 ease-out">
-                                <div id="headFrameGlow" class="absolute inset-2 rounded-full bg-red-500/10 blur-md transition-all duration-300"></div>
-                                <div id="headFrame" class="absolute inset-4 rounded-full border-[6px] border-red-400/90 shadow-[0_0_0_10px_rgba(248,113,113,0.12)] transition-all duration-300"></div>
-                                <div id="scanLine" class="absolute top-[15%] bottom-[15%] left-1/2 w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-cyan-200 to-transparent opacity-90" style="animation: face-scan-line 2.4s ease-in-out infinite;"></div>
-                                <div class="absolute left-1/2 top-[15%] bottom-[15%] w-px -translate-x-1/2 bg-cyan-100/60"></div>
-                                <div class="absolute top-1/2 left-[15%] right-[15%] h-px -translate-y-1/2 bg-white/20"></div>
-                            </div>
-                        </div>
-                        <div class="absolute top-4 left-4 bg-emerald-700/90 text-white text-xs px-3 py-2 rounded-full shadow">
-                            Kamera aktif
-                        </div>
-                    </div>
+            <p id="status" class="mt-4 text-sm text-gray-500">
+                Siapkan kamera untuk mulai enrollment.
+            </p>
+            <p id="guideInstruction" class="mt-2 text-sm font-semibold text-blue-600">
+                Arahkan wajah ke kamera, lalu kedipkan mata.
+            </p>
 
-                    <p id="status" class="mt-4 text-sm text-gray-500 text-center md:text-left">
-                        Siapkan kamera untuk mulai enrollment.
-                    </p>
-                    <p id="guideInstruction" class="mt-2 text-sm font-semibold text-emerald-700 text-center md:text-left">
-                        Arahkan wajah ke kamera, lalu kedipkan mata.
-                    </p>
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button id="startCamera" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md hover:shadow-lg transition text-sm tracking-[.5px]">
+                    <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA
+                </button>
+                <button id="resetSamples" class="w-full border border-red-200 text-red-500 hover:bg-red-50 font-semibold py-3 rounded-md transition text-sm tracking-[.5px]">
+                    RESET
+                </button>
+            </div>
 
-                    <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <button id="startCamera" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-3 rounded-xl font-semibold text-sm shadow transition">
-                            <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA
-                        </button>
-                        <button id="resetSamples" class="border border-red-200 text-red-500 hover:bg-red-50 px-4 py-3 rounded-xl font-semibold text-sm transition">
-                            RESET
-                        </button>
+            <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <div class="rounded-lg border border-gray-200 p-4">
+                    <div class="flex items-center justify-between text-sm font-semibold">
+                        <p class="text-gray-700">Verifikasi Kedipan</p>
+                        <p id="blinkStatus" class="text-gray-500">Belum terverifikasi</p>
                     </div>
                 </div>
 
-                <div class="bg-white/70 border border-white rounded-2xl p-4">
-                    <h2 class="text-base font-bold text-gray-800">Petunjuk</h2>
-                    <div class="mt-4 space-y-4 text-sm text-gray-500">
-                        <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-                                <i class="fa-regular fa-face-smile"></i>
-                            </div>
-                            <p>Hadapkan wajah ke kamera dan pastikan wajah cukup jelas.</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-                                <i class="fa-regular fa-lightbulb"></i>
-                            </div>
-                            <p>Gunakan pencahayaan yang cukup agar deteksi lebih stabil.</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-glasses"></i>
-                            </div>
-                            <p>Hindari aksesori yang menutupi wajah secara berlebihan.</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-arrows-rotate"></i>
-                            </div>
-                            <p>Sistem akan mengambil sampel otomatis saat wajah jelas dan kedipan sudah terverifikasi.</p>
-                        </div>
+                <div class="rounded-lg border border-gray-200 p-4">
+                    <div class="flex items-center justify-between text-sm font-semibold text-gray-700">
+                        <p>Progres Sampel</p>
+                        <p id="sampleCount">0 / 3</p>
                     </div>
 
-                    <div class="mt-6 p-4 rounded-md bg-white border">
-                        <div class="flex items-center justify-between text-sm font-semibold">
-                            <p class="text-gray-700">Verifikasi Kedipan</p>
-                            <p id="blinkStatus" class="text-gray-500">Belum terverifikasi</p>
-                        </div>
-                    </div>
-
-                    <div class="mt-8">
-                        <div class="flex items-center justify-between text-sm font-semibold text-gray-700">
-                            <p>Progres Sampel</p>
-                            <p id="sampleCount">0 / 3</p>
-                        </div>
-
-                        <div class="mt-4 flex items-center justify-center gap-3">
-                            <span id="sampleDot1" class="w-3 h-3 rounded-full bg-gray-200"></span>
-                            <span id="sampleDot2" class="w-3 h-3 rounded-full bg-gray-200"></span>
-                            <span id="sampleDot3" class="w-3 h-3 rounded-full bg-gray-200"></span>
-                        </div>
+                    <div class="mt-4 flex items-center justify-center gap-3">
+                        <span id="sampleDot1" class="w-3 h-3 rounded-full bg-gray-200"></span>
+                        <span id="sampleDot2" class="w-3 h-3 rounded-full bg-gray-200"></span>
+                        <span id="sampleDot3" class="w-3 h-3 rounded-full bg-gray-200"></span>
                     </div>
                 </div>
             </div>
 
             <canvas id="captureCanvas" class="hidden"></canvas>
         </div>
-    </div>
     </div>
 </div>
 
@@ -200,13 +197,13 @@ function updateStatus(message, isError = false) {
 function setBlinkVerified(value) {
     blinkVerified = value;
     blinkStatus.textContent = value ? 'Terverifikasi' : 'Belum terverifikasi';
-    blinkStatus.className = value ? 'text-emerald-600' : 'text-gray-500';
+    blinkStatus.className = value ? 'text-blue-600' : 'text-gray-500';
 }
 
 function updateFrameIndicator(isValid) {
     if (isValid) {
-        headFrame.className = 'absolute inset-4 rounded-full border-[6px] border-emerald-400/95 shadow-[0_0_0_10px_rgba(74,222,128,0.14)] transition-all duration-300';
-        headFrameGlow.className = 'absolute inset-2 rounded-full bg-emerald-400/15 blur-md transition-all duration-300';
+        headFrame.className = 'absolute inset-4 rounded-full border-[6px] border-blue-400/95 shadow-[0_0_0_10px_rgba(96,165,250,0.14)] transition-all duration-300';
+        headFrameGlow.className = 'absolute inset-2 rounded-full bg-blue-400/15 blur-md transition-all duration-300';
         return;
     }
 
@@ -218,7 +215,7 @@ function updateSampleCount() {
     sampleCount.textContent = `${descriptors.length} / ${REQUIRED_SAMPLES}`;
     sampleDots.forEach((dot, index) => {
         dot.className = index < descriptors.length
-            ? 'w-3 h-3 rounded-full bg-emerald-700'
+            ? 'w-3 h-3 rounded-full bg-blue-600'
             : 'w-3 h-3 rounded-full bg-gray-200';
     });
 }
