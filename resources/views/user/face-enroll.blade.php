@@ -5,13 +5,207 @@
 @section('content')
 <style>
 @keyframes face-scan-line {
-    0% { transform: translateX(-50%) translateY(0); opacity: 0.55; }
-    50% { transform: translateX(-50%) translateY(132px); opacity: 1; }
-    100% { transform: translateX(-50%) translateY(0); opacity: 0.55; }
+    0%   { top: 0%;   opacity: 0; }
+    8%   { opacity: 1; }
+    50%  { top: calc(100% - 3px); opacity: 1; }
+    92%  { opacity: 1; }
+    100% { top: 0%;   opacity: 0; }
+}
+
+@keyframes face-scan-glow {
+    0%   { top: 0%;   opacity: 0; }
+    8%   { opacity: 0.6; }
+    50%  { top: calc(82% - 3px); opacity: 0.85; }
+    92%  { opacity: 0.5; }
+    100% { top: 0%;   opacity: 0; }
+}
+
+@keyframes frame-pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59,130,246,0.14), 0 0 0 14px rgba(59,130,246,0.06); }
+    50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(59,130,246,0.08), 0 0 0 22px rgba(59,130,246,0.03); }
+}
+
+.face-enroll-shell {
+    width: 100%;
+    max-width: 65rem;
+}
+
+.face-enroll-stage {
+    aspect-ratio: 18 / 9;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+}
+
+.face-guide {
+    width: min(80vw, 26rem);
+    height: min(80vw, 26rem);
+}
+
+/* ── blur mask luar lingkaran ── */
+/* ── blur mask luar lingkaran ── */
+/* ── blur luar lingkaran: pakai box-shadow inset trick ── */
+.face-blur-outer {
+    position: absolute;
+    inset: 8%;                        /* sesuaikan dengan ukuran lingkaran */
+    border-radius: 50%;
+    pointer-events: none;
+    /* shadow sangat besar ke luar = blur/gelap di luar lingkaran */
+    box-shadow:
+        0 0 0 9999px rgba(8, 15, 40, 0.55),   /* overlay gelap luar */
+        0 0 40px 8px rgba(0, 0, 0, 0.5) inset; /* soft shadow dalam tepi */
+    opacity: 0;
+    transition: opacity 0.35s ease;
+}
+
+.face-inner-mask {
+    position: absolute;
+    inset: 10%;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 60%, rgba(241, 245, 249, 0.92) 100%);
+    box-shadow: inset 0 0 28px rgba(148, 163, 184, 0.12);
+    transition: opacity 0.35s ease, background 0.35s ease;
+}
+
+.face-guide.is-camera-ready .face-inner-mask {
+    opacity: 0.08;
+}
+
+.face-guide.is-camera-ready .face-blur-outer {
+    opacity: 1;
+}
+
+/* ── scan track ── */
+/* ── scan track: HAPUS overflow hidden ── */
+.face-scan-track {
+    position: absolute;
+    top: 10%; bottom: 10%;   /* perlebar area agar tidak terpotong */
+    left: 10%; right: 10%;
+    border-radius: 50%;
+    /* JANGAN pakai overflow: hidden — ini yang bikin terpotong & delay visual */
+}
+
+.face-scan-line {
+    position: absolute;
+    left: -5%; right: -5%;  /* lebih lebar dari track agar terlihat penuh */
+    top: 0;
+    height: 2px;
+    border-radius: 9999px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(147, 197, 253, 0.5) 10%,
+        rgba(59, 130, 246, 1) 35%,
+        rgba(220, 240, 255, 1) 50%,
+        rgba(59, 130, 246, 1) 65%,
+        rgba(147, 197, 253, 0.5) 90%,
+        transparent 100%
+    );
+    box-shadow:
+        0 0 4px 1px rgba(59, 130, 246, 0.7),
+        0 0 14px 4px rgba(96, 165, 250, 0.4),
+        0 0 28px 8px rgba(59, 130, 246, 0.18);
+    opacity: 0;
+    z-index: 10;
+    will-change: top, opacity;          /* GPU hint agar tidak delay */
+}
+
+/* animasi lebih cepat: 1.6s (dari 2.4s) */
+@keyframes face-scan-line {
+    0%   { top: 0%;                   opacity: 0; }
+    6%   { opacity: 1; }
+    50%  { top: calc(100% - 2px);    opacity: 1; }
+    94%  { opacity: 1; }
+    100% { top: 0%;                   opacity: 0; }
+}
+
+@keyframes face-scan-glow {
+    0%   { top: 0%;                   opacity: 0; }
+    6%   { opacity: 0.7; }
+    50%  { top: calc(80% - 2px);     opacity: 0.9; }
+    94%  { opacity: 0.5; }
+    100% { top: 0%;                   opacity: 0; }
+}
+
+.face-scan-track.is-active .face-scan-line {
+    animation: face-scan-line 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    opacity: 1;
+}
+
+.face-scan-track.is-active .face-scan-glow {
+    animation: face-scan-glow 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    opacity: 1;
+}
+/* ── orbit rings ── */
+.face-orbit-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px dashed rgba(96, 165, 250, 0.35);
+    pointer-events: none;
+}
+.face-orbit-ring.outer {
+    inset: -4px;
+    animation: ring-rotate 12s linear infinite;
+}
+.face-orbit-ring.inner {
+    inset: 8px;
+    border-color: rgba(186, 230, 253, 0.22);
+    border-style: dotted;
+    animation: ring-rotate-rev 18s linear infinite;
+}
+
+/* orbit dot markers */
+.orbit-dot {
+    position: absolute;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: rgba(96, 165, 250, 0.85);
+    box-shadow: 0 0 6px 2px rgba(59, 130, 246, 0.55);
+    animation: dot-blink 2.4s ease-in-out infinite;
+}
+
+/* ── corner brackets ── */
+.face-corner {
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: rgba(96, 165, 250, 0.85);
+    border-style: solid;
+    pointer-events: none;
+}
+.face-corner.tl { top: 12px; left: 12px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.face-corner.tr { top: 12px; right: 12px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.face-corner.bl { bottom: 12px; left: 12px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.face-corner.br { bottom: 12px; right: 12px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+/* ── main circle frame ── */
+.face-circle-frame {
+    position: absolute;
+    inset: 10%;
+    border-radius: 50%;
+    border: 3px solid rgba(59, 130, 246, 0.75);
+    transition: all 0.35s ease;
+}
+.face-circle-frame.valid {
+    border-color: rgba(59, 130, 246, 0.95);
+    box-shadow:
+        inset 0 0 30px 6px rgba(59, 130, 246, 0.1),
+        0 0 0 12px rgba(59, 130, 246, 0.08);
+}
+.face-circle-frame.invalid {
+    border-color: rgba(248, 113, 113, 0.9);
+    box-shadow:
+        inset 0 0 20px 4px rgba(248, 113, 113, 0.08),
+        0 0 0 12px rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 640px) {
+    .face-enroll-stage { aspect-ratio: 5 / 6; }
+    .face-guide {
+        width: min(84vw, 19rem);
+        height: min(84vw, 19rem);
+    }
 }
 </style>
 
-<div class="px-8 md:px-14 lg:px-20 mt-5">
+<div class="px-6 md:px-10 mt-5">
     <div class="relative p-5">
         <div class="absolute top-10 left-0 w-full h-[2px] bg-gray-300"></div>
 
@@ -39,20 +233,12 @@
     </div>
 </div>
 
-<div class="flex flex-1 items-center justify-center px-8 md:px-14 lg:px-20 py-7">
-    <div class="w-full bg-white rounded-md shadow-lg p-2 md:p-5 flex flex-col md:flex-row gap-8">
-        <div class="md:w-1/2 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-8">
-            <img src="{{ asset('img/img-login.jpg') }}" class="w-[200px] h-auto mb-4">
-            <h2 class="text-3xl font-bold text-gray-700 tracking-[.5px]">
-                Pendaftaran Wajah
-            </h2>
-            <p class="text-gray-400 text-sm mt-2 max-w-xs">
-                Pastikan wajah berada di dalam frame, pencahayaan cukup, dan ikuti instruksi kedipan untuk menyimpan sampel.
-            </p>
-
-            <div class="mt-8 w-full max-w-sm bg-gray-50 border border-gray-100 rounded-lg p-4 text-left">
-                <h3 class="text-base font-bold text-gray-700">Petunjuk</h3>
-                <div class="mt-4 space-y-3 text-sm text-gray-500">
+<div class="flex flex-1 items-center justify-center py-7">
+    <div class="face-enroll-shell p-4 md:p-6">
+        <div class="mx-auto">
+            <div class="mb-6 w-full bg-gray-50 border border-gray-100 rounded-lg p-4 text-left">
+                <h3 class="text-lg  font-semibold text-gray-700 tracking-[.5px]">Petunjuk</h3>
+                <div class="mt-4 space-y-3 text-sm text-gray-500 tracking-[.3px]">
                     <p class="flex gap-3">
                         <span class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                             <i class="fa-regular fa-face-smile"></i>
@@ -73,66 +259,66 @@
                     </p>
                 </div>
             </div>
-        </div>
 
-        <div class="md:w-1/2">
-            <h3 class="text-xl font-bold text-gray-700 mb-3 tracking-[.5px]">
-                Scan Wajah
-            </h3>
-
-            <div class="relative rounded-md overflow-hidden bg-slate-100 border border-gray-100 aspect-[4/3]">
-                <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                <div class="absolute inset-5 border-4 border-white rounded-2xl pointer-events-none"></div>
+            <div id="enrollStage" class="face-enroll-stage relative overflow-hidden">
+                <video id="video" autoplay muted playsinline class="w-full h-full object-cover opacity-0 transition-opacity duration-300"></video>
                 <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    <div id="headGuide" class="relative w-64 h-64 md:w-80 md:h-80 transition-transform duration-500 ease-out">
-                        <div id="headFrameGlow" class="absolute inset-2 rounded-full bg-red-500/10 blur-md transition-all duration-300"></div>
-                        <div id="headFrame" class="absolute inset-4 rounded-full border-[6px] border-red-400/90 shadow-[0_0_0_10px_rgba(248,113,113,0.12)] transition-all duration-300"></div>
-                        <div id="scanLine" class="absolute top-[15%] bottom-[15%] left-1/2 w-[2px] -translate-x-1/2 bg-gradient-to-b from-transparent via-cyan-200 to-transparent opacity-90" style="animation: face-scan-line 2.4s ease-in-out infinite;"></div>
-                        <div class="absolute left-1/2 top-[15%] bottom-[15%] w-px -translate-x-1/2 bg-cyan-100/60"></div>
-                        <div class="absolute top-1/2 left-[15%] right-[15%] h-px -translate-y-1/2 bg-white/20"></div>
-                    </div>
+                  <div id="headGuide" class="face-guide relative transition-transform duration-500 ease-out">
+
+    <!-- BLUR LUAR LINGKARAN (box-shadow trick, bukan backdrop-filter) -->
+    <div class="face-blur-outer"></div>
+
+    <div class="face-inner-mask"></div>
+
+    <!-- main circle frame -->
+    <div id="headFrame" class="face-circle-frame"></div>
+
+    <!-- scan track — no overflow hidden! -->
+    <div class="face-scan-track">
+        <div class="face-scan-glow"></div>
+        <div id="scanLine" class="face-scan-line"></div>
+    </div>
+</div>
                 </div>
-                <div class="absolute top-4 left-4 bg-blue-600/90 text-white text-xs px-3 py-2 rounded-full shadow">
-                    Kamera aktif
+                <div id="cameraBadge" class="absolute left-1/2 bottom-4 -translate-x-1/2 bg-red-500 text-white text-xs md:text-sm px-3 py-2 rounded-full shadow-sm tracking-[.3px]">
+                    Kamera belum aktif
                 </div>
             </div>
 
-            <p id="status" class="mt-4 text-sm text-gray-500">
+            <p id="status" class="mt-4 text-sm text-gray-500 text-center tracking-[.3px]">
                 Siapkan kamera untuk mulai enrollment.
             </p>
-            <p id="guideInstruction" class="mt-2 text-sm font-semibold text-blue-600">
+            <p id="guideInstruction" class="mt-3 text-sm font-medium text-orange-500 text-center tracking-[.3px]">
                 Arahkan wajah ke kamera, lalu kedipkan mata.
             </p>
 
-            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="mt-6">
+                <div class="rounded-md border border-blue-100 bg-blue-50/50 p-4 sm:p-5 shadow-sm">
+                    <div class="flex items-center justify-between text-sm font-semibold text-gray-700">
+                        <p class="tracking-[.3px]">Wajah Disimpan</p>
+                        <p id="sampleCount">0 / 3</p>
+                    </div>
+
+                    <div class="mt-4 h-3 w-full overflow-hidden rounded-full bg-blue-100 ring-1 ring-blue-200/70">
+                        <div id="sampleProgressBar" class="h-full w-0 rounded-full bg-gradient-to-r from-sky-400 via-blue-500 to-blue-600 transition-all duration-300 ease-out"></div>
+                    </div>
+
+                    <p class="mt-3 text-xs text-gray-500 tracking-[.3px]">
+                        Progress akan bertambah otomatis setiap sampel wajah berhasil disimpan.
+                    </p>
+                    <p id="sampleStepNote" class="mt-2 text-sm font-medium tracking-[.5px] text-blue-600">
+                        Langkah 1: Kedipkan mata.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
                 <button id="startCamera" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md hover:shadow-lg transition text-sm tracking-[.5px]">
                     <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA
                 </button>
                 <button id="resetSamples" class="w-full border border-red-200 text-red-500 hover:bg-red-50 font-semibold py-3 rounded-md transition text-sm tracking-[.5px]">
                     RESET
                 </button>
-            </div>
-
-            <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                <div class="rounded-lg border border-gray-200 p-4">
-                    <div class="flex items-center justify-between text-sm font-semibold">
-                        <p class="text-gray-700">Verifikasi Kedipan</p>
-                        <p id="blinkStatus" class="text-gray-500">Belum terverifikasi</p>
-                    </div>
-                </div>
-
-                <div class="rounded-lg border border-gray-200 p-4">
-                    <div class="flex items-center justify-between text-sm font-semibold text-gray-700">
-                        <p>Progres Sampel</p>
-                        <p id="sampleCount">0 / 3</p>
-                    </div>
-
-                    <div class="mt-4 flex items-center justify-center gap-3">
-                        <span id="sampleDot1" class="w-3 h-3 rounded-full bg-gray-200"></span>
-                        <span id="sampleDot2" class="w-3 h-3 rounded-full bg-gray-200"></span>
-                        <span id="sampleDot3" class="w-3 h-3 rounded-full bg-gray-200"></span>
-                    </div>
-                </div>
             </div>
 
             <canvas id="captureCanvas" class="hidden"></canvas>
@@ -143,20 +329,18 @@
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
 const video = document.getElementById('video');
+const cameraBadge = document.getElementById('cameraBadge');
 const startCameraButton = document.getElementById('startCamera');
 const resetSamplesButton = document.getElementById('resetSamples');
 const statusText = document.getElementById('status');
 const sampleCount = document.getElementById('sampleCount');
-const blinkStatus = document.getElementById('blinkStatus');
+const sampleProgressBar = document.getElementById('sampleProgressBar');
+const sampleStepNote = document.getElementById('sampleStepNote');
 const canvas = document.getElementById('captureCanvas');
-const sampleDots = [
-    document.getElementById('sampleDot1'),
-    document.getElementById('sampleDot2'),
-    document.getElementById('sampleDot3'),
-];
+const headGuide = document.getElementById('headGuide');
 const headFrame = document.getElementById('headFrame');
-const headFrameGlow = document.getElementById('headFrameGlow');
 const guideInstruction = document.getElementById('guideInstruction');
+const scanTrack = document.querySelector('.face-scan-track');
 
 const REQUIRED_SAMPLES = 3;
 const descriptors = [];
@@ -169,9 +353,17 @@ const detectorOptions = new faceapi.TinyFaceDetectorOptions({
 const MIN_BRIGHTNESS = 38;
 const MAX_BRIGHTNESS = 210;
 const MIN_SHARPNESS = 10;
-const BLINK_OPEN_EAR = 0.22;
-const BLINK_CLOSED_EAR = 0.19;
-const BLINK_DROP_RATIO = 0.72;
+const BLINK_OPEN_EAR = 0.17;
+const BLINK_CLOSED_EAR = 0.145;
+const BLINK_DROP_RATIO = 0.9;
+const TURN_THRESHOLD = 0.035;
+const BLINK_CAPTURE_WINDOW_MS = 2200;
+const BLINK_COOLDOWN_MS = 900;
+const ENROLLMENT_STEPS = [
+    'Langkah 1: Kedipkan mata.',
+    'Langkah 2: Hadapkan wajah ke kanan.',
+    'Langkah 3: Hadapkan wajah ke kiri.',
+];
 
 let modelsLoaded = false;
 let stream;
@@ -183,9 +375,30 @@ let lastDetectionAt = 0;
 let lastCaptureAt = 0;
 let isSaving = false;
 let blinkVerified = false;
+let blinkVerifiedAt = 0;
 let eyesWereOpen = false;
 let lastEar = null;
 let maxOpenEar = 0;
+let blinkCloseFrames = 0;
+let blinkCooldownUntil = 0;
+
+function setScanAnimationActive(isActive) {
+    if (!scanTrack) return;
+    scanTrack.classList.toggle('is-active', isActive);
+    if (headGuide) {
+        headGuide.classList.toggle('is-camera-ready', isActive);
+    }
+    if (video) {
+        video.classList.toggle('opacity-0', !isActive);
+        video.classList.toggle('opacity-100', isActive);
+    }
+    if (cameraBadge) {
+        cameraBadge.textContent = isActive ? 'Kamera aktif' : 'Kamera belum aktif';
+        cameraBadge.className = isActive
+            ? 'absolute left-1/2 bottom-4 -translate-x-1/2 bg-blue-600/90 text-white text-[11px] sm:text-xs px-3 py-2 rounded-full shadow'
+            : 'absolute left-1/2 bottom-4 -translate-x-1/2 bg-gray-200 text-gray-600 text-[11px] sm:text-xs px-3 py-2 rounded-full shadow-sm';
+    }
+}
 
 function updateStatus(message, isError = false) {
     statusText.textContent = message;
@@ -196,28 +409,31 @@ function updateStatus(message, isError = false) {
 
 function setBlinkVerified(value) {
     blinkVerified = value;
-    blinkStatus.textContent = value ? 'Terverifikasi' : 'Belum terverifikasi';
-    blinkStatus.className = value ? 'text-blue-600' : 'text-gray-500';
+    blinkVerifiedAt = value ? Date.now() : 0;
 }
 
-function updateFrameIndicator(isValid) {
-    if (isValid) {
-        headFrame.className = 'absolute inset-4 rounded-full border-[6px] border-blue-400/95 shadow-[0_0_0_10px_rgba(96,165,250,0.14)] transition-all duration-300';
-        headFrameGlow.className = 'absolute inset-2 rounded-full bg-blue-400/15 blur-md transition-all duration-300';
+function updateStepNote() {
+    if (!sampleStepNote) return;
+
+    if (descriptors.length >= REQUIRED_SAMPLES) {
+        sampleStepNote.textContent = 'Semua langkah selesai. Menyimpan data wajah...';
         return;
     }
 
-    headFrame.className = 'absolute inset-4 rounded-full border-[6px] border-red-400/90 shadow-[0_0_0_10px_rgba(248,113,113,0.12)] transition-all duration-300';
-    headFrameGlow.className = 'absolute inset-2 rounded-full bg-red-500/10 blur-md transition-all duration-300';
+    sampleStepNote.textContent = ENROLLMENT_STEPS[descriptors.length];
+}
+
+function updateFrameIndicator(isValid) {
+    headFrame.classList.toggle('valid', isValid);
+    headFrame.classList.toggle('invalid', !isValid);
 }
 
 function updateSampleCount() {
     sampleCount.textContent = `${descriptors.length} / ${REQUIRED_SAMPLES}`;
-    sampleDots.forEach((dot, index) => {
-        dot.className = index < descriptors.length
-            ? 'w-3 h-3 rounded-full bg-blue-600'
-            : 'w-3 h-3 rounded-full bg-gray-200';
-    });
+    if (sampleProgressBar) {
+        sampleProgressBar.style.width = `${(descriptors.length / REQUIRED_SAMPLES) * 100}%`;
+    }
+    updateStepNote();
 }
 
 function isFaceInsideGuide(box) {
@@ -250,17 +466,77 @@ function calculateEyeAspectRatio(eye) {
 }
 
 function detectBlink(landmarks) {
+    const now = Date.now();
     const ear = (calculateEyeAspectRatio(landmarks.getLeftEye()) + calculateEyeAspectRatio(landmarks.getRightEye())) / 2;
     lastEar = ear;
 
     maxOpenEar = Math.max(maxOpenEar, ear);
+    const adaptiveOpenThreshold = Math.max(BLINK_OPEN_EAR, maxOpenEar * 0.88);
+    const adaptiveClosedThreshold = Math.max(BLINK_CLOSED_EAR, maxOpenEar * BLINK_DROP_RATIO);
 
-    if (ear > BLINK_OPEN_EAR) {
+    if (ear >= adaptiveOpenThreshold) {
+        if (eyesWereOpen && blinkCloseFrames >= 1 && now >= blinkCooldownUntil) {
+            blinkCloseFrames = 0;
+            blinkCooldownUntil = now + BLINK_COOLDOWN_MS;
+            return true;
+        }
+
         eyesWereOpen = true;
+        blinkCloseFrames = 0;
         return false;
     }
 
-    return eyesWereOpen && (ear < BLINK_CLOSED_EAR || (maxOpenEar > 0 && ear <= maxOpenEar * BLINK_DROP_RATIO));
+    if (eyesWereOpen && ear <= adaptiveClosedThreshold && now >= blinkCooldownUntil) {
+        blinkCloseFrames += 1;
+        if (blinkCloseFrames >= 2 && maxOpenEar > 0 && ear <= maxOpenEar * BLINK_DROP_RATIO) {
+            blinkCooldownUntil = now + BLINK_COOLDOWN_MS;
+            blinkCloseFrames = 0;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function getHeadTurnDirection(landmarks, faceBox) {
+    const nose = landmarks.getNose();
+    if (!nose || nose.length === 0 || !faceBox.width) return 'center';
+
+    const noseTip = nose[Math.floor(nose.length / 2)];
+    const faceCenterX = faceBox.x + (faceBox.width / 2);
+    const horizontalOffset = (noseTip.x - faceCenterX) / faceBox.width;
+
+    if (horizontalOffset >= TURN_THRESHOLD) return 'right';
+    if (horizontalOffset <= -TURN_THRESHOLD) return 'left';
+    return 'center';
+}
+
+function getHeadTurnFeedback(direction, step) {
+    if (step === 1) {
+        if (direction === 'left') {
+            return {
+                guide: 'Wajah masih mengarah ke kiri. Putar perlahan ke kanan.',
+                status: 'Progres belum lanjut. Untuk langkah kedua, hadapkan wajah sedikit ke kanan.',
+            };
+        }
+
+        return {
+            guide: 'Putar wajah sedikit ke kanan, jangan terlalu berlebihan.',
+            status: 'Progres belum lanjut. Hadapkan wajah ke kanan sampai posisi berubah dari tengah.',
+        };
+    }
+
+    if (direction === 'right') {
+        return {
+            guide: 'Wajah masih mengarah ke kanan. Putar perlahan ke kiri.',
+            status: 'Progres belum lanjut. Untuk langkah terakhir, hadapkan wajah sedikit ke kiri.',
+        };
+    }
+
+    return {
+        guide: 'Putar wajah sedikit ke kiri, jangan terlalu berlebihan.',
+        status: 'Progres belum lanjut. Hadapkan wajah ke kiri sampai posisi berubah dari tengah.',
+    };
 }
 
 function getFrameQuality(faceBox = null) {
@@ -331,6 +607,31 @@ function averageDescriptors(samples) {
     return averaged.map((value) => value / samples.length);
 }
 
+async function captureSample(descriptor, quality) {
+    if (Date.now() - lastCaptureAt < 350 || descriptors.length >= REQUIRED_SAMPLES) return;
+
+    lastCaptureAt = Date.now();
+    descriptors.push(Array.from(descriptor));
+    sampleQualities.push(quality);
+    updateSampleCount();
+
+    if (descriptors.length === 1) {
+        guideInstruction.textContent = 'Sampel pertama tersimpan. Sekarang hadapkan wajah ke kanan.';
+        updateStatus('Sampel pertama berhasil. Lanjutkan dengan menghadapkan wajah ke kanan.');
+        return;
+    }
+
+    if (descriptors.length === 2) {
+        guideInstruction.textContent = 'Sampel kedua tersimpan. Sekarang hadapkan wajah ke kiri.';
+        updateStatus('Sampel kedua berhasil. Lanjutkan dengan menghadapkan wajah ke kiri.');
+        return;
+    }
+
+    guideInstruction.textContent = 'Semua sampel lengkap. Menyimpan data wajah.';
+    updateStatus(`Sampel otomatis tersimpan (${descriptors.length}/${REQUIRED_SAMPLES}).`);
+    await saveEmbedding();
+}
+
 function stopEnrollmentTracking() {
     trackingActive = false;
     updateFrameIndicator(false);
@@ -345,6 +646,7 @@ function stopCameraStream() {
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
     }
+    setScanAnimationActive(false);
 }
 
 function resetSamples() {
@@ -356,6 +658,8 @@ function resetSamples() {
     eyesWereOpen = false;
     lastEar = null;
     maxOpenEar = 0;
+    blinkCloseFrames = 0;
+    blinkCooldownUntil = 0;
     setBlinkVerified(false);
     updateSampleCount();
     updateFrameIndicator(false);
@@ -370,7 +674,7 @@ async function loadModels() {
         return;
     }
 
-    updateStatus('Memuat model deteksi wajah...');
+    updateStatus('Memuat face recognition...');
     modelsPromise = Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(modelBaseUrl),
         faceapi.nets.faceLandmark68TinyNet.loadFromUri(modelBaseUrl),
@@ -381,11 +685,11 @@ async function loadModels() {
         await modelsPromise;
     } catch (error) {
         modelsPromise = null;
-        throw new Error('Model face-api belum tersedia di ' + modelBaseUrl + '.');
+        throw new Error('face recognition belum tersedia di ' + modelBaseUrl + '.');
     }
 
     modelsLoaded = true;
-    updateStatus('Model siap. Aktifkan kamera untuk mulai scan otomatis.');
+    updateStatus('Face recognition siap. Aktifkan kamera untuk mulai scan otomatis.');
 }
 
 function startEnrollmentTracking() {
@@ -400,7 +704,7 @@ function startEnrollmentTracking() {
         if (!video.srcObject || processingDetection || isSaving) return;
 
         const now = performance.now();
-        if (now - lastDetectionAt < 180) return;
+        if (now - lastDetectionAt < 60) return;
 
         processingDetection = true;
         lastDetectionAt = now;
@@ -420,14 +724,19 @@ function startEnrollmentTracking() {
             const isInsideGuide = isFaceInsideGuide(detection.detection.box);
             const quality = getFrameQuality(detection.detection.box);
             const isClear = isInsideGuide && isFrameQualityGood(quality);
+            const headTurnDirection = getHeadTurnDirection(detection.landmarks, detection.detection.box);
             updateFrameIndicator(isClear);
 
             if (detectBlink(detection.landmarks) && !blinkVerified) {
                 setBlinkVerified(true);
-                updateStatus('Kedipan berhasil. Menunggu wajah cukup jelas untuk menyimpan sampel.');
-            } else if (!blinkVerified && lastEar !== null) {
-                blinkStatus.textContent = `Kedipkan mata (${lastEar.toFixed(2)})`;
+                updateStatus('Kedipan berhasil. Sampel pertama siap disimpan.');
+                if (isClear && descriptors.length === 0) {
+                    await captureSample(detection.descriptor, quality);
+                    return;
+                }
             }
+
+            const blinkWindowActive = blinkVerified && (Date.now() - blinkVerifiedAt <= BLINK_CAPTURE_WINDOW_MS);
 
             if (!isInsideGuide) {
                 guideInstruction.textContent = 'Posisikan wajah di tengah bingkai.';
@@ -440,24 +749,33 @@ function startEnrollmentTracking() {
                 return;
             }
 
-            if (!blinkVerified) {
+            if (descriptors.length === 0 && !blinkWindowActive) {
                 guideInstruction.textContent = 'Kedipkan mata untuk verifikasi.';
-                updateStatus('Wajah sudah jelas. Kedipkan mata satu kali.');
+                updateStatus('Wajah sudah jelas. Kedipkan mata satu kali untuk mengambil sampel pertama.');
                 return;
             }
 
-            if (Date.now() - lastCaptureAt < 700 || descriptors.length >= REQUIRED_SAMPLES) return;
-
-            lastCaptureAt = Date.now();
-            descriptors.push(Array.from(detection.descriptor));
-            sampleQualities.push(quality);
-            updateSampleCount();
-            guideInstruction.textContent = 'Sampel otomatis tersimpan. Tetap hadapkan wajah ke kamera.';
-            updateStatus(`Sampel otomatis tersimpan (${descriptors.length}/${REQUIRED_SAMPLES}).`);
-
-            if (descriptors.length === REQUIRED_SAMPLES) {
-                await saveEmbedding();
+            if (descriptors.length === 0 && blinkWindowActive) {
+                guideInstruction.textContent = 'Kedipan terdeteksi. Menyimpan sampel pertama...';
+                await captureSample(detection.descriptor, quality);
+                return;
             }
+
+            if (descriptors.length === 1 && headTurnDirection !== 'right') {
+                const feedback = getHeadTurnFeedback(headTurnDirection, 1);
+                guideInstruction.textContent = feedback.guide;
+                updateStatus(feedback.status, true);
+                return;
+            }
+
+            if (descriptors.length === 2 && headTurnDirection !== 'left') {
+                const feedback = getHeadTurnFeedback(headTurnDirection, 2);
+                guideInstruction.textContent = feedback.guide;
+                updateStatus(feedback.status, true);
+                return;
+            }
+
+            await captureSample(detection.descriptor, quality);
         } finally {
             processingDetection = false;
         }
@@ -485,6 +803,7 @@ async function startCamera() {
 
         video.srcObject = stream;
         await video.play();
+        setScanAnimationActive(true);
         updateStatus('Kamera aktif. Menyiapkan deteksi wajah...');
         await loadModels();
         startEnrollmentTracking();
@@ -512,7 +831,7 @@ async function saveEmbedding() {
             },
             body: JSON.stringify({
                 embedding: averageDescriptors(descriptors),
-                blink_verified: blinkVerified ? 'true' : 'false',
+                blink_verified: true,
                 quality_metrics: {
                     sample_count: sampleQualities.length,
                     min_brightness: Math.min(...sampleQualities.map((sample) => sample.brightness)),
