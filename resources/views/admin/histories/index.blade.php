@@ -4,20 +4,20 @@
 
 @section('content')
 <div class="space-y-6">
-    <form method="GET" data-auto-filter class="bg-white p-4 rounded-xl shadow grid md:grid-cols-3 gap-3">
-        <select name="user_id" class="border rounded px-3 py-2">
-            <option value="">Semua User</option>
-            @foreach($users as $user)
-                <option value="{{ $user->id }}" @selected((string) request('user_id') === (string) $user->id)>{{ $user->name }}</option>
-            @endforeach
-        </select>
-        <select name="unit_id" class="border rounded px-3 py-2">
-            <option value="">Semua Unit</option>
-            @foreach($units as $unit)
-                <option value="{{ $unit->id }}" @selected((string) request('unit_id') === (string) $unit->id)>{{ $unit->nama_unit }}</option>
-            @endforeach
-        </select>
-        <input type="date" name="tanggal" value="{{ request('tanggal') }}" class="border rounded px-3 py-2">
+    <form method="GET" data-auto-filter class="bg-white p-4 rounded-xl shadow grid grid-cols-1 md:grid-cols-[minmax(12rem,24rem)_minmax(12rem,20rem)] gap-3">
+        <div>
+            <label class="text-xs font-semibold text-gray-600">Unit</label>
+            <select name="unit_id" class="border rounded px-3 py-2 w-full" required>
+                <option value="" disabled @selected(blank(request('unit_id')))>Pilih Unit</option>
+                @foreach($units as $unit)
+                    <option value="{{ $unit->id }}" @selected((string) request('unit_id') === (string) $unit->id)>{{ $unit->nama_unit }}</option>
+                @endforeach
+            </select>
+        </div>
+        <div>
+            <label class="text-xs font-semibold text-gray-600">Tanggal</label>
+            <input type="date" name="tanggal" value="{{ request('tanggal') }}" class="border rounded px-3 py-2 w-full">
+        </div>
     </form>
 
     <div class="bg-white rounded-xl shadow overflow-x-auto">
@@ -44,7 +44,9 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="p-6 text-center text-gray-500">Belum ada data riwayat.</td>
+                        <td colspan="6" class="p-6 text-center text-gray-500">
+                            {{ request('unit_id') ? 'Belum ada data riwayat untuk unit ini.' : 'Pilih unit terlebih dahulu untuk menampilkan riwayat.' }}
+                        </td>
                     </tr>
                 @endforelse
             </tbody>

@@ -14,6 +14,7 @@ class ShiftSchedule extends Model
         'jam_masuk',
         'jam_pulang',
         'status',
+        'shift_code',
     ];
 
     protected $casts = [

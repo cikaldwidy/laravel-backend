@@ -28,7 +28,8 @@ class PresensiController extends Controller
         }
 
         $now = now();
-        $activeShiftContext = $this->resolveActiveShift($user, $now);
+        $setting = WorkSetting::first();
+        $activeShiftContext = $this->resolveActiveShift($user, $now, $setting);
         $scheduledShift = $this->getTodayShiftAssignment($user, $now);
         $activeShift = $activeShiftContext['shift'] ?? null;
         $canAttend = (bool) $activeShiftContext;
@@ -38,7 +39,6 @@ class PresensiController extends Controller
         $presensi = Presensi::where('user_id', $user->id)
             ->whereDate('tanggal', $tanggalPresensi)
             ->first();
-        $setting = WorkSetting::first();
 
         return view('user.absen', [
             'presensi' => $presensi,
@@ -124,7 +124,7 @@ class PresensiController extends Controller
         }
 
         $now = now();
-        $activeShiftContext = $this->resolveActiveShift($user, $now);
+        $activeShiftContext = $this->resolveActiveShift($user, $now, $setting);
 
         if (!$activeShiftContext) {
             return response()->json([
@@ -243,8 +243,11 @@ class PresensiController extends Controller
             ->first();
     }
 
-    private function resolveActiveShift(User $user, Carbon $now): ?array
+    private function resolveActiveShift(User $user, Carbon $now, ?WorkSetting $setting = null): ?array
     {
+        $checkinEarlyMinutes = (int) ($setting?->checkin_early_minutes ?? WorkSetting::DEFAULT_CHECKIN_EARLY_MINUTES);
+        $checkoutLateMinutes = (int) ($setting?->checkout_late_minutes ?? WorkSetting::DEFAULT_CHECKOUT_LATE_MINUTES);
+
         // Cek shift hari ini dan shift kemarin untuk handle shift lintas hari.
         $shiftCandidates = ShiftSchedule::query()
             ->where('user_id', $user->id)
@@ -260,7 +263,7 @@ class PresensiController extends Controller
             $shiftDate = Carbon::parse($candidate->tanggal)->startOfDay();
             $jamMasuk = $candidate->jam_masuk->format('H:i:s');
             $jamPulang = $candidate->jam_pulang->format('H:i:s');
-            $window = ShiftTime::window($shiftDate, $jamMasuk, $jamPulang, 60, 180);
+            $window = ShiftTime::window($shiftDate, $jamMasuk, $jamPulang, $checkinEarlyMinutes, $checkoutLateMinutes);
 
             if (!$now->between($window['allowed_start'], $window['allowed_end'], true)) {
                 continue;

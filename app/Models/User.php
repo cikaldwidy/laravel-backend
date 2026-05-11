@@ -70,6 +70,11 @@ class User extends Authenticatable
         return $this->hasMany(ShiftSchedule::class);
     }
 
+    public function presensis(): HasMany
+    {
+        return $this->hasMany(Presensi::class);
+    }
+
     public function requestedShiftSwaps(): HasMany
     {
         return $this->hasMany(ShiftSwap::class, 'requester_id');

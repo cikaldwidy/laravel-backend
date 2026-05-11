@@ -439,6 +439,7 @@
         request()->routeIs('admin.biodata.*'),
         request()->routeIs('admin.face_data.*') => 'Pegawai',
         request()->routeIs('admin.shifts.*'),
+        request()->routeIs('jadwal-dinas.*'),
         request()->routeIs('admin.shift_management.schedules*'),
         request()->routeIs('admin.shift_management.swaps*') => 'Jadwal & Shift',
         request()->routeIs('admin.histories.*'),
@@ -477,7 +478,7 @@
         @php
             $employeeOpen = request()->routeIs('admin.users.*') || request()->routeIs('admin.biodata.*') || request()->routeIs('admin.face_data.*');
             $organizationOpen = request()->routeIs('admin.units.*') || request()->routeIs('admin.departments.*') || request()->routeIs('admin.positions.*');
-            $scheduleOpen = request()->routeIs('admin.shifts.*') || request()->routeIs('admin.shift_management.schedules*') || request()->routeIs('admin.shift_management.swaps*');
+            $scheduleOpen = request()->routeIs('admin.shifts.*') || request()->routeIs('jadwal-dinas.*') || request()->routeIs('admin.shift_management.schedules*') || request()->routeIs('admin.shift_management.swaps*');
             $attendanceOpen = request()->routeIs('admin.histories.*') || request()->routeIs('admin.leave_requests.*') || request()->routeIs('admin.features.show');
             $infoOpen = request()->routeIs('admin.announcements.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.notifications.*');
             $settingsOpen = request()->routeIs('admin.settings.*');
@@ -537,8 +538,7 @@
                 </button>
                 <div id="menu-schedule" class="submenu {{ $scheduleOpen ? 'is-open' : '' }}">
                     <a href="{{ route('admin.shifts.index') }}" class="submenu-item {{ request()->routeIs('admin.shifts.*') ? 'active' : '' }}">Master Shift</a>
-                    <a href="{{ route('admin.shift_management.schedules') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.schedules') ? 'active' : '' }}">Jadwal Pegawai</a>
-                    <a href="{{ route('admin.shift_management.schedules.create') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.schedules.create') ? 'active' : '' }}">Tambah Jadwal</a>
+                    <a href="{{ route('jadwal-dinas.index') }}" class="submenu-item {{ request()->routeIs('jadwal-dinas.*') || request()->routeIs('admin.shift_management.schedules') ? 'active' : '' }}">Jadwal Bulanan</a>
                     <a href="{{ route('admin.shift_management.swaps') }}" class="submenu-item {{ request()->routeIs('admin.shift_management.swaps*') ? 'active' : '' }}">Tukar Shift</a>
                 </div>
             </div>
@@ -556,6 +556,7 @@
                     <a href="{{ route('admin.histories.index') }}" class="submenu-item {{ request()->routeIs('admin.histories.*') ? 'active' : '' }}">Riwayat Absensi</a>
                     <a href="{{ route('admin.leave_requests.index') }}" class="submenu-item {{ request()->routeIs('admin.leave_requests.*') ? 'active' : '' }}">Perizinan</a>
                     @foreach(\App\Models\FeatureSetting::FEATURES as $featureKey => $feature)
+                        @continue(!\App\Models\FeatureSetting::availableForRole($featureKey, 'admin'))
                         @if($adminFeatureSettings[$featureKey]['admin'] ?? false)
                             <a href="{{ route('admin.features.show', $featureKey) }}" class="submenu-item {{ request()->routeIs('admin.features.show') && request()->route('featureKey') === $featureKey ? 'active' : '' }}">{{ $feature['label'] }}</a>
                         @endif
@@ -590,7 +591,7 @@
                 </button>
                 <div id="menu-settings" class="submenu {{ $settingsOpen ? 'is-open' : '' }}">
                     <a href="{{ route('admin.settings.admin_accounts.index') }}" class="submenu-item {{ request()->routeIs('admin.settings.admin_accounts.*') ? 'active' : '' }}">Akun Admin</a>
-                    <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.work.*') ? 'active' : '' }}">Jam & Lokasi Kerja</a>
+                    <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.work.*') ? 'active' : '' }}">Lokasi Presensi</a>
                     <a href="{{ route('admin.settings.features.index') }}" class="submenu-item {{ request()->routeIs('admin.settings.features.*') ? 'active' : '' }}">Pengaturan Fitur</a>
                 </div>
             </div>
@@ -614,8 +615,12 @@
                     <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
-                    <div class="hidden md:flex shrink-0 text-sm text-gray-500 tracking-[.2px]">
-                        {{ now()->translatedFormat('l, d F') }}
+                    <div
+                        class="hidden md:flex shrink-0 text-sm text-gray-500 tracking-[.2px]"
+                        data-admin-clock
+                        data-locale="id-ID"
+                    >
+                        {{ now()->locale('id')->translatedFormat('l, d F H:i:s') }}
                     </div>
                 </div>
 
@@ -927,6 +932,26 @@ document.querySelectorAll('[data-toast]').forEach((toast, index) => {
     closeBtn?.addEventListener('click', hide);
 });
 
+document.querySelectorAll('[data-admin-clock]').forEach((clock) => {
+    const locale = clock.dataset.locale || 'id-ID';
+    const formatter = new Intl.DateTimeFormat(locale, {
+        weekday: 'long',
+        day: '2-digit',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+    });
+
+    const updateClock = () => {
+        clock.textContent = formatter.format(new Date()).replace(' pukul ', ' ');
+    };
+
+    updateClock();
+    setInterval(updateClock, 1000);
+});
+
 document.querySelectorAll('[data-auto-filter]').forEach((form) => {
     let timer;
     let isSubmitting = false;
@@ -943,7 +968,7 @@ document.querySelectorAll('[data-auto-filter]').forEach((form) => {
     form.querySelectorAll('input, select').forEach((field) => {
         if (field.type === 'hidden') return;
 
-        if (field.tagName === 'SELECT' || ['date', 'checkbox', 'radio'].includes(field.type)) {
+        if (field.tagName === 'SELECT' || ['date', 'month', 'checkbox', 'radio'].includes(field.type)) {
             field.addEventListener('change', () => submitForm());
             return;
         }

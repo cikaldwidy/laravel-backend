@@ -5,11 +5,11 @@
 
 @layer components {
     .user-page {
-        @apply min-h-[100dvh] bg-cyan-50 flex justify-center;
+        @apply min-h-[100dvh] w-full bg-cyan-50 flex justify-center md:px-4;
     }
 
     .user-phone {
-        @apply w-full max-w-sm min-h-[100dvh] bg-[#dffcff] shadow-2xl relative pb-[calc(6rem+env(safe-area-inset-bottom))];
+        @apply w-full max-w-sm md:max-w-5xl xl:max-w-6xl min-h-[100dvh] bg-[#dffcff] shadow-2xl relative pb-[calc(6rem+env(safe-area-inset-bottom))];
     }
 
     .user-header {
@@ -45,7 +45,7 @@
     }
 
     .user-bottom-nav-inner {
-        @apply w-full max-w-sm h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl;
+        @apply w-full max-w-sm md:max-w-5xl xl:max-w-6xl h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl;
     }
 
     .user-nav-link {

@@ -3,8 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Department;
+use App\Models\EmployeeDetail;
+use App\Models\Position;
+use App\Models\Unit;
 use App\Models\User;
+use App\Models\UserProfile;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -79,7 +85,15 @@ class UserController extends Controller
     // ================= CREATE =================
     public function create()
     {
-        return view('admin.users.create');
+        $departments = Department::query()
+            ->with([
+                'units' => fn ($query) => $query->orderBy('nama_unit'),
+                'positions' => fn ($query) => $query->orderBy('nama_jabatan'),
+            ])
+            ->orderBy('nama_departemen')
+            ->get();
+
+        return view('admin.users.create', compact('departments'));
     }
 
     public function store(Request $request)
@@ -88,17 +102,67 @@ class UserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
+            'no_hp' => ['required', 'regex:/^[0-9]+$/', 'max:20'],
+            'alamat' => ['required', 'string'],
+            'tanggal_lahir' => ['required', 'date'],
+            'jenis_kelamin' => ['required', 'in:L,P'],
+            'nik' => ['nullable', 'regex:/^[0-9]+$/', 'max:32'],
+            'department_id' => ['required', 'exists:departments,id'],
+            'unit_id' => ['required', 'exists:units,id'],
+            'position_id' => ['required', 'exists:positions,id'],
+            'nip' => ['required', 'string', 'max:50'],
+            'status_kerja' => ['required', 'in:tetap,kontrak,magang'],
+            'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
         ]);
 
-        User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'user',
-        ]);
+        $department = Department::query()->findOrFail($validated['department_id']);
+        $unit = Unit::query()->findOrFail($validated['unit_id']);
+        $position = Position::query()->findOrFail($validated['position_id']);
+
+        if ((int) $unit->department_id !== (int) $department->id) {
+            return back()->withErrors(['unit_id' => 'Unit yang dipilih tidak sesuai dengan departemen.'])->withInput();
+        }
+
+        if ((int) $position->department_id !== (int) $department->id) {
+            return back()->withErrors(['position_id' => 'Jabatan yang dipilih tidak sesuai dengan departemen.'])->withInput();
+        }
+
+        $fotoPath = $request->hasFile('foto')
+            ? $request->file('foto')->store('profiles', 'public')
+            : null;
+
+        DB::transaction(function () use ($validated, $department, $position, $fotoPath) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => 'user',
+            ]);
+
+            UserProfile::create([
+                'user_id' => $user->id,
+                'no_hp' => $validated['no_hp'],
+                'alamat' => $validated['alamat'],
+                'tanggal_lahir' => $validated['tanggal_lahir'],
+                'jenis_kelamin' => $validated['jenis_kelamin'],
+                'nik' => $validated['nik'] ?? null,
+                'foto' => $fotoPath,
+            ]);
+
+            EmployeeDetail::create([
+                'user_id' => $user->id,
+                'department_id' => $department->id,
+                'unit_id' => $validated['unit_id'],
+                'position_id' => $validated['position_id'],
+                'nip' => $validated['nip'],
+                'departemen' => $department->nama_departemen,
+                'jabatan' => $position->nama_jabatan,
+                'status_kerja' => $validated['status_kerja'],
+            ]);
+        });
 
         return redirect()->route('admin.users.index')
-            ->with('success', 'User berhasil dibuat');
+            ->with('success', 'Akun pegawai dan biodata berhasil dibuat');
     }
 
     // ================= EDIT =================

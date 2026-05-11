@@ -40,28 +40,30 @@
     ];
 @endphp
 <div class="report-page space-y-6 w-full min-w-0 max-w-full overflow-x-hidden">
-    <form method="GET" class="bg-white p-4 rounded-xl shadow grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 w-full min-w-0">
-        <input type="month" name="bulan" value="{{ request('bulan') }}" class="border rounded px-3 py-2 w-full min-w-0">
-        <input type="date" name="date_from" value="{{ request('date_from', $tanggalMulai->toDateString()) }}" class="border rounded px-3 py-2 w-full min-w-0">
-        <input type="date" name="date_to" value="{{ request('date_to', $tanggalSelesai->toDateString()) }}" class="border rounded px-3 py-2 w-full min-w-0">
-        <select name="user_id" class="border rounded px-3 py-2 w-full min-w-0">
-            <option value="">Semua User</option>
-            @foreach($users as $user)
-                <option value="{{ $user->id }}" @selected((string) request('user_id') === (string) $user->id)>{{ $user->name }}</option>
-            @endforeach
-        </select>
-        <select name="unit_id" class="border rounded px-3 py-2 w-full min-w-0">
-            <option value="">Semua Unit</option>
-            @foreach($units as $unit)
-                <option value="{{ $unit->id }}" @selected((string) request('unit_id') === (string) $unit->id)>{{ $unit->nama_unit }}</option>
-            @endforeach
-        </select>
-        <button class="bg-blue-600 text-white rounded px-4 py-2 font-semibold sm:col-span-2 xl:col-span-5 w-full min-w-0">Generate Laporan</button>
+    <form method="GET" data-auto-filter class="bg-white p-4 rounded-xl shadow grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,20rem)_minmax(12rem,24rem)] gap-3 w-full min-w-0 items-end">
+        <div>
+            <label class="text-xs font-semibold text-gray-600">Bulan</label>
+            <input type="month" name="bulan" value="{{ request('bulan', $selectedMonth) }}" class="border rounded px-3 py-2 w-full min-w-0">
+        </div>
+        <div>
+            <label class="text-xs font-semibold text-gray-600">Unit</label>
+            <select name="unit_id" class="border rounded px-3 py-2 w-full min-w-0" required>
+                <option value="" disabled @selected(blank(request('unit_id')))>Pilih Unit</option>
+                @foreach($units as $unit)
+                    <option value="{{ $unit->id }}" @selected((string) request('unit_id') === (string) $unit->id)>{{ $unit->nama_unit }}</option>
+                @endforeach
+            </select>
+        </div>
     </form>
 
     <div class="flex flex-wrap gap-3 w-full min-w-0">
-        <a href="{{ route('admin.reports.excel', request()->query()) }}" class="bg-emerald-600 text-white px-4 py-2 rounded font-semibold">Export Excel</a>
-        <a href="{{ route('admin.reports.pdf', request()->query()) }}" target="_blank" class="bg-red-600 text-white px-4 py-2 rounded font-semibold">Export PDF</a>
+        @if(request('unit_id'))
+            <a href="{{ route('admin.reports.excel', ['bulan' => request('bulan', $selectedMonth), 'unit_id' => request('unit_id')]) }}" class="bg-emerald-600 text-white px-4 py-2 rounded font-semibold">Export Excel</a>
+            <a href="{{ route('admin.reports.pdf', ['bulan' => request('bulan', $selectedMonth), 'unit_id' => request('unit_id')]) }}" target="_blank" class="bg-red-600 text-white px-4 py-2 rounded font-semibold">Export PDF</a>
+        @else
+            <span class="bg-slate-200 text-slate-500 px-4 py-2 rounded font-semibold cursor-not-allowed">Export Excel</span>
+            <span class="bg-slate-200 text-slate-500 px-4 py-2 rounded font-semibold cursor-not-allowed">Export PDF</span>
+        @endif
     </div>
 
     <div class="bg-white rounded-xl shadow p-4 w-full min-w-0 overflow-hidden">
@@ -147,7 +149,9 @@
             </div>
         </div>
     @empty
-        <div class="bg-white rounded-xl shadow p-6 text-center text-gray-500">Belum ada data laporan.</div>
+        <div class="bg-white rounded-xl shadow p-6 text-center text-gray-500">
+            {{ request('unit_id') ? 'Belum ada data laporan untuk unit dan bulan ini.' : 'Pilih unit terlebih dahulu untuk menampilkan laporan.' }}
+        </div>
     @endforelse
 </div>
 @endsection

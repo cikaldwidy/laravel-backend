@@ -13,8 +13,15 @@ class FeatureSettingController extends Controller
         $features = FeatureSetting::FEATURES;
         $roles = FeatureSetting::ROLES;
         $settings = FeatureSetting::matrix();
+        $availableFeatures = [];
 
-        return view('admin.feature_settings.index', compact('features', 'roles', 'settings'));
+        foreach (array_keys($features) as $featureKey) {
+            foreach ($roles as $role) {
+                $availableFeatures[$featureKey][$role] = FeatureSetting::availableForRole($featureKey, $role);
+            }
+        }
+
+        return view('admin.feature_settings.index', compact('features', 'roles', 'settings', 'availableFeatures'));
     }
 
     public function update(Request $request)
@@ -33,7 +40,8 @@ class FeatureSettingController extends Controller
                         'role' => $role,
                     ],
                     [
-                        'is_enabled' => isset($input[$featureKey][$role]),
+                        'is_enabled' => FeatureSetting::availableForRole($featureKey, $role)
+                            && isset($input[$featureKey][$role]),
                     ]
                 );
             }

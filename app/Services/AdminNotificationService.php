@@ -87,7 +87,10 @@ class AdminNotificationService
                 'message' => $alphaCount . ' pegawai terjadwal belum presensi hari ini.',
                 'icon' => 'fa-solid fa-user-xmark',
                 'tone' => 'bg-red-50 text-red-700',
-                'url' => route('admin.shift_management.schedules', ['tanggal' => $today]),
+                'url' => route('jadwal-dinas.index', [
+                    'bulan' => now()->month,
+                    'tahun' => now()->year,
+                ]),
                 'time' => now(),
             ] : null,
         ])->filter();

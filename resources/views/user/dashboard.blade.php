@@ -3,6 +3,19 @@
 @section('title', 'E-Presensi')
 
 @section('content')
+<style>
+    @media (min-width: 768px) {
+        .user-dashboard-main {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 22rem;
+            align-items: start;
+        }
+
+        .user-dashboard-main > .span-full {
+            grid-column: 1 / -1;
+        }
+    }
+</style>
 @php
     $jadwalMasuk = isset($scheduledShift) && $scheduledShift?->jam_masuk
         ? $scheduledShift->jam_masuk->format('H:i')
@@ -26,8 +39,8 @@
     $featureSettings = \App\Models\FeatureSetting::matrix();
 @endphp
 
-<div class="min-h-[100dvh] bg-cyan-50 flex justify-center">
-    <div class="w-full max-w-sm min-h-[100dvh] bg-[#dffcff] shadow-2xl relative pb-[calc(6rem+env(safe-area-inset-bottom))]">
+<div class="user-page">
+    <div class="user-phone">
         <header class="px-4 pt-4">
             <div class="flex items-start justify-between">
                 <div>
@@ -49,18 +62,18 @@
             </div>
         </header>
 
-        <main class="px-4 pt-4 space-y-4">
+        <main class="user-dashboard-main px-4 pt-4 gap-4 space-y-4 md:space-y-0">
             @if(!$hasScheduledShift)
-                <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
+                <section class="span-full bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
                     Shift kamu belum diatur oleh admin untuk hari ini. Absen hanya bisa dilakukan setelah ada jadwal shift.
                 </section>
             @elseif($isShiftOff)
-                <section class="bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl p-4 text-sm shadow-sm">
+                <section class="span-full bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl p-4 text-sm shadow-sm">
                     Hari ini kamu dijadwalkan libur.
                 </section>
             @endif
 
-            <section class="bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-white/70 overflow-hidden">
+            <section class="span-full bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-white/70 overflow-hidden">
                 <div class="grid grid-cols-2 divide-x divide-slate-100">
                     <div class="p-3 flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
@@ -86,7 +99,7 @@
                 </div>
             </section>
 
-            <section class="grid grid-cols-4 gap-3">
+            <section class="grid grid-cols-4 md:grid-cols-5 gap-3">
                 @php
                     $menu = [
                         ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir, 'url' => route('history.index')],
@@ -94,9 +107,7 @@
                         ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => $izin, 'url' => route('leave_requests.index')],
                         ['label' => 'Cuti', 'icon' => 'fa-plane-departure', 'badge' => 0, 'url' => route('features.show', 'cuti'), 'feature' => 'cuti'],
                         ['label' => 'ID Card', 'icon' => 'fa-id-card', 'badge' => 0, 'url' => route('profile.index')],
-                        ['label' => 'Istirahat', 'icon' => 'fa-mug-hot', 'badge' => 0, 'url' => route('features.show', 'istirahat'), 'feature' => 'istirahat'],
                         ['label' => 'Lembur', 'icon' => 'fa-clock', 'badge' => 0, 'url' => route('features.show', 'lembur'), 'feature' => 'lembur'],
-                        ['label' => 'Slip Gaji', 'icon' => 'fa-wallet', 'badge' => 0, 'url' => route('features.show', 'slip_gaji'), 'feature' => 'slip_gaji'],
                         ['label' => 'Jadwal', 'icon' => 'fa-calendar-days', 'badge' => 0, 'url' => route('user.shifts.index')],
                         ['label' => 'Swap Shift', 'icon' => 'fa-right-left', 'badge' => 0, 'url' => route('shift-swaps.index')],
                     ];
@@ -171,7 +182,7 @@
                 </div>
             </section>
 
-            <section class="space-y-3">
+            <section class="span-full space-y-3">
                 @php
                     $shiftLabel = 'SHIFT 1';
                     $shiftJam = $jadwalMasuk . ' - ' . $jadwalPulang;
@@ -220,8 +231,8 @@
             </section>
         </main>
 
-        <nav class="fixed bottom-0 left-0 w-full flex justify-center z-50 pb-[env(safe-area-inset-bottom)]">
-            <div class="w-full max-w-sm h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl">
+        <nav class="user-bottom-nav">
+            <div class="user-bottom-nav-inner">
                 <a href="{{ route('dashboard') }}" class="text-emerald-700 text-center text-xs">
                     <i class="fa-solid fa-house text-lg"></i>
                     <p>Home</p>

@@ -3,6 +3,15 @@
 @section('title', 'E-Presensi')
 
 @section('content')
+<style>
+    @media (min-width: 768px) {
+        .user-attendance-main {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) 22rem;
+            align-items: start;
+        }
+    }
+</style>
 @php
     $jadwalMasuk = isset($scheduledShift) && $scheduledShift?->jam_masuk
         ? $scheduledShift->jam_masuk->format('H:i')
@@ -23,8 +32,8 @@
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-<div class="min-h-[100dvh] bg-cyan-50 flex justify-center">
-    <div class="w-full max-w-sm min-h-[100dvh] bg-[#dffcff] shadow-2xl relative pb-[calc(6rem+env(safe-area-inset-bottom))]">
+<div class="user-page">
+    <div class="user-phone">
         <header class="h-14 bg-emerald-800 text-white flex items-center px-4 shadow">
             <a href="{{ route('dashboard') }}" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
                 <i class="fa-solid fa-chevron-left"></i>
@@ -33,7 +42,7 @@
             <div class="w-8"></div>
         </header>
 
-        <main class="px-4 pt-5 space-y-4">
+        <main class="user-attendance-main px-4 pt-5 gap-4 space-y-4 md:space-y-0">
             <form id="attendanceForm" method="POST" action="{{ route('absen.store') }}" class="hidden">
                 @csrf
                 <input type="hidden" name="blink_verified" id="blinkVerified" value="false">
@@ -202,8 +211,8 @@
             </section>
         </main>
 
-        <nav class="fixed bottom-0 left-0 w-full flex justify-center z-50 pb-[env(safe-area-inset-bottom)]">
-            <div class="w-full max-w-sm h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl">
+        <nav class="user-bottom-nav">
+            <div class="user-bottom-nav-inner">
                 <a href="{{ route('dashboard') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-house text-lg"></i>
                     <p>Home</p>

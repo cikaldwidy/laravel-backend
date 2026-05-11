@@ -43,16 +43,20 @@
                             </td>
                             @foreach($roles as $role)
                                 <td class="px-5 py-4 text-center">
-                                    <label class="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            name="settings[{{ $featureKey }}][{{ $role }}]"
-                                            value="1"
-                                            class="sr-only peer"
-                                            @checked($settings[$featureKey][$role] ?? false)
-                                        >
-                                        <span class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-100 rounded-full peer peer-checked:after:translate-x-6 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></span>
-                                    </label>
+                                    @if($availableFeatures[$featureKey][$role] ?? true)
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                name="settings[{{ $featureKey }}][{{ $role }}]"
+                                                value="1"
+                                                class="sr-only peer"
+                                                @checked($settings[$featureKey][$role] ?? false)
+                                            >
+                                            <span class="w-12 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-100 rounded-full peer peer-checked:after:translate-x-6 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></span>
+                                        </label>
+                                    @else
+                                        <span class="text-xs font-semibold text-gray-400">Dihapus</span>
+                                    @endif
                                 </td>
                             @endforeach
                         </tr>

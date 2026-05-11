@@ -51,6 +51,8 @@ class UserDashboardController extends Controller
             ->get();
 
         $workSetting = WorkSetting::first();
+        $checkinEarlyMinutes = (int) ($workSetting?->checkin_early_minutes ?? WorkSetting::DEFAULT_CHECKIN_EARLY_MINUTES);
+        $checkoutLateMinutes = (int) ($workSetting?->checkout_late_minutes ?? WorkSetting::DEFAULT_CHECKOUT_LATE_MINUTES);
 
         // Shift for display (RS): jadwal shift hari ini dan shift aktif (untuk shift malam lintas hari).
         $activeShift = null;
@@ -79,8 +81,8 @@ class UserDashboardController extends Controller
                 $shiftDate,
                 $candidate->jam_masuk->format('H:i:s'),
                 $candidate->jam_pulang->format('H:i:s'),
-                60,
-                180
+                $checkinEarlyMinutes,
+                $checkoutLateMinutes
             );
 
             if ($now->between($window['allowed_start'], $window['allowed_end'], true)) {

@@ -20,14 +20,18 @@ class ReportController extends Controller
         [$tanggalMulai, $tanggalSelesai] = $this->resolveDateRange($request);
         $rows = $this->buildRows($request, $tanggalMulai, $tanggalSelesai);
         $matrix = $this->buildMatrixReport($request, $tanggalMulai, $tanggalSelesai);
-        $users = User::query()->where('role', 'user')->orderBy('name')->get();
         $units = Unit::query()->orderBy('nama_unit')->get();
+        $selectedMonth = $tanggalMulai->format('Y-m');
 
-        return view('admin.reports.index', compact('rows', 'matrix', 'users', 'units', 'tanggalMulai', 'tanggalSelesai'));
+        return view('admin.reports.index', compact('rows', 'matrix', 'units', 'tanggalMulai', 'tanggalSelesai', 'selectedMonth'));
     }
 
     public function exportExcel(Request $request): StreamedResponse
     {
+        $request->validate([
+            'unit_id' => ['required', 'integer', 'exists:units,id'],
+        ]);
+
         [$tanggalMulai, $tanggalSelesai] = $this->resolveDateRange($request);
         $matrix = $this->buildMatrixReport($request, $tanggalMulai, $tanggalSelesai);
         $filename = 'laporan-presensi-' . $tanggalMulai->format('Ymd') . '-' . $tanggalSelesai->format('Ymd') . '.xls';
@@ -39,6 +43,10 @@ class ReportController extends Controller
 
     public function exportPdf(Request $request)
     {
+        $request->validate([
+            'unit_id' => ['required', 'integer', 'exists:units,id'],
+        ]);
+
         [$tanggalMulai, $tanggalSelesai] = $this->resolveDateRange($request);
         $matrix = $this->buildMatrixReport($request, $tanggalMulai, $tanggalSelesai);
 
@@ -47,15 +55,16 @@ class ReportController extends Controller
 
     private function resolveDateRange(Request $request): array
     {
-        if ($request->filled('bulan')) {
-            $month = Carbon::createFromFormat('Y-m', $request->bulan);
-            return [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()];
-        }
+        $validated = $request->validate([
+            'bulan' => ['nullable', 'date_format:Y-m'],
+            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+        ]);
 
-        $mulai = $request->filled('date_from') ? Carbon::parse($request->date_from) : today()->startOfMonth();
-        $selesai = $request->filled('date_to') ? Carbon::parse($request->date_to) : today()->endOfMonth();
+        $month = isset($validated['bulan'])
+            ? Carbon::createFromFormat('Y-m', $validated['bulan'])
+            : today();
 
-        return [$mulai->startOfDay(), $selesai->endOfDay()];
+        return [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()];
     }
 
     private function buildRows(Request $request, Carbon $tanggalMulai, Carbon $tanggalSelesai): array
@@ -63,9 +72,10 @@ class ReportController extends Controller
         $users = User::query()
             ->with(['employeeDetail.department', 'employeeDetail.unit', 'leaveRequests'])
             ->where('role', 'user')
-            ->when($request->filled('user_id'), fn ($query) => $query->where('id', $request->user_id))
             ->when($request->filled('unit_id'), function ($query) use ($request) {
                 $query->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $request->unit_id));
+            }, function ($query) {
+                $query->whereRaw('1 = 0');
             })
             ->get()
             ->keyBy('id');
@@ -134,9 +144,10 @@ class ReportController extends Controller
         $users = User::query()
             ->with(['employeeDetail.department', 'employeeDetail.unit'])
             ->where('role', 'user')
-            ->when($request->filled('user_id'), fn ($query) => $query->where('id', $request->user_id))
             ->when($request->filled('unit_id'), function ($query) use ($request) {
                 $query->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $request->unit_id));
+            }, function ($query) {
+                $query->whereRaw('1 = 0');
             })
             ->orderBy('name')
             ->get();

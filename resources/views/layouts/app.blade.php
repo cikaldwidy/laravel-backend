@@ -13,6 +13,7 @@
             background: #ecfeff;
             display: flex;
             justify-content: center;
+            width: 100%;
         }
 
         .user-phone {
@@ -23,6 +24,25 @@
             padding-bottom: calc(6rem + env(safe-area-inset-bottom));
             background: #dffcff;
             box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.25);
+        }
+
+        @media (min-width: 768px) {
+            .user-page {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .user-phone,
+            .user-bottom-nav-inner {
+                max-width: 64rem;
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .user-phone,
+            .user-bottom-nav-inner {
+                max-width: 72rem;
+            }
         }
 
         .user-header-icon {

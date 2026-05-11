@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class FeatureSetting extends Model
 {
+    public const ADMIN_HIDDEN_FEATURES = ['istirahat', 'slip_gaji'];
+
     public const FEATURES = [
         'sakit' => [
             'label' => 'Sakit',
@@ -43,10 +45,27 @@ class FeatureSetting extends Model
 
     public static function enabled(string $featureKey, string $role): bool
     {
+        if (!static::availableForRole($featureKey, $role)) {
+            return false;
+        }
+
         return (bool) static::query()
             ->where('feature_key', $featureKey)
             ->where('role', $role)
             ->value('is_enabled');
+    }
+
+    public static function availableForRole(string $featureKey, string $role): bool
+    {
+        return $role !== 'admin' || !in_array($featureKey, self::ADMIN_HIDDEN_FEATURES, true);
+    }
+
+    public static function featureKeysForRole(string $role): array
+    {
+        return array_values(array_filter(
+            array_keys(self::FEATURES),
+            fn (string $featureKey) => static::availableForRole($featureKey, $role)
+        ));
     }
 
     public static function matrix(): array
@@ -59,7 +78,8 @@ class FeatureSetting extends Model
 
         foreach (array_keys(self::FEATURES) as $featureKey) {
             foreach (self::ROLES as $role) {
-                $matrix[$featureKey][$role] = (bool) ($settings->get($featureKey . ':' . $role)?->is_enabled ?? false);
+                $matrix[$featureKey][$role] = static::availableForRole($featureKey, $role)
+                    && (bool) ($settings->get($featureKey . ':' . $role)?->is_enabled ?? false);
             }
         }
 

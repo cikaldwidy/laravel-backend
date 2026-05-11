@@ -21,74 +21,16 @@ class ShiftManagementController extends Controller
     {
         $validated = $request->validate([
             'tanggal' => ['nullable', 'date'],
-            'user_id' => ['nullable', 'integer', 'exists:users,id'],
             'unit_id' => ['nullable', 'integer', 'exists:units,id'],
         ]);
 
-        $tanggal = isset($validated['tanggal'])
-            ? Carbon::parse($validated['tanggal'])->toDateString()
-            : now()->toDateString();
+        $tanggal = isset($validated['tanggal']) ? Carbon::parse($validated['tanggal']) : now();
 
-        $query = ShiftSchedule::query()
-            ->with('user.employeeDetail.unit')
-            ->whereDate('tanggal', $tanggal)
-            ->orderBy('jam_masuk')
-            ->orderBy('id');
-
-        if (!empty($validated['user_id'])) {
-            $query->where('user_id', $validated['user_id']);
-        }
-
-        if (!empty($validated['unit_id'])) {
-            $query->whereHas('user.employeeDetail', fn ($detail) => $detail->where('unit_id', $validated['unit_id']));
-        }
-
-        $schedules = $query->get();
-
-        $users = User::query()
-            ->with('employeeDetail.unit')
-            ->where('role', 'user')
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
-
-        $shiftTemplates = Shift::query()
-            ->orderBy('nama_shift')
-            ->get();
-
-        $units = Unit::query()
-            ->orderBy('nama_unit')
-            ->get();
-
-        $scheduleMatrix = $this->buildScheduleMatrix($request, Carbon::parse($tanggal));
-
-        return view('admin.shift_management.schedules', compact('tanggal', 'schedules', 'users', 'shiftTemplates', 'units', 'scheduleMatrix'));
-    }
-
-    public function createSchedule(Request $request)
-    {
-        $validated = $request->validate([
-            'tanggal' => ['nullable', 'date'],
-        ]);
-
-        $tanggal = isset($validated['tanggal'])
-            ? Carbon::parse($validated['tanggal'])->toDateString()
-            : now()->toDateString();
-
-        $users = User::query()
-            ->with('employeeDetail.unit')
-            ->where('role', 'user')
-            ->orderBy('name')
-            ->get(['id', 'name', 'email']);
-
-        $shiftTemplates = Shift::query()
-            ->orderBy('nama_shift')
-            ->get();
-
-        $units = Unit::query()
-            ->orderBy('nama_unit')
-            ->get();
-
-        return view('admin.shift_management.schedules-create', compact('tanggal', 'users', 'shiftTemplates', 'units'));
+        return redirect()->route('jadwal-dinas.index', array_filter([
+            'bulan' => $tanggal->month,
+            'tahun' => $tanggal->year,
+            'unit_id' => $validated['unit_id'] ?? null,
+        ]));
     }
 
     public function storeSchedule(Request $request)
@@ -527,9 +469,10 @@ class ShiftManagementController extends Controller
         $users = User::query()
             ->with('employeeDetail.unit')
             ->where('role', 'user')
-            ->when($request->filled('user_id'), fn ($query) => $query->where('id', $request->user_id))
             ->when($request->filled('unit_id'), function ($query) use ($request) {
                 $query->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $request->unit_id));
+            }, function ($query) {
+                $query->whereRaw('1 = 0');
             })
             ->orderBy('name')
             ->get(['id', 'name']);

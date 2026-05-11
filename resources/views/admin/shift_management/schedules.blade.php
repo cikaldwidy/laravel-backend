@@ -32,31 +32,22 @@
 @endphp
 <div class="schedule-page space-y-5 w-full min-w-0 max-w-full overflow-x-hidden">
     <div class="bg-white rounded-md shadow border border-gray-200 p-4 w-full min-w-0">
-        <form method="GET" data-auto-filter class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-end w-full min-w-0">
+        <form method="GET" data-auto-filter class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[minmax(12rem,22rem)_minmax(12rem,22rem)_auto] gap-3 items-end w-full min-w-0">
             <div>
                 <label class="text-xs font-semibold text-gray-600">Tanggal</label>
                 <input type="date" name="tanggal" value="{{ $tanggal }}" class="w-full min-w-0 border rounded-md px-3 py-2 text-sm">
             </div>
             <div>
                 <label class="text-xs font-semibold text-gray-600">Unit</label>
-                <select name="unit_id" class="w-full min-w-0 border rounded-md px-3 py-2 text-sm">
-                    <option value="">Semua Unit</option>
+                <select name="unit_id" class="w-full min-w-0 border rounded-md px-3 py-2 text-sm" required>
+                    <option value="" disabled @selected(blank(request('unit_id')))>Pilih Unit</option>
                     @foreach($units as $unit)
                         <option value="{{ $unit->id }}" @selected((string)request('unit_id') === (string)$unit->id)>{{ $unit->nama_unit }}</option>
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="text-xs font-semibold text-gray-600">User</label>
-                <select name="user_id" class="w-full min-w-0 border rounded-md px-3 py-2 text-sm">
-                    <option value="">Semua User</option>
-                    @foreach($users as $user)
-                        <option value="{{ $user->id }}" @selected((string)request('user_id') === (string)$user->id)>{{ $user->name }}{{ $user->employeeDetail?->unit?->nama_unit ? ' - '.$user->employeeDetail->unit->nama_unit : '' }}</option>
-                    @endforeach
-                </select>
-            </div>
             <div class="flex gap-2">
-                <a href="{{ route('admin.shift_management.schedules.create', ['tanggal' => $tanggal]) }}" class="bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-semibold">Tambah Jadwal</a>
+                <a href="{{ route('jadwal-dinas.index', array_filter(['bulan' => \Illuminate\Support\Carbon::parse($tanggal)->month, 'tahun' => \Illuminate\Support\Carbon::parse($tanggal)->year, 'unit_id' => request('unit_id')])) }}" class="bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-semibold">Kelola Jadwal Bulanan</a>
                 <a href="{{ route('admin.shift_management.schedules') }}" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-semibold">Reset</a>
             </div>
         </form>
@@ -92,7 +83,7 @@
                 </div>
             </div>
             <div class="schedule-table-scroll pb-1">
-                <table class="schedule-table text-xs border-collapse table-fixed" style="width: {{ $scheduleTableMinWidth }}px; min-width: {{ $scheduleTableMinWidth }}px;">
+                <table class="schedule-table text-xs border-collapse table-fixed" data-schedule-table-width="{{ $scheduleTableMinWidth }}">
                     <thead>
                         <tr class="bg-teal-100 text-slate-900">
                             <th class="p-2 border border-slate-300 text-left align-middle w-60 sticky left-0 z-10 bg-teal-100" rowspan="2">Nama / Tanggal</th>
@@ -146,9 +137,16 @@
         </div>
     @empty
         <div class="bg-white rounded-md shadow border border-gray-200 p-6 text-center text-sm text-gray-500">
-            Belum ada pegawai untuk ditampilkan.
+            {{ request('unit_id') ? 'Belum ada pegawai untuk unit ini.' : 'Pilih unit terlebih dahulu untuk menampilkan jadwal pegawai.' }}
         </div>
     @endforelse
 
-</div>
+</div>  
+<script>
+document.querySelectorAll('[data-schedule-table-width]').forEach((table) => {
+    const width = `${table.dataset.scheduleTableWidth}px`;
+    table.style.width = width;
+    table.style.minWidth = width;
+});
+</script>
 @endsection

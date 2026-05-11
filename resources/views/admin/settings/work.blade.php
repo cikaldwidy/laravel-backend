@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Pengaturan Lokasi & Jam Default')
+@section('title', 'Pengaturan Lokasi Presensi')
 
 @section('content')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -8,25 +8,16 @@
 <div class="max-w-5xl mx-auto">
     <div class="bg-white rounded-lg shadow">
         <div class="p-5 border-b">
-            <h2 class="font-bold text-lg text-gray-800">Lokasi Kantor & Jam Default</h2>
+            <h2 class="font-bold text-lg text-gray-800">Lokasi Presensi</h2>
             <p class="text-sm text-gray-500 mt-1">
-                Untuk sistem RS berbasis shift, status telat/pulang cepat mengikuti jadwal shift.
-                Pengaturan ini dipakai untuk validasi radius lokasi presensi dan jam default (opsional).
+                Atur titik GPS kantor, radius presensi, dan toleransi waktu absen untuk jadwal shift.
             </p>
         </div>
 
         <form method="POST" action="{{ route('admin.settings.work.update') }}" class="p-5 space-y-5">
             @csrf
 
-            {{--
-                Jam default tidak dipakai untuk RS berbasis shift, tapi tetap dikirim agar validasi controller tidak berubah.
-                Admin fokus ke GPS/radius; jadwal jam ditentukan oleh shift per user.
-            --}}
-            <input type="hidden" name="jam_masuk" value="{{ old('jam_masuk', \Illuminate\Support\Str::of($setting->jam_masuk)->substr(0, 5)) }}">
-            <input type="hidden" name="jam_pulang" value="{{ old('jam_pulang', \Illuminate\Support\Str::of($setting->jam_pulang)->substr(0, 5)) }}">
-            <input type="hidden" name="batas_telat" value="{{ old('batas_telat', $setting->batas_telat) }}">
-
-            <div class="border-t pt-5">
+            <div>
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
                     <div>
                         <h3 class="font-bold text-gray-800">GPS Kantor</h3>
@@ -104,21 +95,55 @@
                 </div>
             </div>
 
+            <div class="border rounded-lg p-4">
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-800">Toleransi Absen Shift</h3>
+                    <p class="text-sm text-gray-500">Jadwal utama tetap mengikuti shift per pegawai. Pengaturan ini hanya menentukan kapan tombol absen boleh aktif.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label for="checkin_early_minutes" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Boleh absen sebelum shift
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <input
+                                id="checkin_early_minutes"
+                                type="number"
+                                min="0"
+                                max="240"
+                                name="checkin_early_minutes"
+                                value="{{ old('checkin_early_minutes', $setting->checkin_early_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKIN_EARLY_MINUTES) }}"
+                                class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            >
+                            <span class="text-sm text-gray-600">menit</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="checkout_late_minutes" class="block text-sm font-semibold text-gray-700 mb-2">
+                            Sesi absen berakhir setelah shift
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <input
+                                id="checkout_late_minutes"
+                                type="number"
+                                min="0"
+                                max="480"
+                                name="checkout_late_minutes"
+                                value="{{ old('checkout_late_minutes', $setting->checkout_late_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKOUT_LATE_MINUTES) }}"
+                                class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                required
+                            >
+                            <span class="text-sm text-gray-600">menit</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="bg-gray-50 border rounded-lg p-4 text-sm text-gray-600">
                 <p>
-                    Jam masuk saat ini:
-                    <span class="font-semibold text-gray-800">{{ \Illuminate\Support\Str::of($setting->jam_masuk)->substr(0, 5) }}</span>
-                </p>
-                <p class="mt-1">
-                    Jam pulang saat ini:
-                    <span class="font-semibold text-gray-800">{{ \Illuminate\Support\Str::of($setting->jam_pulang)->substr(0, 5) }}</span>
-                </p>
-                <p class="mt-1">
-                    User dianggap telat jika presensi masuk lebih dari
-                    <span class="font-semibold text-gray-800">{{ $setting->batas_telat }} menit</span>
-                    dari jam masuk.
-                </p>
-                <p class="mt-1">
                     Titik GPS kantor:
                     <span class="font-semibold text-gray-800">
                         {{ $setting->office_latitude ?? config('attendance.office_latitude') }},
@@ -126,6 +151,13 @@
                     </span>
                     dengan radius
                     <span class="font-semibold text-gray-800">{{ $setting->radius_meters ?? config('attendance.radius_meters', 100) }} meter</span>.
+                </p>
+                <p class="mt-1">
+                    Absen dapat dimulai
+                    <span class="font-semibold text-gray-800">{{ $setting->checkin_early_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKIN_EARLY_MINUTES }} menit</span>
+                    sebelum jam masuk shift dan sesi absen berakhir
+                    <span class="font-semibold text-gray-800">{{ $setting->checkout_late_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKOUT_LATE_MINUTES }} menit</span>
+                    setelah jam pulang shift.
                 </p>
             </div>
 

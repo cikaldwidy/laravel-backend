@@ -125,7 +125,7 @@
         <div class="bg-slate-950 p-6 text-white flex flex-col justify-between border border-slate-800">
             <div class="space-y-4">
                 <p class="text-sm uppercase tracking-[.2px] flex items-center gap-2 text-slate-200">
-                    <i class="fa-solid fa-location-dot"></i> Lokasi & Jam Kerja
+                    <i class="fa-solid fa-location-dot"></i> Lokasi Presensi
                 </p>
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Koordinat GPS</p>
@@ -138,6 +138,13 @@
                     <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Radius</p>
                     <p class="text-lg font-bold mt-1">
                         {{ $workSetting?->radius_meters ?? config('attendance.radius_meters', 100) }}<span class="opacity-70 text-sm"> Meter</span>
+                    </p>
+                </div>
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest text-slate-400">Toleransi Shift</p>
+                    <p class="text-lg font-bold mt-1">
+                        {{ $workSetting?->checkin_early_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKIN_EARLY_MINUTES }} /
+                        {{ $workSetting?->checkout_late_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKOUT_LATE_MINUTES }}<span class="opacity-70 text-sm"> Menit</span>
                     </p>
                 </div>
             </div>
