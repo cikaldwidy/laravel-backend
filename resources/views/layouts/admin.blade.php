@@ -393,7 +393,7 @@
     }
     </style>
 </head>
-<body class="font-jakarta">
+<body>
 @php
     $adminToasts = collect([
         session('success') ? ['type' => 'success', 'title' => 'Berhasil', 'message' => session('success')] : null,

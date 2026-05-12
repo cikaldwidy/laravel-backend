@@ -4,63 +4,13 @@
 
 @section('content')
 
-<!-- STEP PROGRESS -->
-<div class="px-8 md:px-14 lg:px-20 mt-5">
-    
-
-  <div class="relative p-5">
-
-    <!-- GARIS UTAMA (di belakang angka) -->
-    <div class="absolute top-10 left-0 w-full h-[2px] bg-gray-300"></div>
-
-    <!-- STEP -->
-    <div class="flex justify-between relative z-10 text-[8px] md:text-sm text-gray-500 tracking-[1px]">
-
-      <!-- STEP 1 -->
-      <div class="flex flex-col items-center">
-        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold">
-          1
-        </div>
-        <span class="mt-1 text-blue-600 font-semibold ">LOGIN</span>
-      </div>
-
-      <!-- STEP 2 -->
-      <div class="flex flex-col items-center">
-        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300">
-          2
-        </div>
-        <span class="mt-1">PENDAFTARAN WAJAH</span>
-      </div>
-
-      <!-- STEP 3 -->
-      <div class="flex flex-col items-center">
-        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300">
-          3
-        </div>
-        <span class="mt-1">VERIFIKASI</span>
-      </div>
-
-      <!-- STEP 4 -->
-      <div class="flex flex-col items-center">
-        <div class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-300">
-          4
-        </div>
-        <span class="mt-1">BERHASIL</span>
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
-
-<div class="flex flex-1 items-center justify-center px-8 md:px-14 lg:px-20 py-7">
+<div class="flex flex-1 items-center justify-center px-8 md:px-14 lg:px-20 py-10 md:py-14">
 
   <div class="w-full bg-white rounded-md shadow-lg p-2 md:p-5 flex flex-col md:flex-row gap-8">
 
     <!-- LEFT -->
     <div class="md:w-1/2 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-8">
-      <img src="{{ asset('img/img-login.jpg') }}" class="w-[200px] h-auto mb-4">
+      <img src="{{ asset('img/img-login.png') }}" class="w-[250px] h-auto mb-4">
       <h2 class="text-3xl font-bold text-gray-700 tracking-[.5px]">
         Selamat Datang
       </h2>
@@ -76,20 +26,25 @@
         Login Akun
       </h3>
 
+      <p class="text-sm text-gray-400 mb-5">
+        Login untuk melanjutkan absensi atau pendaftaran wajah tanpa perlu masuk ulang setiap saat.
+      </p>
+
       <form method="POST" action="{{ route('login') }}" class="space-y-4">
         @csrf
+        <input type="hidden" name="redirect_to" value="{{ request('redirect_to') }}">
 
-        <!-- EMAIL -->
+        <!-- NIP / USERNAME -->
         <div>
-          <label class="text-sm text-gray-700">Email atau Username <span class="text-red-500">*</span></label>
+          <label class="text-sm text-gray-700">NIP / Username <span class="text-red-500">*</span></label>
           <input
             type="text"
-            name="email"
-            value="{{ old('email') }}"
-            placeholder="Masukkan email atau username"
+            name="login"
+            value="{{ old('login') }}"
+            placeholder="Masukkan NIP atau username"
             class="w-full mt-1 px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-          @error('email')
+          @error('login')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
           @enderror
         </div>
@@ -111,10 +66,20 @@
           @enderror
         </div>
 
-        <!-- FORGOT -->
-        <div class="text-right">
-          <a href="#" class="text-sm text-blue-600 hover:underline">
-            Lupa password?
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <label class="inline-flex items-center gap-2 text-sm text-gray-500">
+            <input
+              type="checkbox"
+              name="remember"
+              value="1"
+              @checked(old('remember'))
+              class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            >
+            <span>Ingat saya di perangkat ini</span>
+          </label>
+
+          <a href="{{ route('login', ['redirect_to' => 'face.enroll']) }}" class="text-sm text-blue-600 font-semibold hover:underline">
+            Pendaftaran wajah
           </a>
         </div>
 

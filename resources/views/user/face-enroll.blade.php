@@ -27,17 +27,22 @@
 
 .face-enroll-shell {
     width: 100%;
-    max-width: 65rem;
 }
 
 .face-enroll-stage {
     aspect-ratio: 18 / 9;
-    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    background: #ffffff;
+    border: 1px solid rgba(191, 219, 254, 0.9);
 }
 
 .face-guide {
-    width: min(80vw, 26rem);
-    height: min(80vw, 26rem);
+    width: min(82vw, 29rem);
+    height: min(82vw, 29rem);
+}
+
+.camera-panel {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
 }
 
 /* ── blur mask luar lingkaran ── */
@@ -71,6 +76,29 @@
 
 .face-guide.is-camera-ready .face-blur-outer {
     opacity: 1;
+}
+
+.camera-guide-text {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    text-shadow: 0 2px 10px rgba(15, 23, 42, 0.45);
+}
+
+.camera-guide-text.is-visible {
+    opacity: 1;
+}
+
+.camera-guide-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 9999px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.22);
+    backdrop-filter: blur(10px);
 }
 
 /* ── scan track ── */
@@ -199,8 +227,8 @@
 @media (max-width: 640px) {
     .face-enroll-stage { aspect-ratio: 5 / 6; }
     .face-guide {
-        width: min(84vw, 19rem);
-        height: min(84vw, 19rem);
+        width: min(86vw, 21rem);
+        height: min(86vw, 21rem);
     }
 }
 </style>
@@ -233,37 +261,68 @@
     </div>
 </div>
 
-<div class="flex flex-1 items-center justify-center py-7">
-    <div class="face-enroll-shell p-4 md:p-6">
+<div class="px-6 md:px-10 pb-7">
+    <div class="face-enroll-shell">
         <div class="mx-auto">
-            <div class="mb-6 w-full bg-gray-50 border border-gray-100 rounded-lg p-4 text-left">
-                <h3 class="text-lg  font-semibold text-gray-700 tracking-[.5px]">Petunjuk</h3>
-                <div class="mt-4 space-y-3 text-sm text-gray-500 tracking-[.3px]">
-                    <p class="flex gap-3">
-                        <span class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                            <i class="fa-regular fa-face-smile"></i>
+            <div class="mb-8 w-full rounded-md border border-blue-100 bg-white p-6 md:p-8 text-left shadow-[0_18px_40px_rgba(37,99,235,0.08)]">
+                <div class="flex flex-col gap-7 md:flex-row md:items-center">
+                    <div class="md:w-72 md:shrink-0 flex justify-center">
+                        <img src="{{ asset('img/img-pendaftaran.png') }}" alt="Pendaftaran Wajah" class="w-52 md:w-64 h-auto">
+                    </div>
+                    <div class="flex-1">
+                        <span class="inline-flex items-center px-2 py-1.5 text-xs font-semibold uppercase tracking-[1.5px] text-blue-600">
+                            Panduan Pendaftaran Wajah 
                         </span>
-                        <span>Hadapkan wajah ke kamera dan pastikan posisi berada di tengah bingkai.</span>
-                    </p>
-                    <p class="flex gap-3">
-                        <span class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                            <i class="fa-regular fa-lightbulb"></i>
-                        </span>
-                        <span>Gunakan pencahayaan cukup agar sistem dapat membaca wajah dengan stabil.</span>
-                    </p>
-                    <p class="flex gap-3">
-                        <span class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                            <i class="fa-solid fa-arrows-rotate"></i>
-                        </span>
-                        <span>Sampel akan tersimpan otomatis setelah wajah jelas dan kedipan terverifikasi.</span>
-                    </p>
+                        <div class="mt-3 space-y-4 text-sm md:text-[15px] text-slate-600 tracking-[.2px]">
+                            <p class="flex items-center gap-4 rounded-md bg-white/75 p-2 ring-1 ring-blue-50">
+                                <span class="flex h-12 w-12 shrink-0 items-center justify-center self-center rounded-full bg-blue-50 text-blue-600">
+                                    <i class="fa-regular fa-face-smile"></i>
+                                </span>
+                                <span class="self-center leading-relaxed">Hadapkan wajah ke kamera dan pastikan posisi berada di tengah bingkai.</span>
+                            </p>
+                            <p class="flex items-center gap-4 rounded-md bg-white/75 p-2 ring-1 ring-blue-50">
+                                <span class="flex h-12 w-12 shrink-0 items-center justify-center self-center rounded-full bg-blue-50 text-blue-600">
+                                    <i class="fa-regular fa-lightbulb"></i>
+                                </span>
+                                <span class="self-center leading-relaxed">Gunakan pencahayaan cukup agar sistem dapat membaca wajah dengan stabil.</span>
+                            </p>
+                            <p class="flex items-center gap-4 rounded-2xl bg-white/75 p-2 ring-1 ring-blue-50">
+                                <span class="flex h-12 w-12 shrink-0 items-center justify-center self-center rounded-full bg-blue-50 text-blue-600">
+                                    <i class="fa-solid fa-arrows-rotate"></i>
+                                </span>
+                                <span class="self-center leading-relaxed">Sampel akan tersimpan otomatis setelah wajah jelas dan kedipan terverifikasi.</span>
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div id="enrollStage" class="face-enroll-stage relative overflow-hidden">
-                <video id="video" autoplay muted playsinline class="w-full h-full object-cover opacity-0 transition-opacity duration-300"></video>
-                <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div id="headGuide" class="face-guide relative transition-transform duration-500 ease-out">
+            <div class="camera-panel rounded-md p-4 md:p-5">
+                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <p class="text-sm font-semibold uppercase tracking-[1.4px] text-blue-600">Area Kamera</p>
+                        <p class="mt-1 text-sm text-slate-500">Aktifkan kamera, lalu ikuti instruksi sampai 3 sampel wajah tersimpan.</p>
+                    </div>
+                    <div class="flex flex-col gap-3 w-full md:w-auto md:items-end">
+                        <div id="cameraStatusBadge" class="inline-flex items-center gap-2 self-start border border-gray-200 bg-gray-100 px-2 py-1.5 text-xs font-medium tracking-[.3px] text-slate-500 md:self-end">
+                            <i id="cameraStatusIcon" class="fa-solid fa-camera-slash"></i>
+                            <span id="cameraStatusText">Kamera mati</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full md:min-w-[360px]">
+                        <button id="startCamera" class="w-full rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold tracking-[.5px] text-white transition hover:bg-blue-700 hover:shadow-lg">
+                            <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA
+                        </button>
+                        <button id="resetSamples" class="w-full rounded-md border border-red-200 bg-white px-4 py-2 text-xs font-semibold tracking-[.5px] text-red-500 transition hover:bg-red-50">
+                            RESET
+                        </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="enrollStage" class="face-enroll-stage relative overflow-hidden">
+                    <video id="video" autoplay muted playsinline class="w-full h-full object-cover opacity-0 transition-opacity duration-300"></video>
+                    <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                      <div id="headGuide" class="face-guide relative transition-transform duration-500 ease-out">
 
     <!-- BLUR LUAR LINGKARAN (box-shadow trick, bukan backdrop-filter) -->
     <div class="face-blur-outer"></div>
@@ -279,21 +338,19 @@
         <div id="scanLine" class="face-scan-line"></div>
     </div>
 </div>
-                </div>
-                <div id="cameraBadge" class="absolute left-1/2 bottom-4 -translate-x-1/2 bg-red-500 text-white text-xs md:text-sm px-3 py-2 rounded-full shadow-sm tracking-[.3px]">
-                    Kamera belum aktif
+                        <div id="guideInstruction" class="camera-guide-text camera-guide-badge mt-4 mx-4 text-center text-sm font-medium text-white tracking-[.3px]">
+                            Arahkan wajah ke kamera, lalu kedipkan mata.
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <p id="status" class="mt-4 text-sm text-gray-500 text-center tracking-[.3px]">
-                Siapkan kamera untuk mulai enrollment.
-            </p>
-            <p id="guideInstruction" class="mt-3 text-sm font-medium text-orange-500 text-center tracking-[.3px]">
-                Arahkan wajah ke kamera, lalu kedipkan mata.
+            <p id="status" class="mt-5 text-sm text-gray-500 text-center tracking-[.3px]">
+                Siapkan kamera untuk mulai proses pendaftaran.
             </p>
 
             <div class="mt-6">
-                <div class="rounded-md border border-blue-100 bg-blue-50/50 p-4 sm:p-5 shadow-sm">
+                <div class="rounded-md border bg-white p-4 sm:p-5">
                     <div class="flex items-center justify-between text-sm font-semibold text-gray-700">
                         <p class="tracking-[.3px]">Wajah Disimpan</p>
                         <p id="sampleCount">0 / 3</p>
@@ -312,15 +369,6 @@
                 </div>
             </div>
 
-            <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
-                <button id="startCamera" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md hover:shadow-lg transition text-sm tracking-[.5px]">
-                    <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA
-                </button>
-                <button id="resetSamples" class="w-full border border-red-200 text-red-500 hover:bg-red-50 font-semibold py-3 rounded-md transition text-sm tracking-[.5px]">
-                    RESET
-                </button>
-            </div>
-
             <canvas id="captureCanvas" class="hidden"></canvas>
         </div>
     </div>
@@ -329,9 +377,11 @@
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
 const video = document.getElementById('video');
-const cameraBadge = document.getElementById('cameraBadge');
 const startCameraButton = document.getElementById('startCamera');
 const resetSamplesButton = document.getElementById('resetSamples');
+const cameraStatusBadge = document.getElementById('cameraStatusBadge');
+const cameraStatusIcon = document.getElementById('cameraStatusIcon');
+const cameraStatusText = document.getElementById('cameraStatusText');
 const statusText = document.getElementById('status');
 const sampleCount = document.getElementById('sampleCount');
 const sampleProgressBar = document.getElementById('sampleProgressBar');
@@ -392,11 +442,15 @@ function setScanAnimationActive(isActive) {
         video.classList.toggle('opacity-0', !isActive);
         video.classList.toggle('opacity-100', isActive);
     }
-    if (cameraBadge) {
-        cameraBadge.textContent = isActive ? 'Kamera aktif' : 'Kamera belum aktif';
-        cameraBadge.className = isActive
-            ? 'absolute left-1/2 bottom-4 -translate-x-1/2 bg-blue-600/90 text-white text-[11px] sm:text-xs px-3 py-2 rounded-full shadow'
-            : 'absolute left-1/2 bottom-4 -translate-x-1/2 bg-gray-200 text-gray-600 text-[11px] sm:text-xs px-3 py-2 rounded-full shadow-sm';
+    if (guideInstruction) {
+        guideInstruction.classList.toggle('is-visible', isActive);
+    }
+    if (cameraStatusBadge && cameraStatusIcon && cameraStatusText) {
+        cameraStatusBadge.className = isActive
+            ? 'inline-flex items-center gap-2 self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold tracking-[.4px] text-emerald-600 md:self-end'
+            : 'inline-flex items-center gap-2 self-start rounded-full border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-semibold tracking-[.4px] text-slate-500 md:self-end';
+        cameraStatusIcon.className = isActive ? 'fa-solid fa-camera' : 'fa-solid fa-camera-slash';
+        cameraStatusText.textContent = isActive ? 'Kamera aktif' : 'Kamera mati';
     }
 }
 

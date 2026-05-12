@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\EmployeeDetail;
 use App\Models\FaceEmbedding;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -15,28 +18,47 @@ class AuthController extends Controller
 
     public function userLogin(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
+        $validated = $request->validate([
+            'login' => ['required', 'string'],
+            'password' => ['required', 'string'],
+            'remember' => ['nullable', 'boolean'],
+            'redirect_to' => ['nullable', 'string'],
         ]);
 
-        if (Auth::attempt($request->only('email', 'password'))) {
+        $login = trim($validated['login']);
+        $normalizedLogin = strtolower($login);
 
-            if (Auth::user()->role !== 'user') {
-                Auth::logout();
-                return back()->withErrors(['email' => 'Akun bukan user']);
-            }
+        $user = User::query()
+            ->where('role', 'user')
+            ->where('username', $normalizedLogin)
+            ->first();
 
-            $request->session()->regenerate();
+        if (!$user) {
+            $employee = EmployeeDetail::with('user')
+                ->where('nip', $login)
+                ->first();
 
-            if (!FaceEmbedding::where('user_id', Auth::id())->exists()) {
-                return redirect()->route('face.enroll');
-            }
-
-            return redirect('/dashboard');
+            $user = $employee?->user;
         }
 
-        return back()->withErrors(['email' => 'Login gagal']);
+        if (!$user || $user->role !== 'user' || !Hash::check($validated['password'], $user->password)) {
+            return back()
+                ->withErrors(['login' => 'Login gagal'])
+                ->withInput($request->only('login'));
+        }
+
+        Auth::login($user, $request->boolean('remember'));
+        $request->session()->regenerate();
+
+        if ($validated['redirect_to'] ?? null === 'face.enroll') {
+            return redirect()->route('face.enroll');
+        }
+
+        if (!FaceEmbedding::where('user_id', Auth::id())->exists()) {
+            return redirect()->route('face.enroll');
+        }
+
+        return redirect('/dashboard');
     }
 
     public function showAdminLogin()
@@ -48,17 +70,18 @@ class AuthController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required'
+            'password' => 'required',
         ]);
 
         if (Auth::attempt($request->only('email', 'password'))) {
-
             if (Auth::user()->role !== 'admin') {
                 Auth::logout();
+
                 return back()->withErrors(['email' => 'Akses hanya untuk admin']);
             }
 
             $request->session()->regenerate();
+
             return redirect('/admin/dashboard');
         }
 
@@ -70,6 +93,7 @@ class AuthController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/');
     }
 }

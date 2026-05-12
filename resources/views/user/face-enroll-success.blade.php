@@ -3,7 +3,7 @@
 @section('title', 'Pendaftaran Berhasil')
 
 @section('content')
-<div class="px-8 md:px-14 lg:px-20 mt-5">
+<div class="px-6 md:px-10 mt-5">
     <div class="relative p-5">
         <div class="absolute top-10 left-0 w-full h-[2px] bg-gray-300"></div>
 
@@ -31,12 +31,12 @@
     </div>
 </div>
 
-<div class="flex flex-1 items-center justify-center px-8 md:px-14 lg:px-20 py-7">
-    <div class="w-full bg-white rounded-md shadow-lg p-2 md:p-5 flex flex-col md:flex-row gap-8">
+<div class="px-6 md:px-10 pb-7">
+    <div class="w-full rounded-md bg-white p-6 md:p-8 shadow-lg flex flex-col md:flex-row gap-8">
         <div class="md:w-1/2 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-8">
-            <img src="{{ asset('img/img-login.jpg') }}" class="w-[200px] h-auto mb-4">
+            <img src="{{ asset('img/img-verifikasi-berhasil.png') }}" class="w-[250px] h-auto mb-4">
             <h2 class="text-3xl font-bold text-gray-700 tracking-[.5px]">
-                Verifikasi Tuntas
+                Verifikasi Berhasil
             </h2>
             <p class="text-gray-400 text-sm mt-2 max-w-xs">
                 Data wajah sudah tersimpan dan akun Anda siap digunakan untuk proses presensi.
@@ -57,7 +57,7 @@
                     Pendaftaran Berhasil!
                 </h3>
                 <p class="mt-4 text-sm text-gray-500 max-w-sm">
-                    Wajah Anda berhasil didaftarkan. Anda dapat melanjutkan ke dashboard.
+                    Wajah Anda berhasil didaftarkan. Anda dapat melanjutkan ke dashboard pegawai.
                 </p>
 
                 <a href="{{ route('dashboard') }}" class="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-md hover:shadow-lg transition text-sm tracking-[.5px] text-center">
