@@ -27,6 +27,12 @@
                     @error('name') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
+                    <label class="text-sm font-semibold text-gray-700">Username</label>
+                    <input name="username" value="{{ old('username') }}" class="w-full p-2 border rounded mt-1">
+                    <p class="text-xs text-gray-500 mt-1">Gunakan huruf, angka, tanda hubung, atau underscore.</p>
+                    @error('username') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
                     <label class="text-sm font-semibold text-gray-700">Email</label>
                     <input type="email" name="email" value="{{ old('email') }}" class="w-full p-2 border rounded mt-1">
                     @error('email') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror

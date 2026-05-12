@@ -15,9 +15,10 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
-        'role' // ✅ TAMBAHKAN INI
+        'role',
     ];
 
     protected $hidden = [
@@ -29,7 +30,6 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    // 🔥 OPTIONAL (biar clean)
     public function isAdmin()
     {
         return $this->role === 'admin';

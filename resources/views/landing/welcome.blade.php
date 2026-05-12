@@ -4,7 +4,7 @@
 
 @section('content')
 
-  <div class="flex flex-col min-h-screen relative overflow-hidden">
+  <div class="bg-white flex flex-col min-h-screen relative overflow-hidden">
 
     <!-- Header / Logo -->
     <div class="flex flex-col items-center text-center gap-3 px-8 md:px-14 lg:px-20 pt-20 md:pt-6 z-10 md:flex-row md:text-left">

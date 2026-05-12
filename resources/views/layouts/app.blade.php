@@ -149,7 +149,7 @@
         }
       </style>
 </head>
-<body class="bg-gray-100 font-jakarta">
+<body class="bg-gray-100">
         @yield('content')
         <script>
             document.querySelectorAll('[data-auto-filter]').forEach((form) => {

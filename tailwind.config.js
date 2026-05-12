@@ -5,11 +5,7 @@ export default {
     "./resources/**/*.js",
   ],
   theme: {
-    extend: {
-      fontFamily: {
-        jakarta: ['"Plus Jakarta Sans"', 'sans-serif'],
-      },
-    },
+    extend: {},
   },
   plugins: [],
 }

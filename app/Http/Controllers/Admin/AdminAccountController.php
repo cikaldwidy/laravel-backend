@@ -19,6 +19,7 @@ class AdminAccountController extends Controller
 
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('username', 'like', '%' . $search . '%')
                         ->orWhere('email', 'like', '%' . $search . '%');
                 });
             })
@@ -37,12 +38,14 @@ class AdminAccountController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6'],
         ]);
 
         User::create([
             'name' => $validated['name'],
+            'username' => strtolower(trim($validated['username'])),
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => 'admin',
@@ -67,12 +70,14 @@ class AdminAccountController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'username' => ['required', 'string', 'max:255', 'alpha_dash', Rule::unique('users', 'username')->ignore($adminAccount->id)],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($adminAccount->id)],
             'password' => ['nullable', 'string', 'min:6'],
         ]);
 
         $data = [
             'name' => $validated['name'],
+            'username' => strtolower(trim($validated['username'])),
             'email' => $validated['email'],
         ];
 
