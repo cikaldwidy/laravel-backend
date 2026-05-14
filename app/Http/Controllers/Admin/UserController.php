@@ -136,6 +136,7 @@ class UserController extends Controller
         DB::transaction(function () use ($validated, $department, $position, $fotoPath) {
             $user = User::create([
                 'name' => $validated['name'],
+                'username' => strtolower(trim($validated['username'])),
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'role' => 'user',
@@ -191,7 +192,7 @@ class UserController extends Controller
             'email' => $validated['email'],
         ];
 
-        // 🔥 hanya update password kalau diisi
+        // hanya update password kalau diisi
         if (!empty($validated['password'])) {
             $data['password'] = Hash::make($validated['password']);
         }
@@ -207,7 +208,7 @@ class UserController extends Controller
     {
         $user = User::query()->where('role', 'user')->findOrFail($id);
 
-        // 🔥 CEGAH HAPUS DIRI SENDIRI
+        // CEGAH HAPUS DIRI SENDIRI
         if ($user->id == auth()->id()) {
             return back()->with('error', 'Tidak bisa menghapus akun sendiri');
         }
