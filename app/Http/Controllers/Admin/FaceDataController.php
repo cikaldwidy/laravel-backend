@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\FaceEmbedding;
+use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,26 +13,55 @@ use Illuminate\Validation\ValidationException;
 
 class FaceDataController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $validated = $request->validate([
+            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+        ]);
+
+        $selectedUnitId = $validated['unit_id'] ?? null;
+        $units = Unit::query()
+            ->orderBy('nama_unit')
+            ->get();
+        $selectedUnit = $selectedUnitId ? $units->firstWhere('id', (int) $selectedUnitId) : null;
+
         $faceEmbeddings = FaceEmbedding::query()
             ->with('user.employeeDetail.unit')
+            ->when($selectedUnitId, function ($query) use ($selectedUnitId) {
+                $query->whereHas('user.employeeDetail', function ($detailQuery) use ($selectedUnitId) {
+                    $detailQuery->where('unit_id', $selectedUnitId);
+                });
+            })
             ->latest()
             ->get();
 
-        $usersWithoutFaceData = User::query()
+        $baseUserQuery = User::query()
             ->where('role', 'user')
+            ->with('employeeDetail.unit')
+            ->when($selectedUnitId, function ($query) use ($selectedUnitId) {
+                $query->whereHas('employeeDetail', function ($detailQuery) use ($selectedUnitId) {
+                    $detailQuery->where('unit_id', $selectedUnitId);
+                });
+            });
+
+        $usersWithoutFaceData = (clone $baseUserQuery)
             ->whereDoesntHave('faceEmbedding')
             ->orderBy('name')
             ->get();
 
-        $usersWithFaceData = User::query()
-            ->where('role', 'user')
+        $usersWithFaceData = (clone $baseUserQuery)
             ->whereHas('faceEmbedding')
             ->orderBy('name')
             ->get();
 
-        return view('admin.face_data.index', compact('faceEmbeddings', 'usersWithoutFaceData', 'usersWithFaceData'));
+        return view('admin.face_data.index', compact(
+            'faceEmbeddings',
+            'usersWithoutFaceData',
+            'usersWithFaceData',
+            'units',
+            'selectedUnitId',
+            'selectedUnit'
+        ));
     }
 
     public function store(Request $request)
