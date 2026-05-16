@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\Mobile\AuthController as MobileAuthController;
 use App\Http\Controllers\Api\Mobile\AnnouncementController as MobileAnnouncementController;
 use App\Http\Controllers\Api\Mobile\DashboardController as MobileDashboardController;
+use App\Http\Controllers\Api\Mobile\FaceEnrollmentController as MobileFaceEnrollmentController;
 use App\Http\Controllers\Api\Mobile\IzinController as MobileIzinController;
 use App\Http\Controllers\Api\Mobile\PresensiController as MobilePresensiController;
 use App\Http\Controllers\Api\Mobile\ShiftController as MobileShiftController;
@@ -45,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('user')->group(function () {
         Route::get('/profile', [MobileAuthController::class, 'profile']);
         Route::get('/dashboard', [MobileDashboardController::class, 'index']);
+        Route::post('/face-enrollment', [MobileFaceEnrollmentController::class, 'store']);
         Route::post('/presensi/masuk', [MobilePresensiController::class, 'masuk']);
         Route::post('/presensi/pulang', [MobilePresensiController::class, 'pulang']);
         Route::get('/presensi/riwayat', [MobilePresensiController::class, 'riwayat']);
