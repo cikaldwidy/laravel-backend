@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\FaceEmbedding;
 use App\Models\Presensi;
 use App\Models\LeaveRequest;
 use App\Models\ShiftSchedule;
@@ -47,7 +48,7 @@ class PresensiController extends Controller
             'scheduledShift' => $scheduledShift,
             'canAttend' => $canAttend,
             'approvedLeave' => $approvedLeave,
-            'faceThreshold' => config('attendance.face_threshold', 0.55),
+            'faceThreshold' => config('attendance.face_threshold', 0.35),
             'officeRadius' => $setting->radius_meters ?? config('attendance.radius_meters', 100),
             'officeLatitude' => $setting->office_latitude ?? config('attendance.office_latitude'),
             'officeLongitude' => $setting->office_longitude ?? config('attendance.office_longitude'),
@@ -62,6 +63,9 @@ class PresensiController extends Controller
             'lng' => ['required', 'numeric', 'between:-180,180'],
             'embedding' => ['required', 'array', 'size:128'],
             'embedding.*' => ['required', 'numeric'],
+            'descriptor_samples' => ['required', 'array', 'min:3', 'max:5'],
+            'descriptor_samples.*' => ['required', 'array', 'size:128'],
+            'descriptor_samples.*.*' => ['required', 'numeric'],
             'quality_metrics' => ['required', 'array'],
             'quality_metrics.brightness' => ['required', 'numeric'],
             'quality_metrics.sharpness' => ['required', 'numeric'],
@@ -105,6 +109,7 @@ class PresensiController extends Controller
         }
 
         $storedEmbedding = $user->faceEmbedding?->embedding;
+        $storedDescriptorSamples = $user->faceEmbedding?->descriptor_samples;
 
         if (!is_array($storedEmbedding) || count($storedEmbedding) !== 128) {
             return response()->json([
@@ -113,12 +118,49 @@ class PresensiController extends Controller
             ], 422);
         }
 
-        $faceDistance = $this->compareEmbeddings($storedEmbedding, $validated['embedding']);
-
-        if ($faceDistance > config('attendance.face_threshold')) {
+        if (!$this->hasValidDescriptorSamples($storedDescriptorSamples)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Verifikasi wajah gagal.',
+                'message' => 'Data pendaftaran wajah belum lengkap. Silakan daftar ulang wajah.',
+            ], 422);
+        }
+
+        $faceDistance = $this->compareEmbeddings($storedEmbedding, $validated['embedding']);
+        $registrationSampleDistance = $this->findClosestDescriptorDistance(
+            $storedDescriptorSamples,
+            $validated['embedding']
+        );
+        $sampleDistances = array_map(
+            fn (array $sample) => $this->compareEmbeddings($storedEmbedding, $sample),
+            $validated['descriptor_samples']
+        );
+        $sampleRegistrationDistances = array_map(
+            fn (array $sample) => $this->findClosestDescriptorDistance($storedDescriptorSamples, $sample),
+            $validated['descriptor_samples']
+        );
+        $worstSampleDistance = max($sampleDistances);
+        $worstRegistrationSampleDistance = max($sampleRegistrationDistances);
+        $faceThreshold = (float) config('attendance.face_threshold');
+
+        if (
+            $faceDistance > $faceThreshold ||
+            $registrationSampleDistance > $faceThreshold ||
+            $worstSampleDistance > $faceThreshold ||
+            $worstRegistrationSampleDistance > $faceThreshold
+        ) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Wajah tidak sama dengan data pendaftaran.',
+                'face_distance' => round($faceDistance, 6),
+            ], 422);
+        }
+
+        $closestOtherFaceDistance = $this->findClosestOtherFaceDistance($user->id, $validated['embedding']);
+
+        if ($closestOtherFaceDistance !== null && $closestOtherFaceDistance < $faceDistance) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Wajah tidak sama dengan akun yang sedang login.',
                 'face_distance' => round($faceDistance, 6),
             ], 422);
         }
@@ -334,6 +376,64 @@ class PresensiController extends Controller
             $sum += $diff * $diff;
         }
         return sqrt($sum);
+    }
+
+    private function hasValidDescriptorSamples(?array $descriptorSamples): bool
+    {
+        if (!is_array($descriptorSamples) || count($descriptorSamples) < 3) {
+            return false;
+        }
+
+        foreach ($descriptorSamples as $sample) {
+            if (!is_array($sample) || count($sample) !== 128) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function findClosestDescriptorDistance(array $descriptorSamples, array $incomingEmbedding): float
+    {
+        $closestDistance = null;
+
+        foreach ($descriptorSamples as $sample) {
+            if (!is_array($sample) || count($sample) !== 128) {
+                continue;
+            }
+
+            $distance = $this->compareEmbeddings($sample, $incomingEmbedding);
+
+            if ($closestDistance === null || $distance < $closestDistance) {
+                $closestDistance = $distance;
+            }
+        }
+
+        return $closestDistance ?? INF;
+    }
+
+    private function findClosestOtherFaceDistance(int $userId, array $incomingEmbedding): ?float
+    {
+        $closestDistance = null;
+
+        FaceEmbedding::query()
+            ->where('user_id', '!=', $userId)
+            ->select(['id', 'user_id', 'embedding'])
+            ->chunkById(100, function ($faceEmbeddings) use ($incomingEmbedding, &$closestDistance) {
+                foreach ($faceEmbeddings as $faceEmbedding) {
+                    if (!is_array($faceEmbedding->embedding) || count($faceEmbedding->embedding) !== 128) {
+                        continue;
+                    }
+
+                    $distance = $this->compareEmbeddings($faceEmbedding->embedding, $incomingEmbedding);
+
+                    if ($closestDistance === null || $distance < $closestDistance) {
+                        $closestDistance = $distance;
+                    }
+                }
+            });
+
+        return $closestDistance;
     }
 
     private function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float

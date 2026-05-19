@@ -22,9 +22,18 @@ class HistoryController extends Controller
                 });
             })
             ->when($request->filled('status'), function ($query) use ($request) {
-                $query->where(function ($q) use ($request) {
-                    $q->where('status', $request->status)
-                        ->orWhere('status_pulang', $request->status);
+                $statusGroups = [
+                    'hadir' => ['hadir', 'normal'],
+                    'telat' => ['telat', 'terlambat'],
+                    'izin' => ['izin'],
+                    'pulang_cepat' => ['pulang_cepat'],
+                ];
+
+                $statuses = $statusGroups[$request->status] ?? [$request->status];
+
+                $query->where(function ($q) use ($statuses) {
+                    $q->whereIn('status', $statuses)
+                        ->orWhereIn('status_pulang', $statuses);
                 });
             })
             ->when($request->filled('date_from'), fn ($query) => $query->whereDate('tanggal', '>=', $request->date_from))

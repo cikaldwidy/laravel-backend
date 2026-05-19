@@ -9,6 +9,7 @@ use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
 use App\Models\Unit;
 use App\Models\User;
+use App\Support\ShiftTime;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
@@ -368,15 +369,8 @@ class ShiftManagementController extends Controller
                     throw new \RuntimeException('Swap shift hanya bisa disetujui untuk pegawai dalam unit yang sama.');
                 }
 
-                if ($shiftA->tanggal->toDateString() !== $shiftB->tanggal->toDateString()) {
-                    throw new \RuntimeException('Shift harus berada pada tanggal yang sama.');
-                }
-
-                $startA = Carbon::parse($shiftA->tanggal->toDateString() . ' ' . $this->toTimeString($shiftA->jam_masuk));
-                $startB = Carbon::parse($shiftB->tanggal->toDateString() . ' ' . $this->toTimeString($shiftB->jam_masuk));
-
-                if ($startA->isPast() || $startB->isPast()) {
-                    throw new \RuntimeException('Shift yang sudah lewat tidak bisa ditukar.');
+                if (!$this->shiftHasNotEnded($shiftA) || !$this->shiftHasNotEnded($shiftB)) {
+                    throw new \RuntimeException('Shift yang sudah selesai tidak bisa ditukar.');
                 }
 
                 DB::table('shift_schedules')
@@ -591,6 +585,17 @@ class ShiftManagementController extends Controller
         }
 
         return Carbon::parse((string) $value)->format('H:i:s');
+    }
+
+    private function shiftHasNotEnded(ShiftSchedule $shift): bool
+    {
+        $end = ShiftTime::endAt(
+            $shift->tanggal,
+            $this->toTimeString($shift->jam_masuk),
+            $this->toTimeString($shift->jam_pulang)
+        );
+
+        return !$end->isPast();
     }
 
     private function usersAreInSameUnit(?User $firstUser, ?User $secondUser): bool

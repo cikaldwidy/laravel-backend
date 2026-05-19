@@ -74,9 +74,18 @@ class FaceDataController extends Controller
             'blink_verified' => ['required', 'accepted'],
         ]);
 
+        $embedding = array_map('floatval', $validated['embedding']);
+
+        if ($this->isFaceRegisteredToAnotherUser((int) $validated['user_id'], $embedding)) {
+            throw ValidationException::withMessages([
+                'embedding' => 'Wajah ini sudah terdaftar pada akun lain.',
+            ]);
+        }
+
         FaceEmbedding::create([
             'user_id' => $validated['user_id'],
-            'embedding' => array_map('floatval', $validated['embedding']),
+            'embedding' => $embedding,
+            'descriptor_samples' => [$embedding, $embedding, $embedding],
             'photo_path' => $this->storeFaceImage($validated['image'], (int) $validated['user_id']),
         ]);
 
@@ -96,10 +105,19 @@ class FaceDataController extends Controller
             'blink_verified' => ['required', 'accepted'],
         ]);
 
+        $embedding = array_map('floatval', $validated['embedding']);
+
+        if ($this->isFaceRegisteredToAnotherUser($faceEmbedding->user_id, $embedding)) {
+            throw ValidationException::withMessages([
+                'embedding' => 'Wajah ini sudah terdaftar pada akun lain.',
+            ]);
+        }
+
         $oldPhotoPath = $faceEmbedding->photo_path;
 
         $faceEmbedding->update([
-            'embedding' => array_map('floatval', $validated['embedding']),
+            'embedding' => $embedding,
+            'descriptor_samples' => [$embedding, $embedding, $embedding],
             'photo_path' => $this->storeFaceImage($validated['image'], $faceEmbedding->user_id),
         ]);
 
@@ -153,5 +171,51 @@ class FaceDataController extends Controller
         Storage::disk('public')->put($fileName, $decoded);
 
         return $fileName;
+    }
+
+    private function isFaceRegisteredToAnotherUser(int $userId, array $embedding): bool
+    {
+        $duplicateThreshold = (float) config('attendance.face_duplicate_threshold', 0.45);
+
+        return FaceEmbedding::query()
+            ->where('user_id', '!=', $userId)
+            ->get(['user_id', 'embedding', 'descriptor_samples'])
+            ->contains(function (FaceEmbedding $faceEmbedding) use ($embedding, $duplicateThreshold) {
+                if (!is_array($faceEmbedding->embedding) || count($faceEmbedding->embedding) !== 128) {
+                    return false;
+                }
+
+                if ($this->compareEmbeddings($faceEmbedding->embedding, $embedding) <= $duplicateThreshold) {
+                    return true;
+                }
+
+                $storedSamples = $faceEmbedding->descriptor_samples;
+                if (!is_array($storedSamples)) {
+                    return false;
+                }
+
+                foreach ($storedSamples as $storedSample) {
+                    if (
+                        is_array($storedSample) &&
+                        count($storedSample) === 128 &&
+                        $this->compareEmbeddings($storedSample, $embedding) <= $duplicateThreshold
+                    ) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+    }
+
+    private function compareEmbeddings(array $storedEmbedding, array $incomingEmbedding): float
+    {
+        $sum = 0;
+        foreach ($storedEmbedding as $i => $val) {
+            $diff = (float) $val - (float) $incomingEmbedding[$i];
+            $sum += $diff * $diff;
+        }
+
+        return sqrt($sum);
     }
 }

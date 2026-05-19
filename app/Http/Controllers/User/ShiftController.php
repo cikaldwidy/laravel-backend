@@ -25,14 +25,34 @@ class ShiftController extends Controller
         $schedules = ShiftSchedule::query()
             ->where('user_id', auth()->id())
             ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])
-            ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $search = trim($request->search);
+            ->when($request->filled('shift_type'), function ($query) use ($request) {
+                $shiftType = strtoupper((string) $request->shift_type);
 
-                $query->where(function ($q) use ($search) {
-                    $q->where('status', 'like', '%' . $search . '%')
-                        ->orWhere('jam_masuk', 'like', '%' . $search . '%')
-                        ->orWhere('jam_pulang', 'like', '%' . $search . '%');
+                $query->where(function ($q) use ($shiftType) {
+                    match ($shiftType) {
+                        'P' => $q->where('shift_code', 'P')
+                            ->orWhere(function ($sub) {
+                                $sub->whereNull('shift_code')
+                                    ->whereTime('jam_masuk', '>=', '05:00:00')
+                                    ->whereTime('jam_masuk', '<', '12:00:00');
+                            }),
+                        'S' => $q->where('shift_code', 'S')
+                            ->orWhere(function ($sub) {
+                                $sub->whereNull('shift_code')
+                                    ->whereTime('jam_masuk', '>=', '12:00:00')
+                                    ->whereTime('jam_masuk', '<', '18:00:00');
+                            }),
+                        'M' => $q->where('shift_code', 'M')
+                            ->orWhere(function ($sub) {
+                                $sub->whereNull('shift_code')
+                                    ->where(function ($time) {
+                                        $time->whereTime('jam_masuk', '>=', '18:00:00')
+                                            ->orWhereTime('jam_masuk', '<', '05:00:00');
+                                    });
+                            }),
+                        'O' => $q->where('shift_code', 'O')->orWhere('status', 'libur'),
+                        default => null,
+                    };
                 });
             })
             ->orderBy('tanggal')
