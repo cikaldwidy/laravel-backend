@@ -4,11 +4,153 @@
 
 @section('content')
 <style>
+    @keyframes attendance-face-scan-line {
+        0% { top: 0%; opacity: 0; }
+        8% { opacity: 1; }
+        50% { top: calc(100% - 3px); opacity: 1; }
+        92% { opacity: 1; }
+        100% { top: 0%; opacity: 0; }
+    }
+
+    @keyframes attendance-face-scan-glow {
+        0% { top: 0%; opacity: 0; }
+        8% { opacity: 0.6; }
+        50% { top: calc(82% - 3px); opacity: 0.85; }
+        92% { opacity: 0.5; }
+        100% { top: 0%; opacity: 0; }
+    }
+
+    .attendance-face-guide {
+        width: min(68%, 29rem);
+        aspect-ratio: 1;
+    }
+
+    .attendance-face-blur-outer {
+        position: absolute;
+        inset: 8%;
+        border-radius: 50%;
+        pointer-events: none;
+        box-shadow:
+            0 0 0 9999px rgba(8, 15, 40, 0.32),
+            0 0 40px 8px rgba(0, 0, 0, 0.38) inset;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+    }
+
+    .attendance-face-inner-mask {
+        position: absolute;
+        inset: 10%;
+        border-radius: 50%;
+        background: radial-gradient(circle at center, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 60%, rgba(241, 245, 249, 0.92) 100%);
+        box-shadow: inset 0 0 28px rgba(148, 163, 184, 0.12);
+        transition: opacity 0.35s ease, background 0.35s ease;
+    }
+
+    .attendance-face-guide.is-camera-ready .attendance-face-inner-mask {
+        opacity: 0.08;
+    }
+
+    .attendance-face-guide.is-camera-ready .attendance-face-blur-outer {
+        opacity: 1;
+    }
+
+    .attendance-face-frame {
+        position: absolute;
+        inset: 10%;
+        border-radius: 50%;
+        border: 3px solid rgba(59, 130, 246, 0.75);
+        transition: all 0.35s ease;
+    }
+
+    .attendance-face-frame.valid {
+        border-color: rgba(59, 130, 246, 0.95);
+        box-shadow:
+            inset 0 0 30px 6px rgba(59, 130, 246, 0.1),
+            0 0 0 12px rgba(59, 130, 246, 0.08);
+    }
+
+    .attendance-face-frame.invalid {
+        border-color: rgba(248, 113, 113, 0.9);
+        box-shadow:
+            inset 0 0 20px 4px rgba(248, 113, 113, 0.08),
+            0 0 0 12px rgba(255, 255, 255, 0.08);
+    }
+
+    .attendance-face-scan-track {
+        position: absolute;
+        top: 10%;
+        right: 10%;
+        bottom: 10%;
+        left: 10%;
+        border-radius: 50%;
+    }
+
+    .attendance-face-scan-line {
+        position: absolute;
+        left: -5%;
+        right: -5%;
+        top: 0;
+        height: 2px;
+        border-radius: 9999px;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(147, 197, 253, 0.5) 10%,
+            rgba(59, 130, 246, 1) 35%,
+            rgba(220, 240, 255, 1) 50%,
+            rgba(59, 130, 246, 1) 65%,
+            rgba(147, 197, 253, 0.5) 90%,
+            transparent 100%
+        );
+        box-shadow:
+            0 0 4px 1px rgba(59, 130, 246, 0.7),
+            0 0 14px 4px rgba(96, 165, 250, 0.4),
+            0 0 28px 8px rgba(59, 130, 246, 0.18);
+        opacity: 0;
+    }
+
+    .attendance-face-scan-glow {
+        position: absolute;
+        left: 10%;
+        right: 10%;
+        top: 0;
+        height: 22%;
+        border-radius: 9999px;
+        background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.22), transparent 70%);
+        opacity: 0;
+    }
+
+    .attendance-face-scan-track.is-active .attendance-face-scan-line {
+        animation: attendance-face-scan-line 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        opacity: 1;
+    }
+
+    .attendance-face-scan-track.is-active .attendance-face-scan-glow {
+        animation: attendance-face-scan-glow 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        opacity: 1;
+    }
+
     @media (min-width: 768px) {
         .user-attendance-main {
             display: grid;
-            grid-template-columns: minmax(0, 1.15fr) 22rem;
+            grid-template-columns: minmax(0, 1fr) minmax(18rem, 26rem);
             align-items: start;
+        }
+    }
+
+    @media (min-width: 1180px) {
+        .user-attendance-main {
+            grid-template-columns: minmax(36rem, 1fr) minmax(24rem, 30rem);
+        }
+    }
+
+    @media (max-width: 767px) {
+        .user-attendance-main {
+            padding-top: 0.75rem !important;
+        }
+
+        .attendance-face-guide {
+            width: min(72%, 18rem);
         }
     }
 </style>
@@ -34,7 +176,7 @@
 
 <div class="user-page">
     <div class="user-phone">
-        <header class="h-14 bg-emerald-800 text-white flex items-center px-4 shadow">
+        <header class="h-14 bg-blue-800 text-white flex items-center px-4 shadow">
             <a href="{{ route('dashboard') }}" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
                 <i class="fa-solid fa-chevron-left"></i>
             </a>
@@ -59,11 +201,19 @@
                         </div>
                     @else
                         <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                        <div id="cameraOverlay" class="absolute inset-0 flex items-center justify-center bg-black/35 text-white text-xs font-semibold">
+                        <div id="cameraOverlay" class="absolute inset-0 z-20 flex items-center justify-center bg-black/35 text-white text-xs font-semibold">
                             Tekan Masuk/Verifikasi untuk menyalakan kamera
                         </div>
                     @endif
-                    <div class="absolute inset-4 rounded-2xl border-2 border-dashed border-emerald-300/80 pointer-events-none"></div>
+                    <div id="attendanceHeadGuide" class="attendance-face-guide pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+                        <div class="attendance-face-blur-outer"></div>
+                        <div class="attendance-face-inner-mask"></div>
+                        <div id="attendanceHeadFrame" class="attendance-face-frame"></div>
+                        <div id="attendanceScanTrack" class="attendance-face-scan-track">
+                            <div class="attendance-face-scan-glow"></div>
+                            <div class="attendance-face-scan-line"></div>
+                        </div>
+                    </div>
                     <div class="absolute top-3 left-3 bg-white/95 text-slate-800 text-xs font-semibold px-3 py-1 rounded-md shadow">
                         {{ now()->translatedFormat('d F Y') }}
                     </div>
@@ -102,27 +252,27 @@
                     Hari ini kamu dijadwalkan libur, jadi absensi tidak dibuka.
                 </section>
             @elseif(isset($approvedLeave) && $approvedLeave)
-                <section class="bg-sky-50 border border-sky-200 text-sky-900 rounded-2xl p-4 text-sm shadow-sm">
+                <section class="bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl p-4 text-sm shadow-sm">
                     Anda memiliki izin yang telah disetujui hari ini: {{ ucfirst($approvedLeave->jenis_izin) }}. Absensi dilewati otomatis.
                 </section>
             @elseif(empty($canAttend))
-                <section class="bg-sky-50 border border-sky-200 text-sky-900 rounded-2xl p-4 text-sm shadow-sm">
+                <section class="bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl p-4 text-sm shadow-sm">
                     Shift kamu sudah dijadwalkan ({{ $shiftLabel }} {{ $jadwalMasuk }} - {{ $jadwalPulang }}), tapi belum masuk jam absensi.
                 </section>
             @endif
 
             <section class="grid grid-cols-3 gap-2">
-                <div class="bg-emerald-700 text-white rounded-xl p-3 text-center shadow">
+                <div class="bg-blue-700 text-white rounded-xl p-3 text-center shadow">
                     <i class="fa-solid fa-user-clock text-sm"></i>
                     <p class="text-[11px] mt-1 opacity-90">Shift</p>
                     <p class="text-xs font-bold">{{ $shiftLabel }}</p>
                 </div>
-                <div class="bg-emerald-700 text-white rounded-xl p-3 text-center shadow">
+                <div class="bg-blue-700 text-white rounded-xl p-3 text-center shadow">
                     <i class="fa-solid fa-right-to-bracket text-sm"></i>
                     <p class="text-[11px] mt-1 opacity-90">Jam Masuk</p>
                     <p class="text-xs font-bold">{{ $jamMasuk }}</p>
                 </div>
-                <div class="bg-emerald-700 text-white rounded-xl p-3 text-center shadow">
+                <div class="bg-red-600 text-white rounded-xl p-3 text-center shadow">
                     <i class="fa-solid fa-right-from-bracket text-sm"></i>
                     <p class="text-[11px] mt-1 opacity-90">Jam Pulang</p>
                     <p class="text-xs font-bold">{{ $jamPulang }}</p>
@@ -132,8 +282,8 @@
             <section class="bg-white/80 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-3">
                 <div class="relative h-14 rounded-full bg-slate-100 overflow-hidden">
                     <div class="absolute inset-0 grid grid-cols-2">
-                        <div class="bg-emerald-600/15"></div>
-                        <div class="bg-orange-500/15"></div>
+                        <div class="bg-blue-600/15"></div>
+                        <div class="bg-red-500/15"></div>
                     </div>
 
                     <div class="relative z-10 h-full grid grid-cols-2 gap-2 p-2">
@@ -141,7 +291,7 @@
                             id="startVerification"
                             type="button"
                             class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
-                                {{ ($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) ? 'bg-slate-200 text-slate-400' : (!$sudahMasuk ? 'bg-emerald-700 text-white' : 'bg-white text-emerald-800 border border-emerald-100') }}"
+                                {{ ($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) ? 'bg-slate-200 text-slate-400' : (!$sudahMasuk ? 'bg-blue-700 text-white' : 'bg-white text-blue-800 border border-blue-100') }}"
                             @if($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) disabled @endif
                         >
                             <i class="fa-solid fa-fingerprint"></i>
@@ -152,7 +302,7 @@
                             id="submitAttendance"
                             type="button"
                             class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
-                                bg-orange-600 text-white disabled:bg-orange-100 disabled:text-orange-400"
+                                bg-red-600 text-white disabled:bg-red-100 disabled:text-red-400"
                             disabled
                         >
                             <i class="fa-solid fa-paper-plane"></i>
@@ -161,7 +311,7 @@
                     </div>
 
                     <div class="pointer-events-none absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-white shadow border border-slate-200 flex items-center justify-center">
-                        <span class="w-9 h-9 rounded-full bg-emerald-700/10 flex items-center justify-center">
+                        <span class="w-9 h-9 rounded-full bg-blue-700/10 flex items-center justify-center">
                             <i class="fa-solid fa-circle text-amber-400 text-[10px]"></i>
                         </span>
                     </div>
@@ -174,18 +324,14 @@
                         <p class="text-xs text-slate-500">Status Hari Ini</p>
                         <p class="font-bold text-slate-800">{{ auth()->user()->name }}</p>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $sudahPulang ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $sudahPulang ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700' }}">
                         {{ $jenisAbsen }}
                     </span>
                 </div>
                 <div class="grid grid-cols-2 gap-3 text-sm text-slate-600">
                     <div>
-                        <p class="text-xs text-slate-400">Radius kantor</p>
-                        <p class="font-semibold text-slate-800">{{ $officeRadius }} meter</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-400">Threshold wajah</p>
-                        <p class="font-semibold text-slate-800">{{ $faceThreshold }}</p>
+                        <p class="text-xs text-slate-400">Jarak dari kantor</p>
+                        <p id="officeDistanceStatus" class="font-semibold text-slate-800">Menunggu GPS</p>
                     </div>
                     <div>
                         <p class="text-xs text-slate-400">Sampel</p>
@@ -221,16 +367,16 @@
                     <i class="fa-solid fa-file-lines text-lg"></i>
                     <p>Histori</p>
                 </a>
-                <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-emerald-700 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-red-600 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg shadow-red-600/20">
                     <i class="fa-solid fa-fingerprint text-xl"></i>
                 </a>
-                <a href="{{ route('leave_requests.index') }}" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('user.shifts.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-calendar-days text-lg"></i>
-                    <p>Izin</p>
+                    <p>Jadwal</p>
                 </a>
-                <a href="{{ route('announcements.index') }}" class="text-gray-500 text-center text-xs">
-                    <i class="fa-solid fa-circle-info text-lg"></i>
-                    <p>Info</p>
+                <a href="{{ route('profile.index') }}" class="text-gray-500 text-center text-xs">
+                    <i class="fa-solid fa-id-card text-lg"></i>
+                    <p>Biodata</p>
                 </a>
             </div>
         </nav>
@@ -251,9 +397,13 @@ const startVerificationButton = document.getElementById('startVerification');
 const submitAttendanceButton = document.getElementById('submitAttendance');
 const statusText = document.getElementById('status');
 const gpsStatus = document.getElementById('gpsStatus');
+const officeDistanceStatus = document.getElementById('officeDistanceStatus');
 const sampleStatus = document.getElementById('sampleStatus');
 const faceStatus = document.getElementById('faceStatus');
 const blinkStatus = document.getElementById('blinkStatus');
+const attendanceHeadGuide = document.getElementById('attendanceHeadGuide');
+const attendanceHeadFrame = document.getElementById('attendanceHeadFrame');
+const attendanceScanTrack = document.getElementById('attendanceScanTrack');
 const attendanceMapElement = document.getElementById('attendanceMap');
 const officeLatitude = Number(attendanceMapElement?.dataset.officeLat ?? 0);
 const officeLongitude = Number(attendanceMapElement?.dataset.officeLng ?? 0);
@@ -307,11 +457,47 @@ function updateAttendanceMap(latitude, longitude) {
     attendanceMap.setView(latLng, 17);
 }
 
+function calculateOfficeDistanceMeters(latitude, longitude) {
+    const earthRadiusMeters = 6371000;
+    const toRadians = value => value * Math.PI / 180;
+    const latDelta = toRadians(latitude - officeLatitude);
+    const lngDelta = toRadians(longitude - officeLongitude);
+    const startLat = toRadians(officeLatitude);
+    const endLat = toRadians(latitude);
+    const a = Math.sin(latDelta / 2) ** 2
+        + Math.cos(startLat) * Math.cos(endLat) * Math.sin(lngDelta / 2) ** 2;
+
+    return earthRadiusMeters * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function formatDistance(meters) {
+    if (meters >= 1000) return `${(meters / 1000).toFixed(2)} km`;
+    return `${Math.round(meters)} meter`;
+}
+
+function updateOfficeDistance(latitude, longitude) {
+    if (!officeDistanceStatus) return;
+
+    const distance = calculateOfficeDistanceMeters(latitude, longitude);
+    officeDistanceStatus.textContent = formatDistance(distance);
+    officeDistanceStatus.className = distance <= officeRadius
+        ? 'font-semibold text-blue-700'
+        : 'font-semibold text-red-600';
+}
+
+function updateGeolocation(coords) {
+    geolocation = coords;
+    gpsStatus.textContent = `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
+    updateOfficeDistance(coords.latitude, coords.longitude);
+    updateAttendanceMap(coords.latitude, coords.longitude);
+}
+
 initializeAttendanceMap();
 
 let stream;
 let modelsLoaded = false;
 let geolocation = null;
+let geolocationWatchId = null;
 let verificationReady = false;
 let latestDescriptor = null;
 let latestSnapshot = null;
@@ -326,14 +512,16 @@ let blinkVerified = false;
 let eyesWereOpen = false;
 let lastEar = null;
 let maxOpenEar = 0;
+let lastOpenEar = 0;
 const REQUIRED_SAMPLES = 3;
 
 const MIN_BRIGHTNESS = 38;
 const MAX_BRIGHTNESS = 210;
 const MIN_SHARPNESS = 10;
-const BLINK_OPEN_EAR = 0.22;
-const BLINK_CLOSED_EAR = 0.19;
-const BLINK_DROP_RATIO = 0.72;
+const BLINK_OPEN_EAR = 0.27;
+const BLINK_CLOSED_EAR = 0.26;
+const BLINK_DROP_RATIO = 0.9;
+const BLINK_MIN_DROP = 0.025;
 
 // ✅ LEBIH CEPAT: inputSize 160 (dari 224), deteksi ~40% lebih cepat
 const detectorOptions = new faceapi.TinyFaceDetectorOptions({
@@ -366,8 +554,18 @@ function setBlinkVerified(value) {
     blinkVerifiedInput.value = value ? 'true' : 'false';
     blinkStatus.textContent = value ? 'Terverifikasi' : 'Belum terverifikasi';
     blinkStatus.className = value
-        ? 'font-semibold text-emerald-700'
+        ? 'font-semibold text-blue-700'
         : 'font-semibold text-gray-800';
+}
+
+function setCameraGuideReady(isReady) {
+    attendanceHeadGuide?.classList.toggle('is-camera-ready', isReady);
+    attendanceScanTrack?.classList.toggle('is-active', isReady);
+}
+
+function updateFrameIndicator(isValid) {
+    attendanceHeadFrame?.classList.toggle('valid', isValid);
+    attendanceHeadFrame?.classList.toggle('invalid', !isValid);
 }
 
 function humanizeStep(step) {
@@ -384,7 +582,7 @@ function renderChallenge() {
         const li = document.createElement('li');
         const isDone = false;
         li.textContent = `${index + 1}. ${humanizeStep(step)}${isDone ? ' – selesai' : ''}`;
-        li.className = isDone ? 'text-emerald-600 font-semibold' : 'text-slate-600';
+        li.className = isDone ? 'text-blue-600 font-semibold' : 'text-slate-600';
     });
 }
 
@@ -418,14 +616,19 @@ function detectBlink(landmarks) {
     const ear = (leftEar + rightEar) / 2;
     lastEar = ear;
 
-    maxOpenEar = Math.max(maxOpenEar, ear);
-
-    if (ear > BLINK_OPEN_EAR) {
+    if (ear >= BLINK_OPEN_EAR) {
+        maxOpenEar = Math.max(maxOpenEar, ear);
         eyesWereOpen = true;
+        lastOpenEar = ear;
         return false;
     }
 
-    return eyesWereOpen && (ear < BLINK_CLOSED_EAR || (maxOpenEar > 0 && ear <= maxOpenEar * BLINK_DROP_RATIO));
+    if (!eyesWereOpen) return false;
+
+    const openReference = Math.max(maxOpenEar, lastOpenEar);
+    return ear <= BLINK_CLOSED_EAR
+        || (openReference > 0 && ear <= openReference * BLINK_DROP_RATIO)
+        || (openReference > 0 && openReference - ear >= BLINK_MIN_DROP);
 }
 
 function maybeCompleteVerification() {
@@ -527,6 +730,15 @@ function stopStream() {
         stream.getTracks().forEach(t => t.stop());
         stream = null;
     }
+    setCameraGuideReady(false);
+    updateFrameIndicator(false);
+}
+
+function stopGeolocationWatch() {
+    if (geolocationWatchId !== null) {
+        navigator.geolocation.clearWatch(geolocationWatchId);
+        geolocationWatchId = null;
+    }
 }
 
 function getCameraErrorMessage(error) {
@@ -577,13 +789,14 @@ async function startCamera() {
 
     const overlay = document.getElementById('cameraOverlay');
     if (overlay) overlay.classList.add('hidden');
+    setCameraGuideReady(true);
 }
 
 function trackChallenge() {
     stopTracking();
 
-    // ✅ Interval 150ms (dari 220ms) — lebih responsif
-    const DETECTION_INTERVAL = 150;
+    // ✅ Interval 75ms supaya kedipan singkat lebih mudah tertangkap.
+    const DETECTION_INTERVAL = 75;
 
     const runDetection = async () => {
         trackingFrame = requestAnimationFrame(runDetection);
@@ -604,24 +817,36 @@ function trackChallenge() {
 
             if (!detection) {
                 faceStatus.textContent = 'Wajah tidak terdeteksi';
-                updateStatus('Dekatkan wajah ke kamera.', true);
+                updateFrameIndicator(false);
+                updateStatus(
+                    descriptorSamples.length >= REQUIRED_SAMPLES
+                        ? 'Sampel wajah cukup. Hadapkan wajah dan kedipkan mata sekali.'
+                        : 'Dekatkan wajah ke kamera.',
+                    true
+                );
                 return;
             }
 
             const quality = getFrameQuality(detection.detection.box);
             const blinkDetected = detectBlink(detection.landmarks);
+            const isClear = isFrameQualityGood(quality);
 
             faceStatus.textContent = 'Wajah terdeteksi';
-
-            if (!isFrameQualityGood(quality)) {
-                updateStatus(`Pencahayaan kurang. Cahaya: ${Math.round(quality.brightness)}, ketajaman: ${Math.round(quality.sharpness)}.`, true);
-                return;
-            }
+            updateFrameIndicator(isClear || descriptorSamples.length >= REQUIRED_SAMPLES);
 
             if (blinkDetected && !blinkVerified) {
                 setBlinkVerified(true);
                 updateStatus('Kedipan berhasil diverifikasi.');
-            } else if (!blinkVerified && lastEar !== null) {
+                maybeCompleteVerification();
+                return;
+            }
+
+            if (descriptorSamples.length < REQUIRED_SAMPLES && !isClear) {
+                updateStatus(`Pencahayaan kurang. Cahaya: ${Math.round(quality.brightness)}, ketajaman: ${Math.round(quality.sharpness)}.`, true);
+                return;
+            }
+
+            if (!blinkVerified && lastEar !== null) {
                 blinkStatus.textContent = `Kedipkan mata (${lastEar.toFixed(2)})`;
             }
 
@@ -653,15 +878,22 @@ function trackChallenge() {
 
 async function requestGeolocation() {
     if (!navigator.geolocation) throw new Error('Browser tidak mendukung geolokasi.');
-    geolocation = await new Promise((resolve, reject) => {
+    stopGeolocationWatch();
+
+    const currentLocation = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
             pos => resolve(pos.coords),
             () => reject(new Error('Izin lokasi ditolak atau GPS tidak tersedia.')),
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     });
-    gpsStatus.textContent = `${geolocation.latitude.toFixed(6)}, ${geolocation.longitude.toFixed(6)}`;
-    updateAttendanceMap(geolocation.latitude, geolocation.longitude);
+    updateGeolocation(currentLocation);
+
+    geolocationWatchId = navigator.geolocation.watchPosition(
+        pos => updateGeolocation(pos.coords),
+        () => {},
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
 }
 
 async function startVerification() {
@@ -679,6 +911,7 @@ async function startVerification() {
         eyesWereOpen = false;
         lastEar = null;
         maxOpenEar = 0;
+        lastOpenEar = 0;
         lastCaptureAt = 0;
         sampleStatus.textContent = '0/3';
         faceStatus.textContent = 'Menunggu scan';
@@ -698,6 +931,8 @@ async function startVerification() {
         trackChallenge();
         updateStatus('Hadapkan wajah ke kamera dan kedipkan mata.');
     } catch (error) {
+        setCameraGuideReady(false);
+        updateFrameIndicator(false);
         const overlay = document.getElementById('cameraOverlay');
         if (overlay) {
             overlay.textContent = error.message || 'Kamera gagal dinyalakan.';
@@ -735,6 +970,7 @@ async function submitAttendance() {
             body: JSON.stringify({
                 image: latestSnapshot,
                 embedding: latestDescriptor,
+                descriptor_samples: descriptorSamples,
                 quality_metrics: latestQualityMetrics,
                 lat: geolocation.latitude,
                 lng: geolocation.longitude,
@@ -752,6 +988,7 @@ async function submitAttendance() {
         }
 
         updateStatus(result.message || 'Absensi berhasil dikirim.');
+        stopGeolocationWatch();
         window.location.href = result.redirect || dashboardUrl;
     } catch (error) {
         isSubmitting = false;
@@ -763,5 +1000,6 @@ async function submitAttendance() {
 startVerificationButton.addEventListener('click', startVerification);
 submitAttendanceButton.addEventListener('click', submitAttendance);
 window.addEventListener('beforeunload', stopStream);
+window.addEventListener('beforeunload', stopGeolocationWatch);
 </script>
 @endsection

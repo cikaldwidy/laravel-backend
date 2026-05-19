@@ -447,7 +447,7 @@ function setScanAnimationActive(isActive) {
     }
     if (cameraStatusBadge && cameraStatusIcon && cameraStatusText) {
         cameraStatusBadge.className = isActive
-            ? 'inline-flex items-center gap-2 self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold tracking-[.4px] text-emerald-600 md:self-end'
+            ? 'inline-flex items-center gap-2 self-start rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold tracking-[.4px] text-blue-600 md:self-end'
             : 'inline-flex items-center gap-2 self-start rounded-full border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-semibold tracking-[.4px] text-slate-500 md:self-end';
         cameraStatusIcon.className = isActive ? 'fa-solid fa-camera' : 'fa-solid fa-camera-slash';
         cameraStatusText.textContent = isActive ? 'Kamera aktif' : 'Kamera mati';
@@ -885,6 +885,7 @@ async function saveEmbedding() {
             },
             body: JSON.stringify({
                 embedding: averageDescriptors(descriptors),
+                descriptor_samples: descriptors,
                 blink_verified: true,
                 quality_metrics: {
                     sample_count: sampleQualities.length,

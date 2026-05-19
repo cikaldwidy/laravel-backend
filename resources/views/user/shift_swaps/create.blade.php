@@ -14,7 +14,7 @@
         <main class="px-4 pt-4">
             <section class="user-card p-4 space-y-4">
                 <p class="text-sm text-slate-600">
-                    Penukaran shift hanya bisa dilakukan dengan pegawai dalam unit yang sama{{ $unitName ? ', yaitu ' . $unitName : '' }}.
+                    Penukaran shift hanya bisa dilakukan dengan pegawai dalam unit yang sama{{ $unitName ? ', yaitu ' . $unitName : '' }}. Shift target yang tampil adalah jadwal aktif yang belum selesai.
                 </p>
 
             @if($errors->any())
@@ -103,7 +103,7 @@
             const items = await res.json();
 
             if (!Array.isArray(items) || items.length === 0) {
-                targetShiftEl.innerHTML = '<option value="">Tidak ada shift target yang cocok</option>';
+                targetShiftEl.innerHTML = '<option value="">Tidak ada shift target aktif yang belum selesai</option>';
                 return;
             }
 

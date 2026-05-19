@@ -10,7 +10,10 @@
       <style>
         .user-page {
             min-height: 100dvh;
-            background: #ecfeff;
+            background:
+                radial-gradient(circle at top left, rgb(220 38 38 / 0.09), transparent 26rem),
+                radial-gradient(circle at bottom right, rgb(37 99 235 / 0.13), transparent 30rem),
+                #f8fafc;
             display: flex;
             justify-content: center;
             width: 100%;
@@ -18,27 +21,38 @@
 
         .user-phone {
             width: 100%;
-            max-width: 24rem;
             min-height: 100dvh;
             position: relative;
             padding-bottom: calc(6rem + env(safe-area-inset-bottom));
-            background: #dffcff;
-            box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.25);
+            background:
+                linear-gradient(180deg, rgb(239 246 255 / 0.9) 0%, rgb(248 250 252 / 1) 46%, rgb(255 241 242 / 0.42) 100%);
+            overflow-x: hidden;
         }
 
-        @media (min-width: 768px) {
-            .user-page {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
+        .user-phone > main {
+            width: 100%;
+            max-width: 72rem;
+            margin-left: auto;
+            margin-right: auto;
+            padding-left: clamp(0.75rem, 2vw, 2rem) !important;
+            padding-right: clamp(0.75rem, 2vw, 2rem) !important;
+        }
 
-            .user-phone,
-            .user-bottom-nav-inner {
-                max-width: 64rem;
+        .user-phone > header {
+            width: 100%;
+            max-width: 72rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        @media (max-width: 480px) {
+            .user-phone main .grid.grid-cols-4,
+            .user-phone main .grid.grid-cols-5 {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
             }
         }
 
-        @media (min-width: 1280px) {
+        @media (min-width: 1024px) {
             .user-phone,
             .user-bottom-nav-inner {
                 max-width: 72rem;
@@ -79,8 +93,8 @@
         }
 
         .user-field:focus {
-            border-color: #10b981;
-            box-shadow: 0 0 0 3px rgb(16 185 129 / 0.18);
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgb(37 99 235 / 0.18);
         }
 
         .user-btn-primary,
@@ -97,9 +111,9 @@
         }
 
         .user-btn-primary {
-            background: #047857;
+            background: #1d4ed8;
             color: #fff;
-            box-shadow: 0 1px 2px rgb(15 23 42 / 0.08);
+            box-shadow: 0 10px 22px rgb(29 78 216 / 0.18);
         }
 
         .user-btn-secondary {
@@ -122,7 +136,6 @@
 
         .user-bottom-nav-inner {
             width: 100%;
-            max-width: 24rem;
             height: 4rem;
             display: flex;
             align-items: center;
@@ -145,7 +158,7 @@
         }
 
         .user-nav-link-active {
-            color: #047857;
+            color: #1d4ed8;
         }
       </style>
 </head>

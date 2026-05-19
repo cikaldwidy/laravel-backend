@@ -50,7 +50,7 @@
                     <span class="absolute -top-3 left-5 w-2 h-2 rounded-full bg-yellow-400"></span>
                     <span class="absolute -top-1 right-2 w-2 h-2 rounded-full bg-blue-300"></span>
                     <span class="absolute top-8 -left-4 w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span class="absolute bottom-4 -right-5 w-2 h-2 rounded-full bg-orange-400"></span>
+                    <span class="absolute bottom-4 -right-5 w-2 h-2 rounded-full bg-red-500"></span>
                 </div>
 
                 <h3 class="mt-8 text-xl font-bold text-gray-700 tracking-[.5px]">

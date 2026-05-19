@@ -13,7 +13,7 @@
                 </a>
             @endif
             <div class="min-w-0">
-                <h1 class="text-lg font-extrabold text-emerald-900 leading-tight">{{ $title }}</h1>
+                <h1 class="text-lg font-extrabold text-slate-800 leading-tight">{{ $title }}</h1>
                 @if($subtitle)
                     <p class="text-xs text-slate-500 leading-snug">{{ $subtitle }}</p>
                 @endif

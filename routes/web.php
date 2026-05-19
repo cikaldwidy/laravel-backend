@@ -37,6 +37,8 @@ use App\Models\FeatureSetting;
 Route::view('/', 'landing.welcome')->name('landing');
 Route::get('/login', [AuthController::class, 'showUserLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'userLogin']);
+Route::get('/register', [AuthController::class, 'showUserRegister'])->name('register');
+Route::post('/register', [AuthController::class, 'userRegister'])->name('register.store');
 
 // ================= ADMIN LOGIN =================
 Route::get('/admin/login', [AuthController::class, 'showAdminLogin']);

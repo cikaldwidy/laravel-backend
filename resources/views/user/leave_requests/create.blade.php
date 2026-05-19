@@ -55,7 +55,7 @@
             </form>
         </main>
 
-        @include('user.partials.bottom-nav', ['active' => 'leave'])
+        @include('user.partials.bottom-nav', ['active' => ''])
     </div>
 </div>
 @endsection

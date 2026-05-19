@@ -12,16 +12,45 @@
 }
 
 @layer components {
+    .user-phone > main {
+        width: 100%;
+        max-width: 72rem;
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: clamp(0.75rem, 2vw, 2rem) !important;
+        padding-right: clamp(0.75rem, 2vw, 2rem) !important;
+    }
+
+    .user-phone > header {
+        width: 100%;
+        max-width: 72rem;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    @media (max-width: 480px) {
+        .user-phone main .grid.grid-cols-4,
+        .user-phone main .grid.grid-cols-5 {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        }
+    }
+
     .user-page {
-        @apply min-h-[100dvh] w-full bg-cyan-50 flex justify-center md:px-4;
+        @apply min-h-[100dvh] w-full bg-slate-50 flex justify-center;
+        background:
+            radial-gradient(circle at top left, rgb(220 38 38 / 0.09), transparent 26rem),
+            radial-gradient(circle at bottom right, rgb(37 99 235 / 0.13), transparent 30rem),
+            #f8fafc;
     }
 
     .user-phone {
-        @apply w-full max-w-sm md:max-w-5xl xl:max-w-6xl min-h-[100dvh] bg-[#dffcff] shadow-2xl relative pb-[calc(6rem+env(safe-area-inset-bottom))];
+        @apply w-full min-h-[100dvh] relative overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom))];
+        background:
+            linear-gradient(180deg, rgb(239 246 255 / 0.9) 0%, rgb(248 250 252 / 1) 46%, rgb(255 241 242 / 0.42) 100%);
     }
 
     .user-header {
-        @apply h-14 bg-emerald-800 text-white flex items-center px-4 shadow;
+        @apply h-14 bg-blue-800 text-white flex items-center px-4 shadow;
     }
 
     .user-header-icon {
@@ -37,11 +66,11 @@
     }
 
     .user-field {
-        @apply w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500;
+        @apply w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600;
     }
 
     .user-btn-primary {
-        @apply inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl px-4 py-2.5 text-sm font-bold shadow-sm transition;
+        @apply inline-flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl px-4 py-2.5 text-sm font-bold shadow-lg shadow-blue-700/20 transition;
     }
 
     .user-btn-secondary {
@@ -53,7 +82,7 @@
     }
 
     .user-bottom-nav-inner {
-        @apply w-full max-w-sm md:max-w-5xl xl:max-w-6xl h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl;
+        @apply w-full max-w-6xl h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl;
     }
 
     .user-nav-link {
@@ -61,6 +90,6 @@
     }
 
     .user-nav-link-active {
-        @apply text-emerald-700 text-center text-xs;
+        @apply text-blue-700 text-center text-xs;
     }
 }

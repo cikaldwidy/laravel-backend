@@ -13,7 +13,7 @@
 
         <main class="px-4 pt-4">
             <section class="user-card p-6 text-center">
-                <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center">
                     <i class="fa-solid fa-toggle-on text-2xl"></i>
                 </div>
                 <h1 class="mt-4 text-lg font-extrabold text-slate-800">{{ $title }}</h1>

@@ -20,7 +20,7 @@
                                 {{ $announcement->tanggal_mulai->format('d/m/Y') }} - {{ $announcement->tanggal_berakhir->format('d/m/Y') }}
                             </p>
                         </div>
-                        <span class="shrink-0 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">
+                        <span class="shrink-0 px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
                             {{ $announcement->target_type === 'unit' ? ($announcement->unit?->nama_unit ?? 'Unit') : 'Semua' }}
                         </span>
                     </div>
@@ -28,7 +28,7 @@
                 </article>
             @empty
                 <section class="user-card p-6 text-center">
-                    <div class="w-12 h-12 mx-auto rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                    <div class="w-12 h-12 mx-auto rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
                         <i class="fa-solid fa-bullhorn"></i>
                     </div>
                     <p class="mt-3 text-sm font-semibold text-slate-700">Belum ada pengumuman aktif.</p>
@@ -37,7 +37,7 @@
             @endforelse
         </main>
 
-        @include('user.partials.bottom-nav', ['active' => 'info'])
+        @include('user.partials.bottom-nav', ['active' => ''])
     </div>
 </div>
 @endsection

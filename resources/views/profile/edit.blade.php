@@ -138,7 +138,7 @@
             </form>
         </main>
 
-        @include('user.partials.bottom-nav', ['active' => ''])
+        @include('user.partials.bottom-nav', ['active' => 'profile'])
     </div>
 </div>
 <script>

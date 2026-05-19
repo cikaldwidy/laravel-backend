@@ -4,15 +4,46 @@
 
 @section('content')
 <style>
-    @media (min-width: 768px) {
-        .user-dashboard-main {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 22rem;
-            align-items: start;
-        }
+    .user-dashboard-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: start;
+    }
 
-        .user-dashboard-main > .span-full {
-            grid-column: 1 / -1;
+    .user-dashboard-main > .span-full {
+        grid-column: 1 / -1;
+    }
+
+    .dashboard-menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr));
+    }
+
+    .dashboard-menu-card {
+        min-height: 5.75rem;
+    }
+
+    @media (max-width: 360px) {
+        .dashboard-menu-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @media (min-width: 640px) {
+        .dashboard-menu-grid {
+            grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .user-dashboard-main {
+            grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+        }
+    }
+
+    @media (min-width: 1180px) {
+        .user-dashboard-main {
+            grid-template-columns: minmax(36rem, 1fr) minmax(24rem, 30rem);
         }
     }
 </style>
@@ -32,10 +63,11 @@
         : (in_array($presensiHariIni?->status, ['telat', 'terlambat'], true) ? 'Telat' : 'Tepat Waktu');
     $statusBadgeClass = !$sudahMasuk
         ? 'bg-slate-100 text-slate-600'
-        : (in_array($presensiHariIni?->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+        : (in_array($presensiHariIni?->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700');
     $hasScheduledShift = isset($scheduledShift) && $scheduledShift;
     $isShiftOff = $hasScheduledShift && $scheduledShift->status === 'libur';
     $shiftLabel = $hasScheduledShift ? $scheduledShift->nama_shift : null;
+    $announcementCount = $announcements->count();
     $featureSettings = \App\Models\FeatureSetting::matrix();
 @endphp
 
@@ -48,21 +80,32 @@
                     <p class="text-xs text-slate-500 leading-tight">Akun User</p>
                 </div>
 
-                <form method="POST" action="/logout" class="shrink-0">
-                    @csrf
-                    <button type="submit" class="w-9 h-9 rounded-xl bg-white/70 hover:bg-white text-slate-700 flex items-center justify-center shadow-sm border border-white/60">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                    </button>
-                </form>
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="{{ route('announcements.index') }}" class="relative w-9 h-9 rounded-xl bg-white/70 hover:bg-white text-blue-700 flex items-center justify-center shadow-sm border border-white/60">
+                        <i class="fa-solid fa-bell"></i>
+                        @if($announcementCount > 0)
+                            <span class="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
+                                {{ $announcementCount > 9 ? '9+' : $announcementCount }}
+                            </span>
+                        @endif
+                    </a>
+
+                    <form method="POST" action="/logout">
+                        @csrf
+                        <button type="submit" class="w-9 h-9 rounded-xl bg-white/70 hover:bg-white text-slate-700 flex items-center justify-center shadow-sm border border-white/60">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
+                    </form>
+                </div>
             </div>
 
             <div class="mt-3 flex flex-col items-center">
-                <div id="bigClock" class="text-4xl font-extrabold tracking-tight text-emerald-800 leading-none">--:--:--</div>
+                <div id="bigClock" class="text-4xl font-extrabold tracking-tight text-blue-800 leading-none">--:--:--</div>
                 <div class="mt-1 text-xs text-slate-500">{{ now()->translatedFormat('l, d F Y') }}</div>
             </div>
         </header>
 
-        <main class="user-dashboard-main px-4 pt-4 gap-4 space-y-4 md:space-y-0">
+        <main class="user-dashboard-main px-4 pt-4 gap-4">
             @if(!$hasScheduledShift)
                 <section class="span-full bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
                     Shift kamu belum diatur oleh admin untuk hari ini. Absen hanya bisa dilakukan setelah ada jadwal shift.
@@ -74,32 +117,32 @@
             @endif
 
             <section class="span-full bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-white/70 overflow-hidden">
-                <div class="grid grid-cols-2 divide-x divide-slate-100">
-                    <div class="p-3 flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                    <div class="p-3 flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
                             <i class="fa-solid fa-right-to-bracket"></i>
                         </div>
-                        <div>
+                        <div class="min-w-0">
                             <p class="text-[11px] text-slate-500 leading-tight">Jam Masuk</p>
-                            <p class="text-sm font-bold text-slate-800 leading-tight">{{ $jamMasuk ?? $jadwalMasuk }}</p>
+                            <p class="text-sm font-bold text-slate-800 leading-tight truncate">{{ $jamMasuk ?? $jadwalMasuk }}</p>
                             @if($shiftLabel)
-                                <p class="text-[11px] text-slate-500 leading-tight">{{ $shiftLabel }}</p>
+                                <p class="text-[11px] text-slate-500 leading-tight truncate">{{ $shiftLabel }}</p>
                             @endif
                         </div>
                     </div>
-                    <div class="p-3 flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                    <div class="p-3 flex items-center gap-3 min-w-0">
+                        <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
                             <i class="fa-solid fa-camera"></i>
                         </div>
-                        <div>
+                        <div class="min-w-0">
                             <p class="text-[11px] text-slate-500 leading-tight">Jam Pulang</p>
-                            <p class="text-sm font-bold text-slate-800 leading-tight">{{ $jamPulang ?? ($shiftLabel ? $jadwalPulang : 'Belum Dijadwalkan') }}</p>
+                            <p class="text-sm font-bold text-slate-800 leading-tight truncate">{{ $jamPulang ?? ($shiftLabel ? $jadwalPulang : 'Belum Dijadwalkan') }}</p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section class="grid grid-cols-4 md:grid-cols-5 gap-3">
+            <section class="dashboard-menu-grid gap-3">
                 @php
                     $menu = [
                         ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir, 'url' => route('history.index')],
@@ -110,19 +153,20 @@
                         ['label' => 'Lembur', 'icon' => 'fa-clock', 'badge' => 0, 'url' => route('features.show', 'lembur'), 'feature' => 'lembur'],
                         ['label' => 'Jadwal', 'icon' => 'fa-calendar-days', 'badge' => 0, 'url' => route('user.shifts.index')],
                         ['label' => 'Swap Shift', 'icon' => 'fa-right-left', 'badge' => 0, 'url' => route('shift-swaps.index')],
+                        ['label' => 'Pengumuman', 'icon' => 'fa-bell', 'badge' => $announcementCount, 'url' => route('announcements.index')],
                     ];
                 @endphp
 
                 @foreach($menu as $item)
                     @continue(isset($item['feature']) && !($featureSettings[$item['feature']]['user'] ?? false))
                     <a href="{{ $item['url'] ?? '#' }}"
-                       class="relative bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm px-2 py-3 text-center active:scale-[0.99] transition">
+                       class="dashboard-menu-card relative bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm px-2 py-3 text-center active:scale-[0.99] transition">
                         @if(($item['badge'] ?? 0) > 0)
-                            <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
+                            <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
                                 {{ (int) $item['badge'] }}
                             </span>
                         @endif
-                        <div class="w-10 h-10 mx-auto rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                        <div class="w-10 h-10 mx-auto rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
                             <i class="fa-solid {{ $item['icon'] }}"></i>
                         </div>
                         <p class="mt-2 text-[11px] font-semibold text-slate-700 leading-tight">{{ $item['label'] }}</p>
@@ -140,23 +184,23 @@
                 </div>
 
                 <div class="mt-3 grid grid-cols-3 gap-2 text-center">
-                    <div class="rounded-xl bg-emerald-50 p-2">
-                        <p class="text-sm font-extrabold text-emerald-700">{{ $hadir }}</p>
+                    <div class="rounded-xl bg-blue-50 p-2">
+                        <p class="text-sm font-extrabold text-blue-700">{{ $hadir }}</p>
                         <p class="text-[11px] text-slate-500">Hadir</p>
                     </div>
                     <div class="rounded-xl bg-amber-50 p-2">
                         <p class="text-sm font-extrabold text-amber-700">{{ $telat }}</p>
                         <p class="text-[11px] text-slate-500">Telat</p>
                     </div>
-                    <div class="rounded-xl bg-sky-50 p-2">
-                        <p class="text-sm font-extrabold text-sky-700">{{ $izin }}</p>
+                    <div class="rounded-xl bg-red-50 p-2">
+                        <p class="text-sm font-extrabold text-red-600">{{ $izin }}</p>
                         <p class="text-[11px] text-slate-500">Izin</p>
                     </div>
                 </div>
             </section>
 
             @if($approvedLeaveToday)
-                <section class="bg-sky-50 border border-sky-200 text-sky-900 rounded-2xl p-4 text-sm shadow-sm">
+                <section class="bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl p-4 text-sm shadow-sm">
                     Hari ini Anda memiliki izin yang disetujui: <span class="font-bold">{{ ucfirst($approvedLeaveToday->jenis_izin) }}</span>.
                 </section>
             @endif
@@ -167,7 +211,7 @@
                         <p class="text-xs font-semibold text-slate-700">Pengumuman Aktif</p>
                         <p class="text-[11px] text-slate-500">Info terbaru untuk user</p>
                     </div>
-                    <a href="{{ route('announcements.index') }}" class="text-xs text-emerald-700 font-semibold">Lihat semua</a>
+                    <a href="{{ route('announcements.index') }}" class="text-xs text-red-600 font-semibold">Lihat semua</a>
                 </div>
                 <div class="mt-3 space-y-3">
                     @forelse($announcements as $announcement)
@@ -201,13 +245,13 @@
                             : 'Belum Absen';
                         $itemBadge = !$itemMasuk
                             ? 'bg-slate-100 text-slate-600'
-                            : (in_array($item->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700');
+                            : (in_array($item->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700');
                     @endphp
 
                     <div class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-start gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
                                     <i class="fa-solid fa-fingerprint"></i>
                                 </div>
                                 <div>
@@ -233,7 +277,7 @@
 
         <nav class="user-bottom-nav">
             <div class="user-bottom-nav-inner">
-                <a href="{{ route('dashboard') }}" class="text-emerald-700 text-center text-xs">
+                <a href="{{ route('dashboard') }}" class="text-blue-700 text-center text-xs">
                     <i class="fa-solid fa-house text-lg"></i>
                     <p>Home</p>
                 </a>
@@ -241,16 +285,16 @@
                     <i class="fa-solid fa-file-lines text-lg"></i>
                     <p>Histori</p>
                 </a>
-                <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-emerald-700 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg">
+                <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-red-600 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg shadow-red-600/20">
                     <i class="fa-solid fa-fingerprint text-xl"></i>
                 </a>
-                <a href="{{ route('leave_requests.index') }}" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('user.shifts.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-calendar-days text-lg"></i>
-                    <p>Izin</p>
+                    <p>Jadwal</p>
                 </a>
-                <a href="{{ route('announcements.index') }}" class="text-gray-500 text-center text-xs">
-                    <i class="fa-solid fa-circle-info text-lg"></i>
-                    <p>Info</p>
+                <a href="{{ route('profile.index') }}" class="text-gray-500 text-center text-xs">
+                    <i class="fa-solid fa-id-card text-lg"></i>
+                    <p>Biodata</p>
                 </a>
             </div>
         </nav>

@@ -10,11 +10,13 @@ class FaceEmbedding extends Model
     protected $fillable = [
         'user_id',
         'embedding',
+        'descriptor_samples',
         'photo_path',
     ];
 
     protected $casts = [
         'embedding' => 'array',
+        'descriptor_samples' => 'array',
     ];
 
     public function user(): BelongsTo

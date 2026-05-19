@@ -13,7 +13,7 @@
 
         <main class="px-4 pt-4 space-y-4">
             @if(session('success'))
-                <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl p-4 text-sm shadow-sm">
+                <div class="bg-blue-50 border border-blue-200 text-blue-800 rounded-2xl p-4 text-sm shadow-sm">
                     {{ session('success') }}
                 </div>
             @endif
@@ -22,22 +22,22 @@
 
             <section class="user-card p-4">
                 <div class="flex items-center gap-4">
-                    <div class="w-16 h-16 rounded-2xl bg-emerald-50 overflow-hidden flex items-center justify-center border border-white shadow-sm">
+                    <div class="w-16 h-16 rounded-2xl bg-blue-50 overflow-hidden flex items-center justify-center border border-white shadow-sm">
                         @if($foto)
                             <img src="{{ $foto }}" alt="Foto" class="w-full h-full object-cover">
                         @else
-                            <i class="fa-solid fa-user text-emerald-700 text-2xl"></i>
+                            <i class="fa-solid fa-user text-blue-700 text-2xl"></i>
                         @endif
                     </div>
                     <div class="min-w-0 flex-1">
                         <p class="font-extrabold text-slate-800 truncate">{{ $user->name }}</p>
                         <p class="text-xs text-slate-500 truncate">{{ $user->email }}</p>
-                        <p class="mt-2 inline-flex px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold">
+                        <p class="mt-2 inline-flex px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
                             {{ $employeeDetail?->unit?->nama_unit ?? $employeeDetail?->department?->nama_departemen ?? 'User' }}
                         </p>
                     </div>
                     @if(auth()->user()?->role === 'admin')
-                        <a href="{{ route('profile.edit') }}" class="user-header-icon text-emerald-700 bg-white/80 border border-white shadow-sm">
+                        <a href="{{ route('profile.edit') }}" class="user-header-icon text-blue-700 bg-white/80 border border-white shadow-sm">
                             <i class="fa-solid fa-pen"></i>
                         </a>
                     @endif
@@ -97,7 +97,7 @@
             </section>
         </main>
 
-        @include('user.partials.bottom-nav', ['active' => ''])
+        @include('user.partials.bottom-nav', ['active' => 'profile'])
     </div>
 </div>
 @endsection

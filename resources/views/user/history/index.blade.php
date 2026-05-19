@@ -21,9 +21,7 @@
                     <select name="status" class="user-field mt-1">
                         <option value="">Semua Status</option>
                         <option value="hadir" @selected(request('status') === 'hadir')>Hadir</option>
-                        <option value="normal" @selected(request('status') === 'normal')>Normal</option>
                         <option value="telat" @selected(request('status') === 'telat')>Telat</option>
-                        <option value="terlambat" @selected(request('status') === 'terlambat')>Terlambat</option>
                         <option value="izin" @selected(request('status') === 'izin')>Izin</option>
                         <option value="pulang_cepat" @selected(request('status') === 'pulang_cepat')>Pulang Cepat</option>
                     </select>
@@ -47,12 +45,18 @@
                 @forelse($histories as $item)
                     @php
                         $isLate = in_array($item->status, ['telat', 'terlambat'], true);
-                        $badgeClass = $isLate ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700';
+                        $badgeClass = $isLate ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700';
+                        $statusLabel = match ($item->status) {
+                            'normal' => 'Hadir',
+                            'terlambat' => 'Telat',
+                            'pulang_cepat' => 'Pulang Cepat',
+                            default => ucfirst(str_replace('_', ' ', $item->status ?? '-')),
+                        };
                     @endphp
                     <article class="user-card p-4">
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-start gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
                                     <i class="fa-solid fa-fingerprint"></i>
                                 </div>
                                 <div>
@@ -61,13 +65,13 @@
                                 </div>
                             </div>
                             <span class="px-2.5 py-1 rounded-full text-[11px] font-bold {{ $badgeClass }}">
-                                {{ ucfirst($item->status ?? '-') }}
+                                {{ $statusLabel }}
                             </span>
                         </div>
                     </article>
                 @empty
                     <section class="user-card p-6 text-center">
-                        <div class="w-12 h-12 mx-auto rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                        <div class="w-12 h-12 mx-auto rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
                             <i class="fa-solid fa-file-lines"></i>
                         </div>
                         <p class="mt-3 text-sm font-semibold text-slate-700">Belum ada riwayat.</p>

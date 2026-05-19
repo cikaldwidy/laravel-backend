@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
 use App\Models\User;
+use App\Support\ShiftTime;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -56,11 +57,14 @@ class ShiftSwapController extends Controller
 
         $myShifts = ShiftSchedule::query()
             ->where('user_id', $user->id)
-            ->whereDate('tanggal', '>=', today())
+            ->whereDate('tanggal', '>=', today()->subDay())
             ->where('status', 'aktif')
+            ->whereDoesntHave('requestedSwaps', fn ($query) => $query->where('status', 'pending'))
+            ->whereDoesntHave('targetSwaps', fn ($query) => $query->where('status', 'pending'))
             ->orderBy('tanggal')
             ->orderBy('jam_masuk')
             ->get()
+            ->filter(fn (ShiftSchedule $item) => $this->shiftHasNotEnded($item))
             ->map(fn (ShiftSchedule $item) => $this->formatShift($item))
             ->values();
 
@@ -128,10 +132,14 @@ class ShiftSwapController extends Controller
 
         $items = ShiftSchedule::query()
             ->where('user_id', $validated['target_user_id'])
-            ->whereDate('tanggal', $myShift->tanggal)
+            ->whereDate('tanggal', '>=', today()->subDay())
             ->where('status', 'aktif')
+            ->whereDoesntHave('requestedSwaps', fn ($query) => $query->where('status', 'pending'))
+            ->whereDoesntHave('targetSwaps', fn ($query) => $query->where('status', 'pending'))
+            ->orderBy('tanggal')
             ->orderBy('jam_masuk')
             ->get()
+            ->filter(fn (ShiftSchedule $item) => $this->shiftHasNotEnded($item))
             ->map(fn (ShiftSchedule $item) => $this->formatShift($item))
             ->values();
 
@@ -183,15 +191,8 @@ class ShiftSwapController extends Controller
             return $this->rejectRequest('Tukar shift hanya bisa dengan pegawai dalam unit yang sama.');
         }
 
-        if ($myShift->tanggal->toDateString() !== $targetShift->tanggal->toDateString()) {
-            return $this->rejectRequest('Tukar shift hanya bisa di tanggal yang sama.');
-        }
-
-        $myStart = Carbon::parse($myShift->tanggal->toDateString() . ' ' . $myShift->jam_masuk->format('H:i:s'));
-        $targetStart = Carbon::parse($targetShift->tanggal->toDateString() . ' ' . $targetShift->jam_masuk->format('H:i:s'));
-
-        if ($myStart->isPast() || $targetStart->isPast()) {
-            return $this->rejectRequest('Shift yang sudah lewat tidak bisa ditukar.');
+        if (!$this->shiftHasNotEnded($myShift) || !$this->shiftHasNotEnded($targetShift)) {
+            return $this->rejectRequest('Shift yang sudah selesai tidak bisa ditukar.');
         }
 
         $pendingExists = ShiftSwap::query()
@@ -324,5 +325,29 @@ class ShiftSwapController extends Controller
             'shift_code' => $shift->shift_code,
             'nama_shift' => $shift->nama_shift,
         ];
+    }
+
+    private function shiftHasNotEnded(ShiftSchedule $shift): bool
+    {
+        $end = ShiftTime::endAt(
+            $shift->tanggal,
+            $this->toTime($shift->jam_masuk, 'H:i:s'),
+            $this->toTime($shift->jam_pulang, 'H:i:s')
+        );
+
+        return !$end->isPast();
+    }
+
+    private function toTime($value, string $format): string
+    {
+        if ($value instanceof Carbon) {
+            return $value->format($format);
+        }
+
+        if (is_string($value)) {
+            return Carbon::parse($value)->format($format);
+        }
+
+        return Carbon::parse((string) $value)->format($format);
     }
 }
