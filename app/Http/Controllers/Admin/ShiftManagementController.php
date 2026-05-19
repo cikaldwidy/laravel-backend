@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkAssignShiftRequest;
+use App\Models\Announcement;
 use App\Models\Shift;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
@@ -369,16 +370,15 @@ class ShiftManagementController extends Controller
                     throw new \RuntimeException('Swap shift hanya bisa disetujui untuk pegawai dalam unit yang sama.');
                 }
 
+                if ($shiftA->status !== 'aktif' || $shiftB->status !== 'aktif') {
+                    throw new \RuntimeException('Hanya jadwal aktif yang bisa ditukar.');
+                }
+
                 if (!$this->shiftHasNotEnded($shiftA) || !$this->shiftHasNotEnded($shiftB)) {
                     throw new \RuntimeException('Shift yang sudah selesai tidak bisa ditukar.');
                 }
 
-                DB::table('shift_schedules')
-                    ->whereIn('id', [$shiftA->id, $shiftB->id])
-                    ->update([
-                        'user_id' => DB::raw('CASE WHEN id = ' . $shiftA->id . ' THEN ' . $shiftB->user_id . ' WHEN id = ' . $shiftB->id . ' THEN ' . $shiftA->user_id . ' END'),
-                        'updated_at' => now(),
-                    ]);
+                $this->applySwapSchedules($shiftA, $shiftB);
 
                 $swap->update([
                     'status' => 'approved',
@@ -405,6 +405,8 @@ class ShiftManagementController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
+        $this->publishSwapDecisionAnnouncement($shiftSwap->fresh(['requester', 'targetUser', 'shift', 'targetShift']), 'approved');
+
         return back()->with('success', 'Swap shift berhasil di-approve dan kepemilikan shift sudah ditukar.');
     }
 
@@ -424,6 +426,8 @@ class ShiftManagementController extends Controller
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
+
+        $this->publishSwapDecisionAnnouncement($shiftSwap->fresh(['requester', 'targetUser', 'shift', 'targetShift']), 'rejected', $validated['note'] ?? null);
 
         return back()->with('success', 'Request swap berhasil ditolak.');
     }
@@ -596,6 +600,99 @@ class ShiftManagementController extends Controller
         );
 
         return !$end->isPast();
+    }
+
+    private function applySwapSchedules(ShiftSchedule $shiftA, ShiftSchedule $shiftB): void
+    {
+        $requesterId = (int) $shiftA->user_id;
+        $targetId = (int) $shiftB->user_id;
+        $dateA = $shiftA->tanggal->toDateString();
+        $dateB = $shiftB->tanggal->toDateString();
+
+        if ($dateA === $dateB) {
+            $payloadA = $this->schedulePayload($shiftA);
+            $payloadB = $this->schedulePayload($shiftB);
+
+            $shiftA->update($payloadB);
+            $shiftB->update($payloadA);
+            return;
+        }
+
+        $relatedSchedules = ShiftSchedule::query()
+            ->whereIn('user_id', [$requesterId, $targetId])
+            ->whereIn('tanggal', [$dateA, $dateB])
+            ->lockForUpdate()
+            ->get()
+            ->keyBy(fn (ShiftSchedule $schedule) => (int) $schedule->user_id . '|' . $schedule->tanggal->toDateString());
+
+        $requesterOnTargetDate = $relatedSchedules->get($requesterId . '|' . $dateB);
+        $targetOnRequesterDate = $relatedSchedules->get($targetId . '|' . $dateA);
+        $payloadA = $this->schedulePayload($shiftA);
+        $payloadB = $this->schedulePayload($shiftB);
+
+        if ($targetOnRequesterDate) {
+            $targetDatePayload = $this->schedulePayload($targetOnRequesterDate);
+            $shiftA->update($targetDatePayload);
+            $targetOnRequesterDate->update($payloadA);
+        } else {
+            $shiftA->update(['user_id' => $targetId]);
+        }
+
+        if ($requesterOnTargetDate) {
+            $requesterDatePayload = $this->schedulePayload($requesterOnTargetDate);
+            $shiftB->update($requesterDatePayload);
+            $requesterOnTargetDate->update($payloadB);
+        } else {
+            $shiftB->update(['user_id' => $requesterId]);
+        }
+    }
+
+    private function schedulePayload(ShiftSchedule $schedule): array
+    {
+        return [
+            'jam_masuk' => $this->toTimeString($schedule->jam_masuk),
+            'jam_pulang' => $this->toTimeString($schedule->jam_pulang),
+            'status' => $schedule->status,
+            'shift_code' => $schedule->shift_code,
+        ];
+    }
+
+    private function publishSwapDecisionAnnouncement(?ShiftSwap $swap, string $decision, ?string $adminNote = null): void
+    {
+        if (!$swap) {
+            return;
+        }
+
+        $requesterShift = $swap->shift
+            ? $swap->shift->tanggal->format('d/m/Y') . ' ' . Carbon::parse($this->toTimeString($swap->shift->jam_masuk))->format('H:i') . ' - ' . Carbon::parse($this->toTimeString($swap->shift->jam_pulang))->format('H:i')
+            : '-';
+        $targetShift = $swap->targetShift
+            ? $swap->targetShift->tanggal->format('d/m/Y') . ' ' . Carbon::parse($this->toTimeString($swap->targetShift->jam_masuk))->format('H:i') . ' - ' . Carbon::parse($this->toTimeString($swap->targetShift->jam_pulang))->format('H:i')
+            : '-';
+        $isApproved = $decision === 'approved';
+
+        $message = trim(
+            'Request tukar shift antara ' . ($swap->requester?->name ?? 'Pegawai') . ' dan ' . ($swap->targetUser?->name ?? 'pegawai target') . ' telah '
+            . ($isApproved ? 'disetujui' : 'ditolak') . " oleh admin.\n\n"
+            . 'Shift yang diajukan: ' . $requesterShift . "\n"
+            . 'Shift target: ' . $targetShift
+            . ($adminNote ? "\n\nCatatan admin: " . $adminNote : '')
+        );
+
+        $announcement = Announcement::query()->create([
+            'judul' => $isApproved ? 'Tukar Shift Disetujui Admin' : 'Tukar Shift Ditolak Admin',
+            'isi' => $message,
+            'tanggal_mulai' => today()->toDateString(),
+            'tanggal_berakhir' => today()->copy()->addDays(7)->toDateString(),
+            'target_type' => 'users',
+            'unit_id' => null,
+            'is_published' => true,
+        ]);
+
+        $announcement->users()->sync([
+            $swap->requester_id,
+            $swap->target_user_id,
+        ]);
     }
 
     private function usersAreInSameUnit(?User $firstUser, ?User $secondUser): bool

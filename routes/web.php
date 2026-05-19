@@ -60,6 +60,7 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::post('/izin', [LeaveRequestController::class, 'store'])->name('leave_requests.store');
     Route::post('/izin/{leaveRequest}/delete', [LeaveRequestController::class, 'destroy'])->name('leave_requests.destroy');
     Route::get('/pengumuman', [AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::post('/pengumuman/{announcement}/dismiss', [AnnouncementController::class, 'dismiss'])->name('announcements.dismiss');
     Route::get('/jadwal-shift', [UserShiftScheduleController::class, 'index'])->name('user.shifts.index');
     Route::get('/fitur/{featureKey}', [FeaturePageController::class, 'user'])
         ->whereIn('featureKey', ['sakit', 'cuti', 'istirahat', 'lembur', 'slip_gaji'])
@@ -69,8 +70,6 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/tukar-shift/create', [ShiftSwapController::class, 'create'])->name('shift-swaps.create');
     Route::get('/tukar-shift/target-shifts', [ShiftSwapController::class, 'availableTargetShifts'])->name('shift-swaps.target-shifts');
     Route::post('/tukar-shift', [ShiftSwapController::class, 'store'])->name('shift-swaps.store');
-    Route::post('/tukar-shift/{shiftSwap}/accept', [ShiftSwapController::class, 'targetAccept'])->name('shift-swaps.accept');
-    Route::post('/tukar-shift/{shiftSwap}/reject', [ShiftSwapController::class, 'targetReject'])->name('shift-swaps.reject');
 });
 
 Route::middleware(['auth'])->group(function () {

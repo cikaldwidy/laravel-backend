@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\Unit;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class AnnouncementController extends Controller
@@ -12,14 +13,25 @@ class AnnouncementController extends Controller
     public function index()
     {
         $announcements = Announcement::query()
-            ->with('unit')
+            ->with(['unit', 'users'])
+            ->where(function ($query) {
+                $query->where('target_type', '!=', 'users')
+                    ->orWhere(function ($manualUserAnnouncements) {
+                        $manualUserAnnouncements->where('target_type', 'users')
+                            ->where('judul', 'not like', '%Tukar Shift%');
+                    });
+            })
             ->latest('tanggal_mulai')
             ->latest('created_at')
             ->get();
 
         $units = Unit::query()->orderBy('nama_unit')->get();
+        $users = User::query()
+            ->where('role', 'user')
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
-        return view('admin.announcements.index', compact('announcements', 'units'));
+        return view('admin.announcements.index', compact('announcements', 'units', 'users'));
     }
 
     public function store(Request $request)
@@ -29,11 +41,13 @@ class AnnouncementController extends Controller
             'isi' => ['required', 'string'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_berakhir' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
-            'target_type' => ['required', 'in:all,unit'],
-            'unit_id' => ['nullable', 'exists:units,id'],
+            'target_type' => ['required', 'in:all,unit,users'],
+            'unit_id' => ['nullable', 'required_if:target_type,unit', 'exists:units,id'],
+            'user_ids' => ['nullable', 'required_if:target_type,users', 'array'],
+            'user_ids.*' => ['integer', 'exists:users,id'],
         ]);
 
-        Announcement::create([
+        $announcement = Announcement::create([
             'judul' => $validated['judul'],
             'isi' => $validated['isi'],
             'tanggal_mulai' => $validated['tanggal_mulai'],
@@ -42,6 +56,10 @@ class AnnouncementController extends Controller
             'unit_id' => $validated['target_type'] === 'unit' ? $validated['unit_id'] : null,
             'is_published' => true,
         ]);
+
+        if ($validated['target_type'] === 'users') {
+            $announcement->users()->sync($validated['user_ids'] ?? []);
+        }
 
         return back()->with('success', 'Pengumuman berhasil dipublikasikan.');
     }
@@ -53,8 +71,10 @@ class AnnouncementController extends Controller
             'isi' => ['required', 'string'],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_berakhir' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
-            'target_type' => ['required', 'in:all,unit'],
-            'unit_id' => ['nullable', 'exists:units,id'],
+            'target_type' => ['required', 'in:all,unit,users'],
+            'unit_id' => ['nullable', 'required_if:target_type,unit', 'exists:units,id'],
+            'user_ids' => ['nullable', 'required_if:target_type,users', 'array'],
+            'user_ids.*' => ['integer', 'exists:users,id'],
             'is_published' => ['nullable', 'boolean'],
         ]);
 
@@ -67,6 +87,8 @@ class AnnouncementController extends Controller
             'unit_id' => $validated['target_type'] === 'unit' ? $validated['unit_id'] : null,
             'is_published' => (bool) ($validated['is_published'] ?? false),
         ]);
+
+        $announcement->users()->sync($validated['target_type'] === 'users' ? ($validated['user_ids'] ?? []) : []);
 
         return back()->with('success', 'Pengumuman berhasil diperbarui.');
     }

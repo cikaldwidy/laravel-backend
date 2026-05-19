@@ -14,7 +14,7 @@
         <main class="px-4 pt-4">
             <section class="user-card p-4 space-y-4">
                 <p class="text-sm text-slate-600">
-                    Penukaran shift hanya bisa dilakukan dengan pegawai dalam unit yang sama{{ $unitName ? ', yaitu ' . $unitName : '' }}. Shift target yang tampil adalah jadwal aktif yang belum selesai.
+                    Penukaran shift hanya bisa dilakukan dengan pegawai dalam unit yang sama{{ $unitName ? ', yaitu ' . $unitName : '' }}. Shift target bebas tanggal selama jadwalnya aktif dan belum selesai.
                 </p>
 
             @if($errors->any())
@@ -55,7 +55,7 @@
                 <div>
                     <label class="text-xs font-semibold text-slate-600">Shift Target</label>
                     <select name="target_shift_id" id="target_shift_id" class="user-field mt-1" required>
-                        <option value="">Pilih shift saya dan user target dulu</option>
+                        <option value="">Pilih user target dulu</option>
                     </select>
                 </div>
 
@@ -81,22 +81,20 @@
 
 <script>
 (function () {
-    const shiftEl = document.getElementById('shift_id');
     const userEl = document.getElementById('target_user_id');
     const targetShiftEl = document.getElementById('target_shift_id');
 
     async function loadTargetShifts() {
-        const shiftId = shiftEl.value;
         const targetUserId = userEl.value;
 
         targetShiftEl.innerHTML = '<option value="">Memuat...</option>';
 
-        if (!shiftId || !targetUserId) {
-            targetShiftEl.innerHTML = '<option value="">Pilih shift saya dan user target dulu</option>';
+        if (!targetUserId) {
+            targetShiftEl.innerHTML = '<option value="">Pilih user target dulu</option>';
             return;
         }
 
-        const url = `{{ route('shift-swaps.target-shifts') }}?shift_id=${encodeURIComponent(shiftId)}&target_user_id=${encodeURIComponent(targetUserId)}`;
+        const url = `{{ route('shift-swaps.target-shifts') }}?target_user_id=${encodeURIComponent(targetUserId)}`;
 
         try {
             const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
@@ -119,8 +117,8 @@
         }
     }
 
-    shiftEl.addEventListener('change', loadTargetShifts);
     userEl.addEventListener('change', loadTargetShifts);
+    loadTargetShifts();
 })();
 </script>
 @endsection

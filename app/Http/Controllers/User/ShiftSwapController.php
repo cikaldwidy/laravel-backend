@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreShiftSwapRequest;
+use App\Models\Announcement;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
 use App\Models\User;
@@ -79,13 +80,15 @@ class ShiftSwapController extends Controller
     {
         $validated = $request->validate([
             'target_user_id' => ['required', 'integer', 'exists:users,id'],
-            'shift_id' => ['required', 'integer', 'exists:shift_schedules,id'],
+            'shift_id' => ['nullable', 'integer', 'exists:shift_schedules,id'],
         ]);
 
-        $myShift = ShiftSchedule::query()
-            ->where('id', $validated['shift_id'])
-            ->where('user_id', auth()->id())
-            ->firstOrFail();
+        if (!empty($validated['shift_id'])) {
+            ShiftSchedule::query()
+                ->where('id', $validated['shift_id'])
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
+        }
 
         $currentUnitId = auth()->user()?->employeeDetail?->unit_id;
 
@@ -114,12 +117,14 @@ class ShiftSwapController extends Controller
             ->orderBy('jam_masuk')
             ->get()
             ->filter(fn (ShiftSchedule $item) => $this->shiftHasNotEnded($item))
+            ->values()
             ->map(function (ShiftSchedule $item) {
                 return [
                     'id' => $item->id,
                     'text' => $item->tanggal->format('d/m/Y') . ' | ' . $this->toTime($item->jam_masuk, 'H:i') . ' - ' . $this->toTime($item->jam_pulang, 'H:i'),
                 ];
-            });
+            })
+            ->values();
 
         return response()->json($items);
     }
@@ -154,6 +159,10 @@ class ShiftSwapController extends Controller
             return back()->withErrors(['target_user_id' => 'Tukar shift hanya bisa dengan pegawai dalam unit yang sama.'])->withInput();
         }
 
+        if ($myShift->status !== 'aktif' || $targetShift->status !== 'aktif') {
+            return back()->withErrors(['shift_id' => 'Hanya jadwal aktif yang bisa ditukar.'])->withInput();
+        }
+
         if (!$this->shiftHasNotEnded($myShift) || !$this->shiftHasNotEnded($targetShift)) {
             return back()->withErrors(['shift_id' => 'Shift yang sudah selesai tidak bisa ditukar.'])->withInput();
         }
@@ -170,7 +179,7 @@ class ShiftSwapController extends Controller
             return back()->withErrors(['shift_id' => 'Salah satu shift sudah memiliki request pending.'])->withInput();
         }
 
-        ShiftSwap::create([
+        $swap = ShiftSwap::create([
             'requester_id' => auth()->id(),
             'target_user_id' => $data['target_user_id'],
             'shift_id' => $myShift->id,
@@ -179,44 +188,9 @@ class ShiftSwapController extends Controller
             'note' => $data['note'] ?? null,
         ]);
 
-        return redirect()->route('shift-swaps.index')->with('success', 'Request tukar shift berhasil dikirim. Menunggu respon target user dan admin.');
-    }
+        $this->publishSwapAnnouncement($swap->load(['requester', 'targetUser', 'shift', 'targetShift']));
 
-    public function targetAccept(ShiftSwap $shiftSwap)
-    {
-        if ((int) $shiftSwap->target_user_id !== (int) auth()->id()) {
-            abort(403);
-        }
-
-        if ($shiftSwap->status !== 'pending') {
-            return back()->with('error', 'Request ini sudah diproses.');
-        }
-
-        $note = trim(($shiftSwap->note ? $shiftSwap->note . "\n" : '') . 'Target user menerima request pada ' . now()->format('d/m/Y H:i'));
-        $shiftSwap->update(['note' => $note]);
-
-        return back()->with('success', 'Request diterima oleh target user dan menunggu keputusan admin.');
-    }
-
-    public function targetReject(ShiftSwap $shiftSwap)
-    {
-        if ((int) $shiftSwap->target_user_id !== (int) auth()->id()) {
-            abort(403);
-        }
-
-        if ($shiftSwap->status !== 'pending') {
-            return back()->with('error', 'Request ini sudah diproses.');
-        }
-
-        $note = trim(($shiftSwap->note ? $shiftSwap->note . "\n" : '') . 'Target user menolak request pada ' . now()->format('d/m/Y H:i'));
-
-        $shiftSwap->update([
-            'status' => 'rejected',
-            'note' => $note,
-            'approved_at' => now(),
-        ]);
-
-        return back()->with('success', 'Request tukar shift berhasil ditolak.');
+        return redirect()->route('shift-swaps.index')->with('success', 'Request tukar shift berhasil dikirim. Menunggu keputusan admin.');
     }
 
     private function toTime($value, string $format): string
@@ -249,5 +223,35 @@ class ShiftSwapController extends Controller
         $secondUnitId = $secondUser->employeeDetail?->unit_id;
 
         return $firstUnitId !== null && (int) $firstUnitId === (int) $secondUnitId;
+    }
+
+    private function publishSwapAnnouncement(ShiftSwap $swap): void
+    {
+        $requesterShift = $swap->shift
+            ? $swap->shift->tanggal->format('d/m/Y') . ' ' . $this->toTime($swap->shift->jam_masuk, 'H:i') . ' - ' . $this->toTime($swap->shift->jam_pulang, 'H:i')
+            : '-';
+        $targetShift = $swap->targetShift
+            ? $swap->targetShift->tanggal->format('d/m/Y') . ' ' . $this->toTime($swap->targetShift->jam_masuk, 'H:i') . ' - ' . $this->toTime($swap->targetShift->jam_pulang, 'H:i')
+            : '-';
+
+        $announcement = Announcement::create([
+            'judul' => 'Pemberitahuan Tukar Shift',
+            'isi' => trim(
+                ($swap->requester?->name ?? 'Pegawai') . ' mengajukan tukar shift dengan ' . ($swap->targetUser?->name ?? 'pegawai target') . ".\n\n"
+                . 'Shift yang diajukan: ' . $requesterShift . "\n"
+                . 'Shift target: ' . $targetShift . "\n\n"
+                . 'Request ini menunggu keputusan admin.'
+            ),
+            'tanggal_mulai' => today()->toDateString(),
+            'tanggal_berakhir' => today()->copy()->addDays(7)->toDateString(),
+            'target_type' => 'users',
+            'unit_id' => null,
+            'is_published' => true,
+        ]);
+
+        $announcement->users()->sync([
+            $swap->requester_id,
+            $swap->target_user_id,
+        ]);
     }
 }

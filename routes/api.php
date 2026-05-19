@@ -59,7 +59,5 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/tukar-shift/options', [MobileShiftSwapController::class, 'options']);
         Route::get('/tukar-shift/target-shifts', [MobileShiftSwapController::class, 'availableTargetShifts']);
         Route::post('/tukar-shift', [MobileShiftSwapController::class, 'store']);
-        Route::post('/tukar-shift/{shiftSwap}/accept', [MobileShiftSwapController::class, 'accept']);
-        Route::post('/tukar-shift/{shiftSwap}/reject', [MobileShiftSwapController::class, 'reject']);
     });
 });

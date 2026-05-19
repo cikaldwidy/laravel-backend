@@ -21,7 +21,13 @@
                             </p>
                         </div>
                         <span class="shrink-0 px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
-                            {{ $announcement->target_type === 'unit' ? ($announcement->unit?->nama_unit ?? 'Unit') : 'Semua' }}
+                            @if($announcement->target_type === 'users')
+                                Khusus Anda
+                            @elseif($announcement->target_type === 'unit')
+                                {{ $announcement->unit?->nama_unit ?? 'Unit' }}
+                            @else
+                                Semua
+                            @endif
                         </span>
                     </div>
                     <p class="mt-3 text-sm text-slate-600 whitespace-pre-line leading-relaxed">{{ $announcement->isi }}</p>

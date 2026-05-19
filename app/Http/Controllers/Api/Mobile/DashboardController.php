@@ -59,6 +59,7 @@ class DashboardController extends Controller
             ->where('is_published', true)
             ->whereDate('tanggal_mulai', '<=', $today)
             ->whereDate('tanggal_berakhir', '>=', $today)
+            ->whereDoesntHave('dismissedByUsers', fn ($users) => $users->whereKey($user->id))
             ->where(function ($query) use ($user) {
                 $query->where('target_type', 'all');
 
@@ -68,6 +69,11 @@ class DashboardController extends Controller
                             ->where('unit_id', $user->employeeDetail?->unit_id);
                     });
                 }
+
+                $query->orWhere(function ($userQuery) use ($user) {
+                    $userQuery->where('target_type', 'users')
+                        ->whereHas('users', fn ($users) => $users->whereKey($user->id));
+                });
             })
             ->latest('tanggal_mulai')
             ->limit(5)

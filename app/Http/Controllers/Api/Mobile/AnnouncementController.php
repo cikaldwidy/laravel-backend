@@ -29,7 +29,8 @@ class AnnouncementController extends Controller
             ->where('is_published', true)
             ->whereDate('tanggal_mulai', '<=', today())
             ->whereDate('tanggal_berakhir', '>=', today())
-            ->where(function ($query) use ($unitId) {
+            ->whereDoesntHave('dismissedByUsers', fn ($users) => $users->whereKey($user->id))
+            ->where(function ($query) use ($unitId, $user) {
                 $query->where('target_type', 'all');
 
                 if ($unitId) {
@@ -37,6 +38,11 @@ class AnnouncementController extends Controller
                         $unitQuery->where('target_type', 'unit')->where('unit_id', $unitId);
                     });
                 }
+
+                $query->orWhere(function ($userQuery) use ($user) {
+                    $userQuery->where('target_type', 'users')
+                        ->whereHas('users', fn ($users) => $users->whereKey($user->id));
+                });
             })
             ->latest('tanggal_mulai')
             ->get()

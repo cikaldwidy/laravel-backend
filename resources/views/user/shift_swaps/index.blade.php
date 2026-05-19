@@ -46,6 +46,7 @@
                             'approved' => 'bg-blue-100 text-blue-700',
                             'rejected' => 'bg-red-100 text-red-700',
                         ][$swap->status] ?? 'bg-slate-100 text-slate-700';
+                        $isTarget = (int) $swap->target_user_id === (int) auth()->id();
                     @endphp
                     <article class="user-card p-4">
                         <div class="flex items-start justify-between gap-3">
@@ -58,7 +59,7 @@
 
                         <div class="mt-3 grid grid-cols-2 gap-3 text-xs text-slate-600">
                             <div class="user-soft-card">
-                                <p class="text-[11px] text-slate-500">Shift Saya</p>
+                                <p class="text-[11px] text-slate-500">{{ $isTarget ? 'Anda menerima' : 'Shift Saya' }}</p>
                                 @if($swap->shift)
                                     <p class="font-bold text-slate-800">{{ $swap->shift->tanggal->format('d/m/Y') }}</p>
                                     <p>{{ $swap->shift->jam_masuk?->format('H:i') }} - {{ $swap->shift->jam_pulang?->format('H:i') }}</p>
@@ -67,7 +68,7 @@
                                 @endif
                             </div>
                             <div class="user-soft-card">
-                                <p class="text-[11px] text-slate-500">Shift Target</p>
+                                <p class="text-[11px] text-slate-500">{{ $isTarget ? 'Anda melepas' : 'Shift Target' }}</p>
                                 @if($swap->targetShift)
                                     <p class="font-bold text-slate-800">{{ $swap->targetShift->tanggal->format('d/m/Y') }}</p>
                                     <p>{{ $swap->targetShift->jam_masuk?->format('H:i') }} - {{ $swap->targetShift->jam_pulang?->format('H:i') }}</p>
@@ -77,22 +78,16 @@
                             </div>
                         </div>
 
+                        @if($swap->status === 'pending')
+                            <div class="mt-3 rounded-xl px-3 py-2 text-xs font-semibold bg-amber-50 text-amber-700">
+                                Request pertukaran ini menunggu keputusan admin.
+                            </div>
+                        @endif
+
                         @if($swap->note)
                             <div class="mt-3 user-soft-card text-xs text-slate-600 whitespace-pre-line">{{ $swap->note }}</div>
                         @endif
 
-                        @if($swap->status === 'pending' && (int) $swap->target_user_id === (int) auth()->id())
-                            <div class="mt-3 grid grid-cols-2 gap-2">
-                                <form action="{{ route('shift-swaps.accept', $swap) }}" method="POST">
-                                    @csrf
-                                    <button class="w-full user-btn-primary py-2">Accept</button>
-                                </form>
-                                <form action="{{ route('shift-swaps.reject', $swap) }}" method="POST" onsubmit="return confirm('Tolak request ini?')">
-                                    @csrf
-                                    <button class="w-full rounded-xl bg-red-50 text-red-700 px-4 py-2 text-sm font-bold">Reject</button>
-                                </form>
-                            </div>
-                        @endif
                     </article>
                 @empty
                     <section class="user-card p-6 text-center">

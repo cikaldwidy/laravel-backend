@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Mobile;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
 use App\Models\User;
@@ -216,62 +217,13 @@ class ShiftSwapController extends Controller
             'note' => $data['note'] ?? null,
         ]);
 
+        $this->publishSwapAnnouncement($swap->load(['requester', 'targetUser', 'shift', 'targetShift']));
+
         return response()->json([
             'success' => true,
-            'message' => 'Request tukar shift berhasil dikirim. Menunggu respon target user dan admin.',
+            'message' => 'Request tukar shift berhasil dikirim. Menunggu keputusan admin.',
             'data' => $this->formatSwap($swap->load(['requester', 'targetUser', 'shift', 'targetShift']), $user->id),
         ], 201);
-    }
-
-    public function accept(Request $request, ShiftSwap $shiftSwap): JsonResponse
-    {
-        /** @var User $user */
-        $user = $request->user();
-
-        if ((int) $shiftSwap->target_user_id !== (int) $user->id) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
-        }
-
-        if ($shiftSwap->status !== 'pending') {
-            return $this->rejectRequest('Request ini sudah diproses.', 409);
-        }
-
-        $note = trim(($shiftSwap->note ? $shiftSwap->note . "\n" : '') . 'Target user menerima request pada ' . now()->format('d/m/Y H:i'));
-        $shiftSwap->update(['note' => $note]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Request diterima oleh target user dan menunggu keputusan admin.',
-            'data' => $this->formatSwap($shiftSwap->fresh(['requester', 'targetUser', 'shift', 'targetShift']), $user->id),
-        ]);
-    }
-
-    public function reject(Request $request, ShiftSwap $shiftSwap): JsonResponse
-    {
-        /** @var User $user */
-        $user = $request->user();
-
-        if ((int) $shiftSwap->target_user_id !== (int) $user->id) {
-            return response()->json(['success' => false, 'message' => 'Akses ditolak.'], 403);
-        }
-
-        if ($shiftSwap->status !== 'pending') {
-            return $this->rejectRequest('Request ini sudah diproses.', 409);
-        }
-
-        $note = trim(($shiftSwap->note ? $shiftSwap->note . "\n" : '') . 'Target user menolak request pada ' . now()->format('d/m/Y H:i'));
-
-        $shiftSwap->update([
-            'status' => 'rejected',
-            'note' => $note,
-            'approved_at' => now(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Request tukar shift berhasil ditolak.',
-            'data' => $this->formatSwap($shiftSwap->fresh(['requester', 'targetUser', 'shift', 'targetShift']), $user->id),
-        ]);
     }
 
     private function ensureUser(User $user): ?JsonResponse
@@ -310,7 +262,7 @@ class ShiftSwapController extends Controller
             'approved_at' => $swap->approved_at?->toIso8601String(),
             'created_at' => $swap->created_at?->toIso8601String(),
             'is_target' => (int) $swap->target_user_id === $currentUserId,
-            'can_respond' => (int) $swap->target_user_id === $currentUserId && $swap->status === 'pending',
+            'can_respond' => false,
         ];
     }
 
@@ -349,5 +301,35 @@ class ShiftSwapController extends Controller
         }
 
         return Carbon::parse((string) $value)->format($format);
+    }
+
+    private function publishSwapAnnouncement(ShiftSwap $swap): void
+    {
+        $requesterShift = $swap->shift
+            ? $swap->shift->tanggal->format('d/m/Y') . ' ' . $this->toTime($swap->shift->jam_masuk, 'H:i') . ' - ' . $this->toTime($swap->shift->jam_pulang, 'H:i')
+            : '-';
+        $targetShift = $swap->targetShift
+            ? $swap->targetShift->tanggal->format('d/m/Y') . ' ' . $this->toTime($swap->targetShift->jam_masuk, 'H:i') . ' - ' . $this->toTime($swap->targetShift->jam_pulang, 'H:i')
+            : '-';
+
+        $announcement = Announcement::query()->create([
+            'judul' => 'Pemberitahuan Tukar Shift',
+            'isi' => trim(
+                ($swap->requester?->name ?? 'Pegawai') . ' mengajukan tukar shift dengan ' . ($swap->targetUser?->name ?? 'pegawai target') . ".\n\n"
+                . 'Shift yang diajukan: ' . $requesterShift . "\n"
+                . 'Shift target: ' . $targetShift . "\n\n"
+                . 'Request ini menunggu keputusan admin.'
+            ),
+            'tanggal_mulai' => today()->toDateString(),
+            'tanggal_berakhir' => today()->copy()->addDays(7)->toDateString(),
+            'target_type' => 'users',
+            'unit_id' => null,
+            'is_published' => true,
+        ]);
+
+        $announcement->users()->sync([
+            $swap->requester_id,
+            $swap->target_user_id,
+        ]);
     }
 }
