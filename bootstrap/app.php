@@ -11,9 +11,19 @@
 |
 */
 
-$app = new Illuminate\Foundation\Application(
-    $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
-);
+$basePath = dirname(__DIR__);
+
+foreach ([
+    $basePath.'/storage/framework/cache',
+    $basePath.'/storage/framework/sessions',
+    $basePath.'/storage/framework/views',
+] as $directory) {
+    if (! is_dir($directory)) {
+        mkdir($directory, 0755, true);
+    }
+}
+
+$app = new Illuminate\Foundation\Application($basePath);
 
 /*
 |--------------------------------------------------------------------------
