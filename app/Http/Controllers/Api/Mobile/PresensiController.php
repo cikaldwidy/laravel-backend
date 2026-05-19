@@ -196,6 +196,182 @@ class PresensiController extends Controller
         ]);
     }
 
+    public function face(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'type' => ['nullable', 'in:masuk,pulang'],
+            'embedding' => ['required', 'array', 'size:128'],
+            'embedding.*' => ['required', 'numeric'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'lat' => ['nullable', 'numeric', 'between:-90,90'],
+            'lng' => ['nullable', 'numeric', 'between:-180,180'],
+            'timestamp' => ['nullable', 'date'],
+        ]);
+
+        /** @var User $user */
+        $user = $request->user();
+        $roleResponse = $this->ensureUser($user);
+        if ($roleResponse) {
+            return $roleResponse;
+        }
+
+        if (isset($validated['user_id']) && (int) $validated['user_id'] !== $user->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User absensi tidak sesuai dengan token login.',
+            ], 403);
+        }
+
+        if (!$user->hasFaceEnrollment()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Wajah belum terdaftar. Selesaikan enrollment terlebih dulu.',
+            ], 422);
+        }
+
+        $incomingEmbedding = array_map('floatval', $validated['embedding']);
+        $storedEmbedding = $user->faceEmbedding?->embedding;
+        if (!is_array($storedEmbedding) || count($storedEmbedding) !== 128) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data embedding wajah terdaftar belum valid. Hubungi admin untuk enrollment ulang.',
+            ], 422);
+        }
+
+        $faceDistance = $this->compareEmbeddings($storedEmbedding, $incomingEmbedding);
+        if ($faceDistance > (float) config('attendance.face_threshold', 0.65)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Wajah tidak cocok dengan data yang terdaftar.',
+                'data' => [
+                    'face_distance' => round($faceDistance, 6),
+                ],
+            ], 422);
+        }
+
+        $now = now();
+        $setting = WorkSetting::query()->first();
+        $activeShiftContext = $this->resolveActiveShift($user, $now, $setting);
+
+        if (!$activeShiftContext) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shift belum diatur atau Anda berada di luar jam presensi.',
+            ], 403);
+        }
+
+        $tanggalPresensi = $activeShiftContext['shift_date']->toDateString();
+        $approvedLeave = $this->getApprovedLeaveForDate($user->id, $tanggalPresensi);
+
+        if ($approvedLeave) {
+            $presensi = Presensi::query()->updateOrCreate(
+                ['user_id' => $user->id, 'tanggal' => $tanggalPresensi],
+                ['status' => 'izin', 'status_pulang' => null]
+            );
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda memiliki izin yang sudah disetujui pada tanggal presensi ini.',
+                'data' => $this->formatPresensi($presensi),
+            ], 409);
+        }
+
+        $latitude = $validated['latitude'] ?? $validated['lat'] ?? null;
+        $longitude = $validated['longitude'] ?? $validated['lng'] ?? null;
+        $distanceResponse = $this->validateOptionalOfficeDistance(
+            $latitude !== null ? (float) $latitude : null,
+            $longitude !== null ? (float) $longitude : null,
+            $setting
+        );
+        if ($distanceResponse instanceof JsonResponse) {
+            return $distanceResponse;
+        }
+
+        $presensi = Presensi::query()
+            ->where('user_id', $user->id)
+            ->whereDate('tanggal', $tanggalPresensi)
+            ->first();
+        $type = $validated['type'] ?? ((!$presensi || !$presensi->jam_masuk) ? 'masuk' : 'pulang');
+
+        if ($type === 'masuk') {
+            if ($presensi?->jam_masuk) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan presensi masuk.',
+                    'data' => $this->formatPresensi($presensi),
+                ], 409);
+            }
+
+            $statusMasuk = $now->lte($activeShiftContext['start']) ? 'hadir' : 'terlambat';
+            $presensi = Presensi::query()->updateOrCreate(
+                ['user_id' => $user->id, 'tanggal' => $tanggalPresensi],
+                [
+                    'jam_masuk' => $now,
+                    'latitude_masuk' => $latitude,
+                    'longitude_masuk' => $longitude,
+                    'jarak_masuk' => $distanceResponse !== null ? round($distanceResponse, 2) : null,
+                    'face_distance_masuk' => round($faceDistance, 6),
+                    'embedding_absensi' => $incomingEmbedding,
+                    'embedding_masuk' => $incomingEmbedding,
+                    'status' => $statusMasuk,
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Absensi berhasil disimpan',
+                'data' => array_merge($this->formatPresensi($presensi), [
+                    'type' => 'masuk',
+                    'face_distance' => round($faceDistance, 6),
+                ]),
+            ]);
+        }
+
+        if (!$presensi?->jam_masuk) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda belum melakukan presensi masuk.',
+            ], 422);
+        }
+
+        if ($presensi->jam_keluar) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah melakukan presensi pulang.',
+                'data' => $this->formatPresensi($presensi),
+            ], 409);
+        }
+
+        if ($now->lt($activeShiftContext['end'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Belum waktunya pulang.',
+            ], 422);
+        }
+
+        $presensi->update([
+            'jam_keluar' => $now,
+            'latitude_keluar' => $latitude,
+            'longitude_keluar' => $longitude,
+            'jarak_keluar' => $distanceResponse !== null ? round($distanceResponse, 2) : null,
+            'face_distance_keluar' => round($faceDistance, 6),
+            'embedding_absensi' => $incomingEmbedding,
+            'embedding_keluar' => $incomingEmbedding,
+            'status_pulang' => 'normal',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Absensi berhasil disimpan',
+            'data' => array_merge($this->formatPresensi($presensi->fresh()), [
+                'type' => 'pulang',
+                'face_distance' => round($faceDistance, 6),
+            ]),
+        ]);
+    }
+
     public function riwayat(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -319,6 +495,25 @@ class PresensiController extends Controller
         return $distance;
     }
 
+    private function validateOptionalOfficeDistance(?float $latitude, ?float $longitude, ?WorkSetting $setting): float|JsonResponse|null
+    {
+        if ($latitude === null && $longitude === null) {
+            return null;
+        }
+
+        if ($latitude === null || $longitude === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Latitude dan longitude harus dikirim bersamaan.',
+            ], 422);
+        }
+
+        return $this->validateOfficeDistance([
+            'lat' => $latitude,
+            'lng' => $longitude,
+        ], $setting);
+    }
+
     private function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
         $earthRadius = 6371000;
@@ -333,6 +528,17 @@ class PresensiController extends Controller
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadius * $c;
+    }
+
+    private function compareEmbeddings(array $storedEmbedding, array $incomingEmbedding): float
+    {
+        $sum = 0.0;
+        foreach ($storedEmbedding as $index => $value) {
+            $diff = (float) $value - (float) $incomingEmbedding[$index];
+            $sum += $diff * $diff;
+        }
+
+        return sqrt($sum);
     }
 
     private function storeAttendanceImage(string $imageData, int $userId): string
@@ -386,6 +592,7 @@ class PresensiController extends Controller
             'longitude_keluar' => $presensi->longitude_keluar,
             'jarak_masuk' => $presensi->jarak_masuk,
             'jarak_keluar' => $presensi->jarak_keluar,
+            'has_embedding_absensi' => is_array($presensi->embedding_absensi),
             'keterangan' => $presensi->status_pulang ?: $presensi->status,
         ];
     }

@@ -42,6 +42,7 @@ Route::post('/login', [MobileAuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [MobileAuthController::class, 'logout']);
+    Route::post('/absensi/face', [MobilePresensiController::class, 'face']);
 
     Route::prefix('user')->group(function () {
         Route::get('/profile', [MobileAuthController::class, 'profile']);

@@ -23,6 +23,9 @@ class Presensi extends Model
         'face_distance_masuk',
         'face_distance_keluar',
         'liveness_challenge',
+        'embedding_absensi',
+        'embedding_masuk',
+        'embedding_keluar',
         'status',
         'status_pulang',
     ];
@@ -40,6 +43,9 @@ class Presensi extends Model
         'face_distance_masuk' => 'float',
         'face_distance_keluar' => 'float',
         'liveness_challenge' => 'array',
+        'embedding_absensi' => 'array',
+        'embedding_masuk' => 'array',
+        'embedding_keluar' => 'array',
     ];
     public function user() {
         return $this->belongsTo(\App\Models\User::class);
