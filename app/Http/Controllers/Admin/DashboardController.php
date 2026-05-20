@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\LeaveRequest;
 use App\Models\Announcement;
 use App\Models\Presensi;
-use App\Models\Unit;
 use App\Models\User;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
@@ -83,7 +83,7 @@ class DashboardController extends Controller
             ->get();
 
         $workSetting = WorkSetting::first();
-        $units = Unit::query()->count();
+        $units = Department::query()->count();
         $announcements = Announcement::query()
             ->where('is_published', true)
             ->whereDate('tanggal_mulai', '<=', $tanggal)

@@ -33,7 +33,7 @@
                         <p class="font-extrabold text-slate-800 truncate">{{ $user->name }}</p>
                         <p class="text-xs text-slate-500 truncate">{{ $user->email }}</p>
                         <p class="mt-2 inline-flex px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold">
-                            {{ $employeeDetail?->unit?->nama_unit ?? $employeeDetail?->department?->nama_departemen ?? 'User' }}
+                            {{ $employeeDetail?->department?->nama_departemen ?? $employeeDetail?->departemen ?? 'User' }}
                         </p>
                     </div>
                     @if(auth()->user()?->role === 'admin')
@@ -82,12 +82,8 @@
                         <p class="font-bold text-slate-800">{{ $employeeDetail?->status_kerja ?? '-' }}</p>
                     </div>
                     <div class="user-soft-card">
-                        <p class="text-[11px] text-slate-500">Departemen</p>
+                        <p class="text-[11px] text-slate-500">Unit Kerja/Bagian</p>
                         <p class="font-bold text-slate-800">{{ $employeeDetail?->department?->nama_departemen ?? $employeeDetail?->departemen ?? '-' }}</p>
-                    </div>
-                    <div class="user-soft-card">
-                        <p class="text-[11px] text-slate-500">Unit</p>
-                        <p class="font-bold text-slate-800">{{ $employeeDetail?->unit?->nama_unit ?? '-' }}</p>
                     </div>
                     <div class="user-soft-card">
                         <p class="text-[11px] text-slate-500">Jabatan</p>

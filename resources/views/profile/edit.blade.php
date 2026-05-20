@@ -67,11 +67,9 @@
                         $departmentOptions = $departments->map(fn ($department) => [
                             'id' => $department->id,
                             'name' => $department->nama_departemen,
-                            'units' => $department->units->map(fn ($unit) => ['id' => $unit->id, 'name' => $unit->nama_unit])->values(),
                             'positions' => $department->positions->map(fn ($position) => ['id' => $position->id, 'name' => $position->nama_jabatan])->values(),
                         ])->values();
                         $selectedDepartmentId = old('department_id', $employeeDetail?->department_id);
-                        $selectedUnitId = old('unit_id', $employeeDetail?->unit_id);
                         $selectedPositionId = old('position_id', $employeeDetail?->position_id);
                     @endphp
                     <div>
@@ -93,21 +91,14 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="text-xs font-semibold text-slate-600">Departemen</label>
+                        <label class="text-xs font-semibold text-slate-600">Unit Kerja/Bagian</label>
                         <select name="department_id" id="department_id" class="user-field mt-1">
-                            <option value="">Pilih departemen</option>
+                            <option value="">Pilih unit kerja/bagian</option>
                             @foreach($departments as $department)
                                 <option value="{{ $department->id }}" @selected((string) $selectedDepartmentId === (string) $department->id)>{{ $department->nama_departemen }}</option>
                             @endforeach
                         </select>
                         @error('department_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-slate-600">Unit</label>
-                        <select name="unit_id" id="unit_id" class="user-field mt-1">
-                            <option value="">Pilih unit</option>
-                        </select>
-                        @error('unit_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-slate-600">Jabatan</label>
@@ -144,9 +135,7 @@
 <script>
 const departmentOptions = @json($departmentOptions);
 const departmentSelect = document.getElementById('department_id');
-const unitSelect = document.getElementById('unit_id');
 const positionSelect = document.getElementById('position_id');
-const selectedUnitId = @json((string) $selectedUnitId);
 const selectedPositionId = @json((string) $selectedPositionId);
 
 function fillDependentOptions(select, items, selectedValue, placeholder) {
@@ -166,16 +155,14 @@ function fillDependentOptions(select, items, selectedValue, placeholder) {
     });
 }
 
-function syncDepartmentRelations(useStoredSelection = false) {
+function syncDepartmentPositions(useStoredSelection = false) {
     const selectedDepartment = departmentOptions.find((department) => String(department.id) === departmentSelect.value);
-    const unitValue = useStoredSelection ? selectedUnitId : unitSelect.value;
     const positionValue = useStoredSelection ? selectedPositionId : positionSelect.value;
 
-    fillDependentOptions(unitSelect, selectedDepartment?.units ?? [], unitValue, 'Pilih unit');
     fillDependentOptions(positionSelect, selectedDepartment?.positions ?? [], positionValue, 'Pilih jabatan');
 }
 
-departmentSelect?.addEventListener('change', () => syncDepartmentRelations(false));
-syncDepartmentRelations(true);
+departmentSelect?.addEventListener('change', () => syncDepartmentPositions(false));
+syncDepartmentPositions(true);
 </script>
 @endsection

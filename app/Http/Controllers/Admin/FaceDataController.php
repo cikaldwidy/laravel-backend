@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\FaceEmbedding;
-use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -16,20 +16,20 @@ class FaceDataController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+            'unit_id' => ['nullable', 'integer', 'exists:departments,id'],
         ]);
 
         $selectedUnitId = $validated['unit_id'] ?? null;
-        $units = Unit::query()
-            ->orderBy('nama_unit')
+        $units = Department::query()
+            ->orderBy('nama_departemen')
             ->get();
         $selectedUnit = $selectedUnitId ? $units->firstWhere('id', (int) $selectedUnitId) : null;
 
         $faceEmbeddings = FaceEmbedding::query()
-            ->with('user.employeeDetail.unit')
+            ->with('user.employeeDetail.department')
             ->when($selectedUnitId, function ($query) use ($selectedUnitId) {
                 $query->whereHas('user.employeeDetail', function ($detailQuery) use ($selectedUnitId) {
-                    $detailQuery->where('unit_id', $selectedUnitId);
+                    $detailQuery->where('department_id', $selectedUnitId);
                 });
             })
             ->latest()
@@ -37,10 +37,10 @@ class FaceDataController extends Controller
 
         $baseUserQuery = User::query()
             ->where('role', 'user')
-            ->with('employeeDetail.unit')
+            ->with('employeeDetail.department')
             ->when($selectedUnitId, function ($query) use ($selectedUnitId) {
                 $query->whereHas('employeeDetail', function ($detailQuery) use ($selectedUnitId) {
-                    $detailQuery->where('unit_id', $selectedUnitId);
+                    $detailQuery->where('department_id', $selectedUnitId);
                 });
             });
 

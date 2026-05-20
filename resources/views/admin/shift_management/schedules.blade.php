@@ -38,11 +38,11 @@
                 <input type="date" name="tanggal" value="{{ $tanggal }}" class="w-full min-w-0 border rounded-md px-3 py-2 text-sm">
             </div>
             <div>
-                <label class="text-xs font-semibold text-gray-600">Unit</label>
+                <label class="text-xs font-semibold text-gray-600">Unit Kerja/Bagian</label>
                 <select name="unit_id" class="w-full min-w-0 border rounded-md px-3 py-2 text-sm" required>
-                    <option value="" disabled @selected(blank(request('unit_id')))>Pilih Unit</option>
+                    <option value="" disabled @selected(blank(request('unit_id')))>Pilih Unit Kerja/Bagian</option>
                     @foreach($units as $unit)
-                        <option value="{{ $unit->id }}" @selected((string)request('unit_id') === (string)$unit->id)>{{ $unit->nama_unit }}</option>
+                        <option value="{{ $unit->id }}" @selected((string)request('unit_id') === (string)$unit->id)>{{ $unit->nama_departemen }}</option>
                     @endforeach
                 </select>
             </div>
@@ -75,7 +75,7 @@
         <div class="schedule-table-card bg-white rounded-md shadow border border-gray-200 overflow-hidden w-full min-w-0 max-w-full">
             <div class="px-3 py-2 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                    <h2 class="font-bold text-xs text-slate-900 leading-tight">Unit {{ $unitGroup['unit'] }}</h2>
+                    <h2 class="font-bold text-xs text-slate-900 leading-tight">Unit Kerja/Bagian {{ $unitGroup['unit'] }}</h2>
                     <p class="text-[10px] text-slate-500 leading-tight">{{ count($unitGroup['employees']) }} pegawai</p>
                 </div>
                 <div class="text-[10px] text-slate-500 leading-tight">
@@ -137,7 +137,7 @@
         </div>
     @empty
         <div class="bg-white rounded-md shadow border border-gray-200 p-6 text-center text-sm text-gray-500">
-            {{ request('unit_id') ? 'Belum ada pegawai untuk unit ini.' : 'Pilih unit terlebih dahulu untuk menampilkan jadwal pegawai.' }}
+            {{ request('unit_id') ? 'Belum ada pegawai untuk unit kerja/bagian ini.' : 'Pilih unit kerja/bagian terlebih dahulu untuk menampilkan jadwal pegawai.' }}
         </div>
     @endforelse
 

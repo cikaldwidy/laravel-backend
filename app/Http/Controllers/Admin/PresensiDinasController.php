@@ -18,7 +18,7 @@ class PresensiDinasController extends Controller
 
         $tanggal = $validated['tanggal'] ?? now()->toDateString();
         $users = User::query()
-            ->with('employeeDetail.unit')
+            ->with('employeeDetail.department')
             ->where('role', 'user')
             ->orderBy('name')
             ->get();

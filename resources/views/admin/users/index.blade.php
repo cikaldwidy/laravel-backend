@@ -25,15 +25,15 @@
                         type="search"
                         name="search"
                         value="{{ request('search') }}"
-                        placeholder="Nama, email, NIP, unit..."
+                        placeholder="Nama, email, NIP, unit kerja/bagian, jabatan..."
                         class="w-full border border-gray-200 rounded-md pl-8 pr-3 py-2 text-sm focus:outline-none focus:border-gray-500 transition text-gray-700"
                     >
                 </div>
             </div>
             <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-2">Unit</label>
+                <label class="block text-xs font-semibold text-gray-500 mb-2">Unit Kerja/Bagian</label>
                 <select name="unit" class="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-gray-500 transition bg-white text-gray-700">
-                    <option value="">Semua Unit</option>
+                    <option value="">Semua Unit Kerja/Bagian</option>
                     @foreach($units as $unit)
                         <option value="{{ $unit }}" @selected(request('unit') === $unit)>{{ $unit }}</option>
                     @endforeach
@@ -70,7 +70,8 @@
                 <thead class="bg-gray-50 text-gray-600">
                     <tr>
                         <th class="p-3 text-left">Pegawai</th>
-                        <th class="p-3 text-left">Unit</th>
+                        <th class="p-3 text-left">Unit Kerja/Bagian</th>
+                        <th class="p-3 text-left">Jabatan</th>
                         <th class="p-3 text-left">Biodata</th>
                         <th class="p-3 text-left">Wajah</th>
                         <th class="p-3 text-left">Aksi</th>
@@ -90,7 +91,8 @@
                                 <div class="font-semibold text-gray-800">{{ $u->name }}</div>
                                 <div class="text-xs text-gray-500">{{ $u->email }}</div>
                             </td>
-                            <td class="p-3">{{ $u->employeeDetail?->unit?->nama_unit ?? $u->employeeDetail?->department?->nama_departemen ?? '-' }}</td>
+                            <td class="p-3">{{ $u->employeeDetail?->department?->nama_departemen ?? $u->employeeDetail?->departemen ?? '-' }}</td>
+                            <td class="p-3">{{ $u->employeeDetail?->position?->nama_jabatan ?? $u->employeeDetail?->jabatan ?? '-' }}</td>
                             <td class="p-3">
                                 <span class="px-2 py-1 rounded text-xs font-semibold {{ $biodataComplete ? 'bg-green-100 text-green-700' : (($hasProfile || $hasDetail) ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600') }}">
                                     {{ $biodataComplete ? 'Lengkap' : (($hasProfile || $hasDetail) ? 'Sebagian' : 'Belum ada') }}
@@ -116,7 +118,7 @@
                             </td>
                         </tr>
                         <tr id="user-detail-{{ $u->id }}" class="hidden bg-gray-50">
-                                <td colspan="5" class="p-4">
+                                <td colspan="6" class="p-4">
                                     <div class="grid md:grid-cols-3 gap-4 text-sm">
                                         <div class="bg-white border rounded-lg p-4">
                                             <p class="text-xs font-semibold text-gray-500 uppercase">Profil</p>
@@ -131,8 +133,7 @@
                                             <p class="text-xs font-semibold text-gray-500 uppercase">Pekerjaan</p>
                                             <div class="mt-3 space-y-2">
                                                 <p><span class="text-gray-500">NIP:</span> {{ $detail?->nip ?? '-' }}</p>
-                                                <p><span class="text-gray-500">Unit:</span> {{ $detail?->unit?->nama_unit ?? '-' }}</p>
-                                                <p><span class="text-gray-500">Departemen:</span> {{ $detail?->department?->nama_departemen ?? $detail?->departemen ?? '-' }}</p>
+                                                <p><span class="text-gray-500">Unit Kerja/Bagian:</span> {{ $detail?->department?->nama_departemen ?? $detail?->departemen ?? '-' }}</p>
                                                 <p><span class="text-gray-500">Jabatan:</span> {{ $detail?->position?->nama_jabatan ?? $detail?->jabatan ?? '-' }}</p>
                                                 <p><span class="text-gray-500">Status:</span> {{ $detail?->status_kerja ? ucfirst($detail->status_kerja) : '-' }}</p>
                                             </div>
@@ -154,7 +155,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="p-6 text-center text-gray-500">Belum ada akun pegawai.</td>
+                            <td colspan="6" class="p-6 text-center text-gray-500">Belum ada akun pegawai.</td>
                         </tr>
                     @endforelse
                 </tbody>

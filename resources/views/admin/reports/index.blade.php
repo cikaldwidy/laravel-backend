@@ -46,11 +46,11 @@
             <input type="month" name="bulan" value="{{ request('bulan', $selectedMonth) }}" class="border rounded px-3 py-2 w-full min-w-0">
         </div>
         <div>
-            <label class="text-xs font-semibold text-gray-600">Unit</label>
+            <label class="text-xs font-semibold text-gray-600">Unit Kerja/Bagian</label>
             <select name="unit_id" class="border rounded px-3 py-2 w-full min-w-0" required>
-                <option value="" disabled @selected(blank(request('unit_id')))>Pilih Unit</option>
+                <option value="" disabled @selected(blank(request('unit_id')))>Pilih Unit Kerja/Bagian</option>
                 @foreach($units as $unit)
-                    <option value="{{ $unit->id }}" @selected((string) request('unit_id') === (string) $unit->id)>{{ $unit->nama_unit }}</option>
+                    <option value="{{ $unit->id }}" @selected((string) request('unit_id') === (string) $unit->id)>{{ $unit->nama_departemen }}</option>
                 @endforeach
             </select>
         </div>
@@ -81,7 +81,7 @@
         <div class="report-table-card bg-white rounded-xl shadow w-full min-w-0 max-w-full overflow-hidden">
             <div class="px-3 py-2 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2 bg-slate-50">
                 <div>
-                    <h2 class="font-bold text-xs text-slate-900 leading-tight">Unit {{ $unitGroup['unit'] }}</h2>
+                    <h2 class="font-bold text-xs text-slate-900 leading-tight">Unit Kerja/Bagian {{ $unitGroup['unit'] }}</h2>
                     <p class="text-[10px] text-slate-500 leading-tight">{{ count($unitGroup['employees']) }} pegawai · {{ $unitGroup['total_hours'] }} total jam kerja</p>
                 </div>
                 <div class="text-[10px] text-slate-500 leading-tight">
@@ -150,7 +150,7 @@
         </div>
     @empty
         <div class="bg-white rounded-xl shadow p-6 text-center text-gray-500">
-            {{ request('unit_id') ? 'Belum ada data laporan untuk unit dan bulan ini.' : 'Pilih unit terlebih dahulu untuk menampilkan laporan.' }}
+            {{ request('unit_id') ? 'Belum ada data laporan untuk unit kerja/bagian dan bulan ini.' : 'Pilih unit kerja/bagian terlebih dahulu untuk menampilkan laporan.' }}
         </div>
     @endforelse
 </div>

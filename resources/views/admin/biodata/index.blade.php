@@ -15,7 +15,7 @@
                 <tr>
                     <th class="p-3 text-left">Pegawai</th>
                     <th class="p-3 text-left">Kontak</th>
-                    <th class="p-3 text-left">Unit / Jabatan</th>
+                    <th class="p-3 text-left">Unit Kerja/Bagian / Jabatan</th>
                     <th class="p-3 text-left">Status Data</th>
                     <th class="p-3 text-left">Aksi</th>
                 </tr>
@@ -40,7 +40,7 @@
                             <div class="text-xs text-gray-500">NIK: {{ $profile?->nik ?? '-' }}</div>
                         </td>
                         <td class="p-3">
-                            <div>{{ $detail?->unit?->nama_unit ?? '-' }}</div>
+                            <div>{{ $detail?->department?->nama_departemen ?? $detail?->departemen ?? '-' }}</div>
                             <div class="text-xs text-gray-500">{{ $detail?->position?->nama_jabatan ?? $detail?->jabatan ?? '-' }}</div>
                         </td>
                         <td class="p-3">
