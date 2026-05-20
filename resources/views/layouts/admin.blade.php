@@ -433,7 +433,6 @@
     $adminSection = match (true) {
         request()->routeIs('admin.dashboard') => 'Dashboard',
         request()->routeIs('admin.departments.*'),
-        request()->routeIs('admin.units.*'),
         request()->routeIs('admin.positions.*') => 'Struktur Organisasi',
         request()->routeIs('admin.users.*'),
         request()->routeIs('admin.biodata.*'),
@@ -477,7 +476,7 @@
         <!-- Navigation with Custom Scrollbar - Scrollable Area -->
         @php
             $employeeOpen = request()->routeIs('admin.users.*') || request()->routeIs('admin.biodata.*') || request()->routeIs('admin.face_data.*');
-            $organizationOpen = request()->routeIs('admin.units.*') || request()->routeIs('admin.departments.*') || request()->routeIs('admin.positions.*');
+            $organizationOpen = request()->routeIs('admin.departments.*') || request()->routeIs('admin.positions.*');
             $scheduleOpen = request()->routeIs('admin.shifts.*') || request()->routeIs('jadwal-dinas.*') || request()->routeIs('admin.shift_management.schedules*') || request()->routeIs('admin.shift_management.swaps*');
             $attendanceOpen = request()->routeIs('admin.histories.*') || request()->routeIs('admin.leave_requests.*') || request()->routeIs('admin.features.show');
             $infoOpen = request()->routeIs('admin.announcements.*') || request()->routeIs('admin.reports.*') || request()->routeIs('admin.notifications.*');
@@ -504,8 +503,7 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-organization" class="submenu {{ $organizationOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.departments.index') }}" class="submenu-item {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">Master Departemen</a>
-                    <a href="{{ route('admin.units.index') }}" class="submenu-item {{ request()->routeIs('admin.units.*') ? 'active' : '' }}">Unit Kerja</a>
+                    <a href="{{ route('admin.departments.index') }}" class="submenu-item {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">Master Unit Kerja/Bagian</a>
                     <a href="{{ route('admin.positions.index') }}" class="submenu-item {{ request()->routeIs('admin.positions.*') ? 'active' : '' }}">Master Jabatan</a>
                 </div>
             </div>

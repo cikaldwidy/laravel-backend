@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\LeaveRequest;
 use App\Models\Presensi;
 use App\Models\ShiftSchedule;
-use App\Models\Unit;
 use App\Models\User;
 use App\Support\ShiftTime;
 use Carbon\Carbon;
@@ -20,7 +20,7 @@ class ReportController extends Controller
         [$tanggalMulai, $tanggalSelesai] = $this->resolveDateRange($request);
         $rows = $this->buildRows($request, $tanggalMulai, $tanggalSelesai);
         $matrix = $this->buildMatrixReport($request, $tanggalMulai, $tanggalSelesai);
-        $units = Unit::query()->orderBy('nama_unit')->get();
+        $units = Department::query()->orderBy('nama_departemen')->get();
         $selectedMonth = $tanggalMulai->format('Y-m');
 
         return view('admin.reports.index', compact('rows', 'matrix', 'units', 'tanggalMulai', 'tanggalSelesai', 'selectedMonth'));
@@ -29,7 +29,7 @@ class ReportController extends Controller
     public function exportExcel(Request $request): StreamedResponse
     {
         $request->validate([
-            'unit_id' => ['required', 'integer', 'exists:units,id'],
+            'unit_id' => ['required', 'integer', 'exists:departments,id'],
         ]);
 
         [$tanggalMulai, $tanggalSelesai] = $this->resolveDateRange($request);
@@ -44,7 +44,7 @@ class ReportController extends Controller
     public function exportPdf(Request $request)
     {
         $request->validate([
-            'unit_id' => ['required', 'integer', 'exists:units,id'],
+            'unit_id' => ['required', 'integer', 'exists:departments,id'],
         ]);
 
         [$tanggalMulai, $tanggalSelesai] = $this->resolveDateRange($request);
@@ -57,7 +57,7 @@ class ReportController extends Controller
     {
         $validated = $request->validate([
             'bulan' => ['nullable', 'date_format:Y-m'],
-            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+            'unit_id' => ['nullable', 'integer', 'exists:departments,id'],
         ]);
 
         $month = isset($validated['bulan'])
@@ -70,10 +70,10 @@ class ReportController extends Controller
     private function buildRows(Request $request, Carbon $tanggalMulai, Carbon $tanggalSelesai): array
     {
         $users = User::query()
-            ->with(['employeeDetail.department', 'employeeDetail.unit', 'leaveRequests'])
+            ->with(['employeeDetail.department', 'leaveRequests'])
             ->where('role', 'user')
             ->when($request->filled('unit_id'), function ($query) use ($request) {
-                $query->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $request->unit_id));
+                $query->whereHas('employeeDetail', fn ($detail) => $detail->where('department_id', $request->unit_id));
             }, function ($query) {
                 $query->whereRaw('1 = 0');
             })
@@ -125,7 +125,7 @@ class ReportController extends Controller
                 $rows[] = [
                     'tanggal' => $cursor->format('Y-m-d'),
                     'nama' => $user->name,
-                    'unit' => $user->employeeDetail?->unit?->nama_unit ?? ($user->employeeDetail?->department?->nama_departemen ?? $user->employeeDetail?->departemen ?? '-'),
+                    'unit' => $user->employeeDetail?->department?->nama_departemen ?? $user->employeeDetail?->departemen ?? '-',
                     'shift' => $shift ? ($shift->nama_shift . ' (' . $shift->jam_masuk->format('H:i') . '-' . $shift->jam_pulang->format('H:i') . ')') : '-',
                     'check_in' => $presensi?->jam_masuk?->format('H:i') ?? '-',
                     'check_out' => $presensi?->jam_keluar?->format('H:i') ?? '-',
@@ -142,10 +142,10 @@ class ReportController extends Controller
     private function buildMatrixReport(Request $request, Carbon $tanggalMulai, Carbon $tanggalSelesai): array
     {
         $users = User::query()
-            ->with(['employeeDetail.department', 'employeeDetail.unit'])
+            ->with(['employeeDetail.department'])
             ->where('role', 'user')
             ->when($request->filled('unit_id'), function ($query) use ($request) {
-                $query->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $request->unit_id));
+                $query->whereHas('employeeDetail', fn ($detail) => $detail->where('department_id', $request->unit_id));
             }, function ($query) {
                 $query->whereRaw('1 = 0');
             })
@@ -211,7 +211,7 @@ class ReportController extends Controller
             $dailyShiftGroups = [];
             $shiftTotals = ['pagi' => 0, 'sore' => 0, 'malam' => 0];
             $totalMinutes = 0;
-            $unitName = $user->employeeDetail?->unit?->nama_unit ?? ($user->employeeDetail?->department?->nama_departemen ?? $user->employeeDetail?->departemen ?? '-');
+            $unitName = $user->employeeDetail?->department?->nama_departemen ?? $user->employeeDetail?->departemen ?? '-';
 
             foreach ($dates as $date) {
                 $dateKey = $date->toDateString();

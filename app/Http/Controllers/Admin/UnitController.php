@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Department;
 use App\Models\Unit;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -12,10 +11,7 @@ class UnitController extends Controller
 {
     public function index()
     {
-        $departments = Department::query()->orderBy('nama_departemen')->get();
-        $units = Unit::query()->with('department')->orderBy('nama_unit')->get();
-
-        return view('admin.units.index', compact('units', 'departments'));
+        return redirect()->route('admin.departments.index');
     }
 
     public function store(Request $request)
@@ -23,6 +19,9 @@ class UnitController extends Controller
         $validated = $request->validate([
             'department_id' => ['required', 'exists:departments,id'],
             'nama_unit' => ['required', 'string', 'max:120', 'unique:units,nama_unit'],
+        ], [], [
+            'department_id' => 'unit kerja/bagian',
+            'nama_unit' => 'nama unit',
         ]);
 
         Unit::create($validated);
@@ -40,6 +39,9 @@ class UnitController extends Controller
                 'max:120',
                 Rule::unique('units', 'nama_unit')->ignore($unit->id),
             ],
+        ], [], [
+            'department_id' => 'unit kerja/bagian',
+            'nama_unit' => 'nama unit',
         ]);
 
         $unit->update($validated);

@@ -97,7 +97,7 @@
 @forelse($matrix['unit_groups'] as $unitGroup)
     <table>
         <tr>
-            <td colspan="{{ $colspan }}" class="unit-title">Unit {{ $unitGroup['unit'] }}</td>
+            <td colspan="{{ $colspan }}" class="unit-title">Unit Kerja/Bagian {{ $unitGroup['unit'] }}</td>
         </tr>
         <tr>
             <td colspan="{{ $colspan }}" class="unit-summary">

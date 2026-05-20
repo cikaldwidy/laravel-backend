@@ -44,7 +44,7 @@
 
     @forelse($matrix['unit_groups'] as $unitGroup)
         <div class="unit-section">
-            <div class="unit-title">Unit {{ $unitGroup['unit'] }}</div>
+            <div class="unit-title">Unit Kerja/Bagian {{ $unitGroup['unit'] }}</div>
             <p class="unit-subtitle">{{ count($unitGroup['employees']) }} pegawai | Pagi {{ $unitGroup['shift_totals']['pagi'] }} | Sore {{ $unitGroup['shift_totals']['sore'] }} | Malam {{ $unitGroup['shift_totals']['malam'] }} | {{ $unitGroup['total_hours'] }} total jam kerja</p>
 
             <table>

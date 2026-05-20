@@ -37,6 +37,9 @@ class PositionController extends Controller
                     fn ($query) => $query->where('department_id', $request->department_id)
                 ),
             ],
+        ], [], [
+            'department_id' => 'unit kerja/bagian',
+            'nama_jabatan' => 'nama jabatan',
         ]);
 
         Position::create($validated);
@@ -56,6 +59,9 @@ class PositionController extends Controller
                     ->where(fn ($query) => $query->where('department_id', $request->department_id))
                     ->ignore($position->id),
             ],
+        ], [], [
+            'department_id' => 'unit kerja/bagian',
+            'nama_jabatan' => 'nama jabatan',
         ]);
 
         $position->update($validated);

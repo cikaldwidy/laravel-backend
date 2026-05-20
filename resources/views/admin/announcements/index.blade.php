@@ -28,16 +28,16 @@
                 <span class="block text-xs font-semibold text-gray-600 mb-1">Target</span>
                 <select name="target_type" class="border rounded px-3 py-2 w-full js-target-type">
                     <option value="all">Semua User</option>
-                    <option value="unit">Per Unit</option>
+                    <option value="unit">Per Unit Kerja/Bagian</option>
                     <option value="users">Khusus User</option>
                 </select>
             </label>
             <label class="js-unit-field hidden">
-                <span class="block text-xs font-semibold text-gray-600 mb-1">Unit</span>
+                <span class="block text-xs font-semibold text-gray-600 mb-1">Unit Kerja/Bagian</span>
                 <select name="unit_id" class="border rounded px-3 py-2 w-full">
-                    <option value="">Pilih Unit</option>
+                    <option value="">Pilih Unit Kerja/Bagian</option>
                     @foreach($units as $unit)
-                        <option value="{{ $unit->id }}">{{ $unit->nama_unit }}</option>
+                        <option value="{{ $unit->id }}">{{ $unit->nama_departemen }}</option>
                     @endforeach
                 </select>
             </label>
@@ -66,13 +66,13 @@
                     <input type="date" name="tanggal_berakhir" value="{{ $announcement->tanggal_berakhir->toDateString() }}" class="border rounded px-3 py-2">
                     <select name="target_type" class="border rounded px-3 py-2 js-target-type">
                         <option value="all" @selected($announcement->target_type === 'all')>Semua User</option>
-                        <option value="unit" @selected($announcement->target_type === 'unit')>Per Unit</option>
+                        <option value="unit" @selected($announcement->target_type === 'unit')>Per Unit Kerja/Bagian</option>
                         <option value="users" @selected($announcement->target_type === 'users')>Khusus User</option>
                     </select>
                     <select name="unit_id" class="border rounded px-3 py-2 js-unit-field">
-                        <option value="">Pilih Unit</option>
+                        <option value="">Pilih Unit Kerja/Bagian</option>
                         @foreach($units as $unit)
-                            <option value="{{ $unit->id }}" @selected((string) $announcement->unit_id === (string) $unit->id)>{{ $unit->nama_unit }}</option>
+                            <option value="{{ $unit->id }}" @selected((string) $announcement->unit_id === (string) $unit->id)>{{ $unit->nama_departemen }}</option>
                         @endforeach
                     </select>
                     <select name="user_ids[]" multiple class="border rounded px-3 py-2 md:col-span-2 min-h-32 js-users-field">

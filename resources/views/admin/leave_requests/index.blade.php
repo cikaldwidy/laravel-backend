@@ -18,9 +18,9 @@
             @endforeach
         </select>
         <select name="unit_id" class="border rounded px-3 py-2">
-            <option value="">Semua Unit</option>
+            <option value="">Semua Unit Kerja/Bagian</option>
             @foreach($units as $unit)
-                <option value="{{ $unit->id }}" @selected((string) request('unit_id') === (string) $unit->id)>{{ $unit->nama_unit }}</option>
+                <option value="{{ $unit->id }}" @selected((string) request('unit_id') === (string) $unit->id)>{{ $unit->nama_departemen }}</option>
             @endforeach
         </select>
         <input type="date" name="tanggal" value="{{ request('tanggal') }}" class="border rounded px-3 py-2">
@@ -31,7 +31,7 @@
             <thead class="bg-gray-50">
                 <tr>
                     <th class="p-3 text-left">User</th>
-                    <th class="p-3 text-left">Unit</th>
+                    <th class="p-3 text-left">Unit Kerja/Bagian</th>
                     <th class="p-3 text-left">Jenis</th>
                     <th class="p-3 text-left">Periode</th>
                     <th class="p-3 text-left">Status</th>
@@ -43,7 +43,7 @@
                 @forelse($requests as $item)
                     <tr>
                         <td class="p-3">{{ $item->user?->name }}</td>
-                        <td class="p-3">{{ $item->user?->employeeDetail?->unit?->nama_unit ?? $item->user?->employeeDetail?->department?->nama_departemen ?? $item->user?->employeeDetail?->departemen ?? '-' }}</td>
+                        <td class="p-3">{{ $item->user?->employeeDetail?->department?->nama_departemen ?? $item->user?->employeeDetail?->departemen ?? '-' }}</td>
                         <td class="p-3">{{ ucfirst($item->jenis_izin) }}</td>
                         <td class="p-3">{{ $item->tanggal_mulai->format('d/m/Y') }} - {{ $item->tanggal_selesai->format('d/m/Y') }}</td>
                         <td class="p-3">{{ ucfirst($item->status) }}</td>

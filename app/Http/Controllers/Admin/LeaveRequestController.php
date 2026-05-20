@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\FeatureSetting;
 use App\Models\LeaveRequest;
-use App\Models\Unit;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,12 +20,12 @@ class LeaveRequestController extends Controller
         }
 
         $requests = LeaveRequest::query()
-            ->with(['user.employeeDetail.unit', 'approver'])
+            ->with(['user.employeeDetail.department', 'approver'])
             ->when($request->filled('jenis_izin'), fn ($query) => $query->where('jenis_izin', $request->jenis_izin))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
             ->when($request->filled('user_id'), fn ($query) => $query->where('user_id', $request->user_id))
             ->when($request->filled('unit_id'), function ($query) use ($request) {
-                $query->whereHas('user.employeeDetail', fn ($detail) => $detail->where('unit_id', $request->unit_id));
+                $query->whereHas('user.employeeDetail', fn ($detail) => $detail->where('department_id', $request->unit_id));
             })
             ->when($request->filled('tanggal'), function ($query) use ($request) {
                 $tanggal = Carbon::parse($request->tanggal)->toDateString();
@@ -36,7 +36,7 @@ class LeaveRequestController extends Controller
             ->get();
 
         $users = User::query()->where('role', 'user')->orderBy('name')->get();
-        $units = Unit::query()->orderBy('nama_unit')->get();
+        $units = Department::query()->orderBy('nama_departemen')->get();
 
         return view('admin.leave_requests.index', compact('requests', 'users', 'units'));
     }

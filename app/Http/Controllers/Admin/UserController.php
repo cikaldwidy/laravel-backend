@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\EmployeeDetail;
 use App\Models\Position;
-use App\Models\Unit;
 use App\Models\User;
 use App\Models\UserProfile;
 use Illuminate\Http\Request;
@@ -20,7 +19,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $users = User::query()
-            ->with(['employeeDetail.department', 'employeeDetail.unit', 'employeeDetail.position', 'userProfile', 'faceEmbedding'])
+            ->with(['employeeDetail.department', 'employeeDetail.position', 'userProfile', 'faceEmbedding'])
             ->where('role', 'user')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = trim($request->search);
@@ -33,7 +32,6 @@ class UserController extends Controller
                             $detail->where('nip', 'like', '%' . $search . '%')
                                 ->orWhere('departemen', 'like', '%' . $search . '%')
                                 ->orWhere('jabatan', 'like', '%' . $search . '%')
-                                ->orWhereHas('unit', fn ($unit) => $unit->where('nama_unit', 'like', '%' . $search . '%'))
                                 ->orWhereHas('department', fn ($department) => $department->where('nama_departemen', 'like', '%' . $search . '%'))
                                 ->orWhereHas('position', fn ($position) => $position->where('nama_jabatan', 'like', '%' . $search . '%'));
                         })
@@ -45,8 +43,7 @@ class UserController extends Controller
             })
             ->when($request->filled('unit'), function ($query) use ($request) {
                 $query->whereHas('employeeDetail', function ($detail) use ($request) {
-                    $detail->whereHas('unit', fn ($unit) => $unit->where('nama_unit', $request->unit))
-                        ->orWhereHas('department', fn ($department) => $department->where('nama_departemen', $request->unit));
+                    $detail->whereHas('department', fn ($department) => $department->where('nama_departemen', $request->unit));
                 });
             })
             ->when($request->filled('biodata'), function ($query) use ($request) {
@@ -72,9 +69,9 @@ class UserController extends Controller
             ->get();
 
         $units = User::query()
-            ->with(['employeeDetail.department', 'employeeDetail.unit'])
+            ->with(['employeeDetail.department'])
             ->get()
-            ->map(fn ($user) => $user->employeeDetail?->unit?->nama_unit ?? $user->employeeDetail?->department?->nama_departemen)
+            ->map(fn ($user) => $user->employeeDetail?->department?->nama_departemen ?? $user->employeeDetail?->departemen)
             ->filter()
             ->unique()
             ->sort()
@@ -88,7 +85,6 @@ class UserController extends Controller
     {
         $departments = Department::query()
             ->with([
-                'units' => fn ($query) => $query->orderBy('nama_unit'),
                 'positions' => fn ($query) => $query->orderBy('nama_jabatan'),
             ])
             ->orderBy('nama_departemen')
@@ -110,23 +106,24 @@ class UserController extends Controller
             'jenis_kelamin' => ['required', 'in:L,P'],
             'nik' => ['nullable', 'regex:/^[0-9]+$/', 'max:32'],
             'department_id' => ['required', 'exists:departments,id'],
-            'unit_id' => ['required', 'exists:units,id'],
             'position_id' => ['required', 'exists:positions,id'],
             'nip' => ['required', 'string', 'max:50'],
             'status_kerja' => ['required', 'in:tetap,kontrak,magang'],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+        ], [], [
+            'department_id' => 'unit kerja/bagian',
+            'position_id' => 'jabatan',
+            'status_kerja' => 'status kerja',
+            'no_hp' => 'no. HP',
+            'tanggal_lahir' => 'tanggal lahir',
+            'jenis_kelamin' => 'jenis kelamin',
         ]);
 
         $department = Department::query()->findOrFail($validated['department_id']);
-        $unit = Unit::query()->findOrFail($validated['unit_id']);
         $position = Position::query()->findOrFail($validated['position_id']);
 
-        if ((int) $unit->department_id !== (int) $department->id) {
-            return back()->withErrors(['unit_id' => 'Unit yang dipilih tidak sesuai dengan departemen.'])->withInput();
-        }
-
         if ((int) $position->department_id !== (int) $department->id) {
-            return back()->withErrors(['position_id' => 'Jabatan yang dipilih tidak sesuai dengan departemen.'])->withInput();
+            return back()->withErrors(['position_id' => 'Jabatan yang dipilih tidak sesuai dengan unit kerja/bagian.'])->withInput();
         }
 
         $fotoPath = $request->hasFile('foto')
@@ -155,7 +152,7 @@ class UserController extends Controller
             EmployeeDetail::create([
                 'user_id' => $user->id,
                 'department_id' => $department->id,
-                'unit_id' => $validated['unit_id'],
+                'unit_id' => null,
                 'position_id' => $validated['position_id'],
                 'nip' => $validated['nip'],
                 'departemen' => $department->nama_departemen,

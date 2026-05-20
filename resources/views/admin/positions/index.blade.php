@@ -9,7 +9,7 @@
         <form method="POST" action="{{ route('admin.positions.store') }}" class="grid md:grid-cols-[0.85fr_1.15fr_auto] gap-3">
             @csrf
             <select name="department_id" class="border rounded px-3 py-2">
-                <option value="">Pilih departemen</option>
+                <option value="">Pilih unit kerja/bagian</option>
                 @foreach($departments as $department)
                     <option value="{{ $department->id }}" @selected((string) old('department_id') === (string) $department->id)>{{ $department->nama_departemen }}</option>
                 @endforeach
@@ -25,7 +25,7 @@
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-600">
                 <tr>
-                    <th class="p-3 text-left">Departemen</th>
+                    <th class="p-3 text-left">Unit Kerja/Bagian</th>
                     <th class="p-3 text-left">Jabatan</th>
                     <th class="p-3 text-left">Edit Cepat</th>
                     <th class="p-3 text-left">Aksi</th>

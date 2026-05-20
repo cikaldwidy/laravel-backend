@@ -138,11 +138,11 @@
                 <input type="number" name="tahun" value="{{ $tahun }}" min="2000" max="2100" class="block border rounded-md px-3 py-2 text-sm w-full">
             </div>
             <div class="min-w-0">
-                <label class="text-xs font-semibold text-gray-600">Unit</label>
+                <label class="text-xs font-semibold text-gray-600">Unit Kerja/Bagian</label>
                 <select name="unit_id" class="block border rounded-md px-3 py-2 text-sm w-full" required>
-                    <option value="" disabled @selected(blank($selectedUnitId))>Pilih Unit</option>
+                    <option value="" disabled @selected(blank($selectedUnitId))>Pilih Unit Kerja/Bagian</option>
                     @foreach($units as $unit)
-                        <option value="{{ $unit->id }}" @selected((string) $selectedUnitId === (string) $unit->id)>{{ $unit->nama_unit }}</option>
+                        <option value="{{ $unit->id }}" @selected((string) $selectedUnitId === (string) $unit->id)>{{ $unit->nama_departemen }}</option>
                     @endforeach
                 </select>
             </div>
@@ -171,7 +171,7 @@
             <div class="duty-card bg-white rounded-xl shadow border border-gray-200 overflow-hidden w-full min-w-0 max-w-full">
                 <div class="px-4 py-3 border-b border-slate-100 bg-slate-50 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                        <h2 class="font-bold text-sm text-slate-900 leading-tight">Unit {{ $unitGroup['unit'] }}</h2>
+                        <h2 class="font-bold text-sm text-slate-900 leading-tight">Unit Kerja/Bagian {{ $unitGroup['unit'] }}</h2>
                         <p class="text-xs text-slate-500 leading-tight">{{ count($unitGroup['employees']) }} pegawai · {{ $unitGroup['shift_totals']['TOTAL'] }} total dinas</p>
                     </div>
                     <div class="text-xs text-slate-500 leading-tight">
@@ -249,7 +249,7 @@
             </div>
         @empty
             <div class="bg-white rounded-xl shadow border border-gray-200 p-6 text-center text-sm text-gray-500">
-                {{ $selectedUnitId ? 'Belum ada pegawai untuk unit ini.' : 'Pilih unit terlebih dahulu untuk menampilkan jadwal dinas.' }}
+                {{ $selectedUnitId ? 'Belum ada pegawai untuk unit kerja/bagian ini.' : 'Pilih unit kerja/bagian terlebih dahulu untuk menampilkan jadwal dinas.' }}
             </div>
         @endforelse
 

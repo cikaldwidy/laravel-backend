@@ -4,9 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\JadwalDinasExport;
 use App\Http\Controllers\Controller;
+use App\Models\Department;
 use App\Models\Shift;
 use App\Models\ShiftSchedule;
-use App\Models\Unit;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -28,7 +28,7 @@ class JadwalDinasController extends Controller
         $validated = $request->validate([
             'bulan' => ['required', 'integer', 'between:1,12'],
             'tahun' => ['required', 'integer', 'between:2000,2100'],
-            'unit_id' => ['required', 'integer', 'exists:units,id'],
+            'unit_id' => ['required', 'integer', 'exists:departments,id'],
             'jadwal' => ['nullable', 'array'],
             'jadwal.*' => ['array'],
             'jadwal.*.*' => ['nullable', 'in:P,S,M,O'],
@@ -88,7 +88,7 @@ class JadwalDinasController extends Controller
     public function export(Request $request): BinaryFileResponse
     {
         $request->validate([
-            'unit_id' => ['required', 'integer', 'exists:units,id'],
+            'unit_id' => ['required', 'integer', 'exists:departments,id'],
         ]);
 
         $data = $this->buildScheduleData($request);
@@ -102,13 +102,13 @@ class JadwalDinasController extends Controller
         $validated = $request->validate([
             'bulan' => ['nullable', 'integer', 'between:1,12'],
             'tahun' => ['nullable', 'integer', 'between:2000,2100'],
-            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+            'unit_id' => ['nullable', 'integer', 'exists:departments,id'],
         ]);
 
         $bulan = (int) ($validated['bulan'] ?? now()->month);
         $tahun = (int) ($validated['tahun'] ?? now()->year);
         $selectedUnitId = $validated['unit_id'] ?? null;
-        $selectedUnit = $selectedUnitId ? Unit::query()->find($selectedUnitId) : null;
+        $selectedUnit = $selectedUnitId ? Department::query()->find($selectedUnitId) : null;
         $monthStart = Carbon::create($tahun, $bulan, 1)->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
@@ -120,10 +120,10 @@ class JadwalDinasController extends Controller
         }
 
         $employees = User::query()
-            ->with('employeeDetail.unit')
+            ->with('employeeDetail.department')
             ->where('role', 'user')
             ->when($selectedUnitId, function ($query) use ($selectedUnitId) {
-                $query->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $selectedUnitId));
+                $query->whereHas('employeeDetail', fn ($detail) => $detail->where('department_id', $selectedUnitId));
             }, function ($query) {
                 $query->whereRaw('1 = 0');
             })
@@ -166,9 +166,9 @@ class JadwalDinasController extends Controller
             'dates' => $dates,
             'rows' => $rows,
             'unitGroups' => $unitGroups,
-            'units' => Unit::query()->orderBy('nama_unit')->get(),
+            'units' => Department::query()->orderBy('nama_departemen')->get(),
             'selectedUnitId' => $selectedUnitId,
-            'selectedUnitName' => $selectedUnit?->nama_unit ?? 'Pilih Unit',
+            'selectedUnitName' => $selectedUnit?->nama_departemen ?? 'Pilih Unit Kerja/Bagian',
             'shiftOptions' => ['P' => 'Pagi', 'S' => 'Sore', 'M' => 'Malam', 'O' => 'Off'],
         ];
     }
@@ -178,7 +178,9 @@ class JadwalDinasController extends Controller
         $groups = [];
 
         foreach ($rows as $row) {
-            $unitName = $row['employee']->employeeDetail?->unit?->nama_unit ?? 'Tanpa Unit';
+            $unitName = $row['employee']->employeeDetail?->department?->nama_departemen
+                ?? $row['employee']->employeeDetail?->departemen
+                ?? 'Tanpa Unit Kerja/Bagian';
             $unitKey = mb_strtolower(trim($unitName));
 
             if (!isset($groups[$unitKey])) {

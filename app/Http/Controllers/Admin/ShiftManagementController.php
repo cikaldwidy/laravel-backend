@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BulkAssignShiftRequest;
 use App\Models\Announcement;
+use App\Models\Department;
 use App\Models\Shift;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
-use App\Models\Unit;
 use App\Models\User;
 use App\Support\ShiftTime;
 use Carbon\Carbon;
@@ -23,7 +23,7 @@ class ShiftManagementController extends Controller
     {
         $validated = $request->validate([
             'tanggal' => ['nullable', 'date'],
-            'unit_id' => ['nullable', 'integer', 'exists:units,id'],
+            'unit_id' => ['nullable', 'integer', 'exists:departments,id'],
         ]);
 
         $tanggal = isset($validated['tanggal']) ? Carbon::parse($validated['tanggal']) : now();
@@ -184,21 +184,21 @@ class ShiftManagementController extends Controller
     public function downloadImportTemplate(Request $request)
     {
         $validated = $request->validate([
-            'unit_id' => ['required', 'integer', 'exists:units,id'],
+            'unit_id' => ['required', 'integer', 'exists:departments,id'],
             'bulan_import' => ['required', 'date_format:Y-m'],
         ]);
 
-        $unit = Unit::query()->findOrFail($validated['unit_id']);
+        $unit = Department::query()->findOrFail($validated['unit_id']);
         $monthStart = Carbon::createFromFormat('Y-m-d', $validated['bulan_import'] . '-01')->startOfMonth();
         $monthEnd = $monthStart->copy()->endOfMonth();
 
         $users = User::query()
             ->where('role', 'user')
-            ->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $unit->id))
+            ->whereHas('employeeDetail', fn ($detail) => $detail->where('department_id', $unit->id))
             ->orderBy('name')
             ->get();
 
-        $safeUnitName = Str::slug($unit->nama_unit ?: 'unit');
+        $safeUnitName = Str::slug($unit->nama_departemen ?: 'unit-kerja-bagian');
         $filename = 'template-jadwal-' . $safeUnitName . '-' . $monthStart->format('Y-m') . '.xlsx';
         $path = tempnam(sys_get_temp_dir(), 'jadwal-template-');
 
@@ -214,7 +214,7 @@ class ShiftManagementController extends Controller
     public function importUnitSchedules(Request $request)
     {
         $validated = $request->validate([
-            'unit_id' => ['required', 'integer', 'exists:units,id'],
+            'unit_id' => ['required', 'integer', 'exists:departments,id'],
             'bulan_import' => ['required', 'date_format:Y-m'],
             'file' => ['required', 'file', 'max:4096', 'mimes:xlsx,csv,txt'],
         ]);
@@ -226,7 +226,7 @@ class ShiftManagementController extends Controller
         $users = User::query()
             ->with('employeeDetail')
             ->where('role', 'user')
-            ->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $validated['unit_id']))
+            ->whereHas('employeeDetail', fn ($detail) => $detail->where('department_id', $validated['unit_id']))
             ->get();
 
         $usersByNip = $users
@@ -465,10 +465,10 @@ class ShiftManagementController extends Controller
         }
 
         $users = User::query()
-            ->with('employeeDetail.unit')
+            ->with('employeeDetail.department')
             ->where('role', 'user')
             ->when($request->filled('unit_id'), function ($query) use ($request) {
-                $query->whereHas('employeeDetail', fn ($detail) => $detail->where('unit_id', $request->unit_id));
+                $query->whereHas('employeeDetail', fn ($detail) => $detail->where('department_id', $request->unit_id));
             }, function ($query) {
                 $query->whereRaw('1 = 0');
             })
@@ -484,7 +484,7 @@ class ShiftManagementController extends Controller
         $unitGroups = [];
 
         foreach ($users as $user) {
-            $unitName = $user->employeeDetail?->unit?->nama_unit ?? '-';
+            $unitName = $user->employeeDetail?->department?->nama_departemen ?? $user->employeeDetail?->departemen ?? '-';
             $unitKey = Str::lower(trim($unitName));
 
             if (!isset($unitGroups[$unitKey])) {
@@ -697,8 +697,8 @@ class ShiftManagementController extends Controller
 
     private function usersAreInSameUnit(?User $firstUser, ?User $secondUser): bool
     {
-        $firstUnitId = $firstUser?->employeeDetail?->unit_id;
-        $secondUnitId = $secondUser?->employeeDetail?->unit_id;
+        $firstUnitId = $firstUser?->employeeDetail?->department_id;
+        $secondUnitId = $secondUser?->employeeDetail?->department_id;
 
         return $firstUnitId !== null && (int) $firstUnitId === (int) $secondUnitId;
     }
@@ -747,7 +747,7 @@ class ShiftManagementController extends Controller
         return $rows;
     }
 
-    private function writeScheduleTemplateXlsx(string $path, Unit $unit, $users, Carbon $monthStart, Carbon $monthEnd): void
+    private function writeScheduleTemplateXlsx(string $path, Department $unit, $users, Carbon $monthStart, Carbon $monthEnd): void
     {
         if (!class_exists(\ZipArchive::class)) {
             throw new \RuntimeException('Server belum mendukung ZipArchive untuk membuat file .xlsx.');
@@ -796,7 +796,7 @@ class ShiftManagementController extends Controller
             ['value' => 'Libur', 'style' => 5],
         ]);
         $rows[] = $this->xlsxRow(5, [
-            ['value' => 'Unit ' . $unit->nama_unit, 'style' => 6],
+            ['value' => 'Unit Kerja/Bagian ' . $unit->nama_departemen, 'style' => 6],
         ]);
         $rows[] = $this->xlsxRow(6, [
             ['value' => 'Pegawai: ' . $users->count(), 'style' => 6],

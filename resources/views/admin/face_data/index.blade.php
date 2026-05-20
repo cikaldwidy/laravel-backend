@@ -5,6 +5,14 @@
 @section('content')
 <div class="space-y-5">
     <div id="alertBox" class="hidden"></div>
+    <div
+        id="faceDataConfig"
+        class="hidden"
+        data-current-unit-id="{{ $selectedUnitId ? (string) $selectedUnitId : '' }}"
+        data-store-url="{{ route('admin.face_data.store') }}"
+        data-index-url="{{ route('admin.face_data.index') }}"
+        data-csrf-token="{{ csrf_token() }}"
+    ></div>
 
     <section class="bg-white border border-white/70 rounded-lg shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -86,15 +94,15 @@
                     <option value="">Pilih pegawai</option>
                     @foreach($usersWithoutFaceData as $user)
                         <option value="{{ $user->id }}">
-                            {{ $user->name }} - {{ $user->email }}{{ $user->employeeDetail?->unit?->nama_unit ? ' - ' . $user->employeeDetail?->unit?->nama_unit : '' }}
+                            {{ $user->name }} - {{ $user->email }}{{ $user->employeeDetail?->department?->nama_departemen ? ' - ' . $user->employeeDetail?->department?->nama_departemen : '' }}
                         </option>
                     @endforeach
                 </select>
 
                 @if($selectedUnit)
                     <div class="mt-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
-                        Unit aktif:
-                        <span class="font-bold text-slate-900">{{ $selectedUnit->nama_unit }}</span>
+                        Unit Kerja/Bagian aktif:
+                        <span class="font-bold text-slate-900">{{ $selectedUnit->nama_departemen }}</span>
                     </div>
                 @endif
 
@@ -138,7 +146,7 @@
                                 $totalFaceUsers = $usersWithFaceData->count() + $usersWithoutFaceData->count();
                                 $faceCoverage = $totalFaceUsers > 0 ? round(($usersWithFaceData->count() / $totalFaceUsers) * 100) : 0;
                             @endphp
-                            <div class="h-full rounded-full bg-slate-900" style="width: {{ $faceCoverage }}%"></div>
+                            <div id="faceCoverageBar" class="h-full rounded-full bg-slate-900" data-face-coverage="{{ $faceCoverage }}"></div>
                         </div>
                         <p class="text-xs font-bold text-slate-500">{{ $faceCoverage }}% lengkap</p>
                     </div>
@@ -154,7 +162,7 @@
             <div>
                 <h2 class="text-lg font-bold text-slate-900">Daftar Data Wajah</h2>
                 <p class="text-sm text-slate-500">
-                    {{ $faceEmbeddings->count() }} template wajah tersimpan{{ $selectedUnit ? ' di ' . $selectedUnit->nama_unit : '' }}
+                    {{ $faceEmbeddings->count() }} template wajah tersimpan{{ $selectedUnit ? ' di ' . $selectedUnit->nama_departemen : '' }}
                 </p>
             </div>
             <span class="inline-flex w-fit items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">
@@ -166,17 +174,17 @@
         <form method="GET" action="{{ route('admin.face_data.index') }}" class="px-5 py-4 border-b border-slate-100 bg-slate-50/70">
             <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
                 <div>
-                    <label for="unitFilter" class="block text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">Filter Unit</label>
+                    <label for="unitFilter" class="block text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">Filter Unit Kerja/Bagian</label>
                     <select
                         id="unitFilter"
                         name="unit_id"
                         class="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
                         onchange="this.form.submit()"
                     >
-                        <option value="">Semua unit</option>
+                        <option value="">Semua unit kerja/bagian</option>
                         @foreach($units as $unit)
                             <option value="{{ $unit->id }}" @selected((string) $selectedUnitId === (string) $unit->id)>
-                                {{ $unit->nama_unit }}
+                                {{ $unit->nama_departemen }}
                             </option>
                         @endforeach
                     </select>
@@ -200,7 +208,7 @@
                     <tr>
                         <th class="px-5 py-3 text-left">Foto</th>
                         <th class="px-5 py-3 text-left">Pegawai</th>
-                        <th class="px-5 py-3 text-left">Unit</th>
+                        <th class="px-5 py-3 text-left">Unit Kerja/Bagian</th>
                         <th class="px-5 py-3 text-left">Update</th>
                         <th class="px-5 py-3 text-right">Aksi</th>
                     </tr>
@@ -225,7 +233,7 @@
                             </td>
                             <td class="px-5 py-4">
                                 <span class="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
-                                    {{ $faceEmbedding->user?->employeeDetail?->unit?->nama_unit ?? '-' }}
+                                    {{ $faceEmbedding->user?->employeeDetail?->department?->nama_departemen ?? $faceEmbedding->user?->employeeDetail?->departemen ?? '-' }}
                                 </span>
                             </td>
                             <td class="px-5 py-4 whitespace-nowrap text-slate-600">{{ $faceEmbedding->updated_at?->format('d M Y H:i') }}</td>
@@ -275,6 +283,8 @@
 <script>
 const video = document.getElementById('video');
 const canvas = document.getElementById('captureCanvas');
+const faceDataConfig = document.getElementById('faceDataConfig');
+const faceCoverageBar = document.getElementById('faceCoverageBar');
 const startCameraButton = document.getElementById('startCamera');
 const captureFaceButton = document.getElementById('captureFace');
 const saveFaceButton = document.getElementById('saveFace');
@@ -294,7 +304,14 @@ const selectedUserName = document.getElementById('selectedUserName');
 const selectedUserEmail = document.getElementById('selectedUserEmail');
 const formTitle = document.getElementById('formTitle');
 const formSubtitle = document.getElementById('formSubtitle');
-const currentUnitId = @json($selectedUnitId ? (string) $selectedUnitId : '');
+const currentUnitId = faceDataConfig.dataset.currentUnitId;
+const storeFaceUrl = faceDataConfig.dataset.storeUrl;
+const indexFaceUrl = faceDataConfig.dataset.indexUrl;
+const csrfToken = faceDataConfig.dataset.csrfToken;
+
+if (faceCoverageBar) {
+    faceCoverageBar.style.width = `${faceCoverageBar.dataset.faceCoverage || 0}%`;
+}
 
 let stream = null;
 let modelsLoaded = false;
@@ -633,7 +650,7 @@ async function saveFace() {
     }
 
     const isUpdate = modeInput.value === 'update';
-    const url = isUpdate ? updateUrlInput.value : '{{ route('admin.face_data.store') }}';
+    const url = isUpdate ? updateUrlInput.value : storeFaceUrl;
     const body = payload();
     if (isUpdate) {
         body._method = 'PUT';
@@ -648,7 +665,7 @@ async function saveFace() {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'X-CSRF-TOKEN': csrfToken,
             },
             body: JSON.stringify(body),
         });
@@ -659,7 +676,7 @@ async function saveFace() {
         }
 
         showAlert(result.message || 'Data wajah berhasil disimpan.');
-        redirectKeepingUnit(result.redirect || '{{ route('admin.face_data.index') }}');
+        redirectKeepingUnit(result.redirect || indexFaceUrl);
     } catch (error) {
         saveFaceButton.disabled = false;
         showAlert(error.message || 'Gagal menyimpan data wajah.', 'error');

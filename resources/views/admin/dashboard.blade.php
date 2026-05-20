@@ -53,7 +53,7 @@
     </div>
 
     {{-- ══════════════════════════════════════
-         ROW 2 — Unit / Pengumuman / Notifikasi
+         ROW 2 — Unit Kerja/Bagian / Pengumuman / Notifikasi
     ══════════════════════════════════════ --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
@@ -62,7 +62,7 @@
                 <i class="fa-solid fa-building"></i>
             </div>
             <div>
-                <p class="text-sm font-semibold text-slate-500">Total Unit</p>
+                <p class="text-sm font-semibold text-slate-500">Total Unit Kerja/Bagian</p>
                 <p class="mt-1 text-2xl font-extrabold text-slate-950">{{ $units }}</p>
             </div>
         </div>
