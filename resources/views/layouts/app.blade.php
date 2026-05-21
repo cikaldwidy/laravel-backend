@@ -9,10 +9,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Presensi">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
-    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png?v=2">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png?v=2">
-    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png?v=2">
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
       @vite(['resources/css/app.css', 'resources/js/app.js'])
       <script src="https://cdn.tailwindcss.com"></script>
