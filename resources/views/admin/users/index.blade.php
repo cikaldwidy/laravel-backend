@@ -126,6 +126,7 @@
                                                 <p><span class="text-gray-500">No. HP:</span> {{ $profile?->no_hp ?? '-' }}</p>
                                                 <p><span class="text-gray-500">NIK:</span> {{ $profile?->nik ?? '-' }}</p>
                                                 <p><span class="text-gray-500">Gender:</span> {{ $profile?->jenis_kelamin === 'L' ? 'Laki-laki' : ($profile?->jenis_kelamin === 'P' ? 'Perempuan' : '-') }}</p>
+                                                <p><span class="text-gray-500">Agama:</span> {{ $profile?->agama ?? '-' }}</p>
                                                 <p><span class="text-gray-500">Tanggal lahir:</span> {{ $profile?->tanggal_lahir?->format('d/m/Y') ?? '-' }}</p>
                                             </div>
                                         </div>

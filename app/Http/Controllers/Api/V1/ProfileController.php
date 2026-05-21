@@ -34,6 +34,7 @@ class ProfileController extends Controller
                 'alamat' => $profile?->alamat,
                 'tanggal_lahir' => $profile?->tanggal_lahir?->toDateString(),
                 'jenis_kelamin' => $profile?->jenis_kelamin,
+                'agama' => $profile?->agama,
                 'nik' => $profile?->nik,
                 'foto' => $profile?->foto ? asset('storage/' . $profile->foto) : null,
                 'nip' => $employee?->nip,

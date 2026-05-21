@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <title>{{ trim($__env->yieldContent('title')) ? config('app.name', 'Laravel').' | '.trim($__env->yieldContent('title')) : config('app.name', 'Laravel') }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Presensi">
+    {{-- TODO: Tambahkan public/icons/icon-192.png dan public/icons/icon-512.png untuk ikon PWA final. --}}
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
       @vite(['resources/css/app.css', 'resources/js/app.js'])
       <script src="https://cdn.tailwindcss.com"></script>
@@ -189,6 +196,19 @@
                     field.addEventListener('input', () => submitForm(450));
                 });
             });
+        </script>
+        <script>
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", function () {
+                    navigator.serviceWorker.register("/sw.js")
+                        .then(function () {
+                            console.log("Service Worker registered successfully");
+                        })
+                        .catch(function (error) {
+                            console.log("Service Worker registration failed:", error);
+                        });
+                });
+            }
         </script>
 </body>
 </html>

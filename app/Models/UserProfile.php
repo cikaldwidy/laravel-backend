@@ -13,6 +13,7 @@ class UserProfile extends Model
         'alamat',
         'tanggal_lahir',
         'jenis_kelamin',
+        'agama',
         'foto',
         'nik',
     ];
@@ -26,4 +27,3 @@ class UserProfile extends Model
         return $this->belongsTo(User::class);
     }
 }
-

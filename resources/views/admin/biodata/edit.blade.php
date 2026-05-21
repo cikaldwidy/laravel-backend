@@ -55,6 +55,16 @@
                     @error('jenis_kelamin') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
+                    <label class="text-sm font-semibold text-gray-700">Agama</label>
+                    <select name="agama" class="w-full p-2 border rounded mt-1">
+                        <option value="">Pilih agama</option>
+                        @foreach(['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'] as $agama)
+                            <option value="{{ $agama }}" @selected(old('agama', $profile?->agama) === $agama)>{{ $agama }}</option>
+                        @endforeach
+                    </select>
+                    @error('agama') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                </div>
+                <div>
                     <label class="text-sm font-semibold text-gray-700">NIK</label>
                     <input name="nik" value="{{ old('nik', $profile?->nik) }}" class="w-full p-2 border rounded mt-1">
                     @error('nik') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror

@@ -61,6 +61,10 @@
                         <p class="font-bold text-slate-800">{{ $profile?->jenis_kelamin ?? '-' }}</p>
                     </div>
                     <div class="user-soft-card">
+                        <p class="text-[11px] text-slate-500">Agama</p>
+                        <p class="font-bold text-slate-800">{{ $profile?->agama ?? '-' }}</p>
+                    </div>
+                    <div class="user-soft-card">
                         <p class="text-[11px] text-slate-500">Tanggal Lahir</p>
                         <p class="font-bold text-slate-800">{{ $profile?->tanggal_lahir?->format('d/m/Y') ?? '-' }}</p>
                     </div>
@@ -162,6 +166,19 @@
                         </select>
                         @error('jenis_kelamin') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                     </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">Agama</label>
+                        <select name="agama" class="user-field mt-1">
+                            <option value="">-- pilih --</option>
+                            @foreach(['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'] as $agama)
+                                <option value="{{ $agama }}" @selected(old('agama', $profile?->agama) === $agama)>{{ $agama }}</option>
+                            @endforeach
+                        </select>
+                        @error('agama') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                         <label class="text-xs font-semibold text-slate-600">NIK</label>
                         <input name="nik" value="{{ old('nik', $profile?->nik) }}" class="user-field mt-1">

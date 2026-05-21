@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <title>@yield('title', 'Admin Panel')</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Presensi">
+    {{-- TODO: Tambahkan public/icons/icon-192.png dan public/icons/icon-512.png untuk ikon PWA final. --}}
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -974,6 +981,19 @@ document.querySelectorAll('[data-auto-filter]').forEach((form) => {
         field.addEventListener('input', () => submitForm(450));
     });
 });
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+        navigator.serviceWorker.register("/sw.js")
+            .then(function () {
+                console.log("Service Worker registered successfully");
+            })
+            .catch(function (error) {
+                console.log("Service Worker registration failed:", error);
+            });
+    });
+}
 </script>
 
 </body>

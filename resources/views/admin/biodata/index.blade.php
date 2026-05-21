@@ -38,6 +38,7 @@
                         <td class="p-3">
                             <div>{{ $profile?->no_hp ?? '-' }}</div>
                             <div class="text-xs text-gray-500">NIK: {{ $profile?->nik ?? '-' }}</div>
+                            <div class="text-xs text-gray-500">Agama: {{ $profile?->agama ?? '-' }}</div>
                         </td>
                         <td class="p-3">
                             <div>{{ $detail?->department?->nama_departemen ?? $detail?->departemen ?? '-' }}</div>

@@ -40,6 +40,7 @@ class UserBiodataController extends Controller
             'alamat' => ['required', 'string'],
             'tanggal_lahir' => ['required', 'date'],
             'jenis_kelamin' => ['required', 'in:L,P'],
+            'agama' => ['required', 'string', 'max:50'],
             'nik' => ['nullable', 'regex:/^[0-9]+$/', 'max:32'],
             'department_id' => ['required', 'exists:departments,id'],
             'position_id' => ['required', 'exists:positions,id'],
@@ -80,6 +81,7 @@ class UserBiodataController extends Controller
                 'alamat' => $validated['alamat'],
                 'tanggal_lahir' => $validated['tanggal_lahir'],
                 'jenis_kelamin' => $validated['jenis_kelamin'],
+                'agama' => $validated['agama'],
                 'nik' => $validated['nik'] ?? null,
                 'foto' => $fotoPath,
             ]
