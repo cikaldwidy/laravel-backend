@@ -61,6 +61,15 @@ class PresensiController extends Controller
             'image' => ['required', 'string'],
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
+            'location_accuracy' => ['required', 'numeric', 'min:0', 'max:1000'],
+            'location_timestamp' => ['required', 'date'],
+            'location_age_seconds' => ['required', 'numeric', 'min:0', 'max:300'],
+            'location_samples' => ['required', 'array', 'min:1', 'max:5'],
+            'location_samples.*.latitude' => ['required', 'numeric', 'between:-90,90'],
+            'location_samples.*.longitude' => ['required', 'numeric', 'between:-180,180'],
+            'location_samples.*.accuracy' => ['required', 'numeric', 'min:0', 'max:1000'],
+            'location_samples.*.timestamp' => ['required', 'date'],
+            'location_samples.*.age_seconds' => ['required', 'numeric', 'min:0', 'max:300'],
             'embedding' => ['required', 'array', 'size:128'],
             'embedding.*' => ['required', 'numeric'],
             'descriptor_samples' => ['required', 'array', 'min:3', 'max:5'],
@@ -94,18 +103,9 @@ class PresensiController extends Controller
             ], 422);
         }
 
-        $distance = $this->calculateDistance(
-            (float) $validated['lat'],
-            (float) $validated['lng'],
-            $officeLatitude,
-            $officeLongitude
-        );
-
-        if ($distance > $officeRadius) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Anda berada di luar radius kantor (' . round($distance) . ' meter).'
-            ], 403);
+        $distance = $this->validateTrustedLocation($validated, $setting);
+        if ($distance instanceof \Illuminate\Http\JsonResponse) {
+            return $distance;
         }
 
         $storedEmbedding = $user->faceEmbedding?->embedding;
@@ -360,6 +360,153 @@ class PresensiController extends Controller
             'status' => 'error',
             'message' => $message,
         ], 422));
+    }
+
+    private function validateTrustedLocation(array $validated, ?WorkSetting $setting): float|\Illuminate\Http\JsonResponse
+    {
+        $metadataResponse = $this->validateLocationMetadata($validated);
+        if ($metadataResponse instanceof \Illuminate\Http\JsonResponse) {
+            return $metadataResponse;
+        }
+
+        $officeLatitude = (float) ($setting?->office_latitude ?? config('attendance.office_latitude', -6.123456));
+        $officeLongitude = (float) ($setting?->office_longitude ?? config('attendance.office_longitude', 106.123456));
+        $officeRadius = (int) ($setting?->radius_meters ?? config('attendance.radius_meters', 100));
+
+        $distance = $this->calculateDistance(
+            (float) $validated['lat'],
+            (float) $validated['lng'],
+            $officeLatitude,
+            $officeLongitude
+        );
+
+        if ($distance > $officeRadius) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Anda berada di luar radius kantor (' . round($distance) . ' meter).'
+            ], 403);
+        }
+
+        return $distance;
+    }
+
+    private function validateLocationMetadata(array $validated): ?\Illuminate\Http\JsonResponse
+    {
+        $maxLocationAccuracy = (float) config('attendance.web_max_location_accuracy_meters', 180);
+        if ((float) $validated['location_accuracy'] > $maxLocationAccuracy) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Akurasi lokasi terlalu rendah. Aktifkan GPS akurat lalu coba lagi.',
+            ], 422);
+        }
+
+        $maxLocationAge = (float) config('attendance.max_location_age_seconds', 20);
+        if ((float) $validated['location_age_seconds'] > $maxLocationAge) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Data lokasi sudah terlalu lama. Ambil GPS ulang lalu coba lagi.',
+            ], 422);
+        }
+
+        try {
+            $locationTimestamp = Carbon::parse($validated['location_timestamp']);
+        } catch (\Throwable) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Timestamp lokasi tidak valid.',
+            ], 422);
+        }
+
+        $maxClientTimeSkew = (int) config('attendance.max_client_time_skew_seconds', 120);
+        $timeSkew = abs(now()->diffInSeconds($locationTimestamp, false));
+        if ($timeSkew > $maxClientTimeSkew) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Waktu perangkat tidak sinkron. Periksa jam perangkat lalu coba lagi.',
+            ], 422);
+        }
+
+        return $this->validateLocationSamples(
+            $validated['location_samples'] ?? [],
+            (float) $validated['lat'],
+            (float) $validated['lng']
+        );
+    }
+
+    private function validateLocationSamples(array $samples, float $latitude, float $longitude): ?\Illuminate\Http\JsonResponse
+    {
+        $requiredSamples = (int) config('attendance.web_required_location_samples', 2);
+        $fastLocationAccuracy = (float) config('attendance.fast_location_accuracy_meters', 25);
+        $latestSample = count($samples) > 0 ? $samples[count($samples) - 1] : null;
+
+        if (
+            is_array($latestSample) &&
+            isset($latestSample['accuracy']) &&
+            (float) $latestSample['accuracy'] <= $fastLocationAccuracy
+        ) {
+            $requiredSamples = 1;
+        }
+
+        if (count($samples) < $requiredSamples) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Sampel lokasi belum cukup. Tunggu GPS stabil lalu coba lagi.',
+            ], 422);
+        }
+
+        $maxLocationAccuracy = (float) config('attendance.web_max_location_accuracy_meters', 180);
+        $maxLocationAge = (float) config('attendance.max_location_age_seconds', 20);
+        $maxClientTimeSkew = (int) config('attendance.max_client_time_skew_seconds', 120);
+        $maxSampleSpread = (float) config('attendance.max_location_sample_spread_meters', 35);
+
+        foreach ($samples as $sample) {
+            if ((float) $sample['accuracy'] > $maxLocationAccuracy) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Salah satu sampel lokasi terlalu tidak akurat. Ambil GPS ulang lalu coba lagi.',
+                ], 422);
+            }
+
+            if ((float) $sample['age_seconds'] > $maxLocationAge) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Salah satu sampel lokasi sudah kedaluwarsa. Ambil GPS ulang lalu coba lagi.',
+                ], 422);
+            }
+
+            try {
+                $sampleTimestamp = Carbon::parse($sample['timestamp']);
+            } catch (\Throwable) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Timestamp sampel lokasi tidak valid.',
+                ], 422);
+            }
+
+            $timeSkew = abs(now()->diffInSeconds($sampleTimestamp, false));
+            if ($timeSkew > $maxClientTimeSkew) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Waktu sampel lokasi tidak sinkron dengan server.',
+                ], 422);
+            }
+
+            $distanceFromClaim = $this->calculateDistance(
+                (float) $sample['latitude'],
+                (float) $sample['longitude'],
+                $latitude,
+                $longitude
+            );
+
+            if ($distanceFromClaim > $maxSampleSpread) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Pergerakan lokasi terlalu besar. Tunggu GPS stabil lalu coba lagi.',
+                ], 422);
+            }
+        }
+
+        return null;
     }
 
     private function passesQualityGate(array $qualityMetrics): bool

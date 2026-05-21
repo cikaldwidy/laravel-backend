@@ -3,6 +3,12 @@
 @section('title', 'Login')
 
 @section('content')
+@php
+  $turnstileEnabled = (bool) config('services.turnstile.enabled')
+    && filled(config('services.turnstile.site_key'))
+    && filled(config('services.turnstile.secret_key'));
+  $turnstileSiteKey = config('services.turnstile.site_key');
+@endphp
 <style>
   .sph-auth-bg {
     background:
@@ -15,30 +21,20 @@
     border-top: 4px solid #2563eb;
     box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
   }
-
-  .sph-accent-line {
-    width: 4.5rem;
-    height: 0.25rem;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #dc2626 0%, #2563eb 100%);
-  }
 </style>
+
+@if($turnstileEnabled && $turnstileSiteKey)
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+@endif
 
 <div class="sph-auth-bg flex min-h-[100dvh] flex-1 items-center justify-center px-5 py-8 md:px-14 lg:px-20">
 
   <div class="sph-auth-card w-full max-w-5xl bg-white rounded-xl p-4 md:p-6 flex flex-col md:flex-row gap-8">
 
     <!-- LEFT -->
-    <div class="md:w-1/2 flex flex-col justify-center items-center text-center border-b md:border-b-0 md:border-r border-slate-100 pb-6 md:pb-0 md:pr-8">
+    <div class="md:w-1/2 flex flex-col justify-center items-center text-center pb-6 md:pb-0 md:pr-8">
       <img src="{{ asset('img/logo.jpeg') }}" alt="Logo SPH" class="w-24 h-24 object-contain mb-4 rounded-xl border border-slate-100">
-      <img src="{{ asset('img/img-login.png') }}" class="w-[250px] h-auto mb-4">
-      <div class="sph-accent-line mb-4"></div>
-      <h2 class="text-3xl font-bold text-slate-800 tracking-[.5px]">
-        Selamat Datang
-      </h2>
-      <p class="text-slate-500 text-sm mt-2 max-w-xs">
-        Masuk ke akun Anda untuk mengakses sistem absensi pegawai.
-      </p>
+      <img src="{{ asset('img/img-login.png') }}" class="w-[340px] max-w-full h-auto">
     </div>
 
     <!-- RIGHT (FORM) -->
@@ -109,10 +105,24 @@
             <span>Ingat saya di perangkat ini</span>
           </label>
 
-          <a href="{{ route('login', ['redirect_to' => 'face.enroll']) }}" class="text-sm text-red-600 font-semibold hover:text-red-700 hover:underline">
+          <a href="{{ route('login', ['redirect_to' => 'face.enroll']) }}" class="underline text-sm text-blue-600 font-semibold hover:text-blue-700 hover:underline">
             Pendaftaran wajah
           </a>
         </div>
+
+        @if($turnstileEnabled && $turnstileSiteKey)
+          <div>
+            <div
+              class="cf-turnstile"
+              data-sitekey="{{ $turnstileSiteKey }}"
+              data-theme="light"
+              data-action="user-login"
+            ></div>
+            @error('cf-turnstile-response')
+              <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
+            @enderror
+          </div>
+        @endif
 
         <!-- BUTTON -->
         <button
@@ -126,7 +136,7 @@
       <!-- FOOT -->
       <p class="text-center text-sm text-slate-400 mt-6">
         Belum punya akun?
-        <a href="{{ route('register') }}" class="text-red-600 font-semibold hover:text-red-700">Daftar akun</a>
+        <a href="{{ route('register') }}" class="text-blue-600 font-semibold hover:text-blue-700 underline">Hubungi admin</a>
       </p>
 
     </div>

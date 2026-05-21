@@ -28,8 +28,7 @@
           RSU SATITI PRIMA HUSADA
         </h2>
         <p class="text-md text-gray-500 mb-10 max-w-xs mx-auto md:mx-0 text-justify">
-          Sistem absensi pegawai yang dirancang untuk mendukung
-          pencatatan kehadiran secara rapi, cepat, dan terpusat.
+          Sistem absensi pegawai untuk rumah sakit umum Satiti Prima Husada, Ngunut, tulungagung.
         </p>
         <div class="flex justify-center md:justify-start w-full">
           <a href="{{ route('login') }}"
@@ -45,23 +44,13 @@
       </div>
 
       <!-- Right Illustration -->
-      <div class="hidden md:flex md:w-[55%] justify-center items-center relative">
+      <div class="hidden md:flex md:w-[55%] justify-center items-start relative pt-2 lg:pt-0">
 
         <img
           src="{{ asset('img/img-welcome.png') }}"
           alt="Ilustrasi Absensi"
-          class="md:w-70 lg:w-[420px] object-contain relative z-10"
+          class="md:w-[360px] lg:w-[430px] object-contain relative z-10 md:-translate-y-4 lg:-translate-y-8"
         >
-
-        <!-- Fade atas -->
-        <div class="absolute top-0 left-0 right-0 h-16 z-20 pointer-events-none"
-          style="background: linear-gradient(to bottom, #ffff 0%, transparent 100%);">
-        </div>
-
-        <!-- Fade bawah -->
-        <div class="absolute bottom-0 left-0 right-0 h-24 z-20 pointer-events-none"
-          style="background: linear-gradient(to top, #ffff 0%, transparent 100%);">
-        </div>
 
       </div>
 

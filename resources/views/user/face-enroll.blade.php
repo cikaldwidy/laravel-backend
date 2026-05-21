@@ -30,14 +30,25 @@
 }
 
 .face-enroll-stage {
-    aspect-ratio: 18 / 9;
+    aspect-ratio: 3 / 2;
+    min-height: 20rem;
     background: #ffffff;
     border: 1px solid rgba(191, 219, 254, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    gap: 2rem;
 }
 
 .face-guide {
-    width: min(82vw, 29rem);
-    height: min(82vw, 29rem);
+    width: min(100%, 26rem);
+    aspect-ratio: 1 / 1;
+    height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .camera-panel {
@@ -99,6 +110,8 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
     box-shadow: 0 10px 25px rgba(15, 23, 42, 0.22);
     backdrop-filter: blur(10px);
+    flex-wrap: wrap;
+    white-space: normal;
 }
 
 /* ── scan track ── */
@@ -109,6 +122,12 @@
     left: 10%; right: 10%;
     border-radius: 50%;
     /* JANGAN pakai overflow: hidden — ini yang bikin terpotong & delay visual */
+}
+
+#guideInstruction {
+    margin-top: 1.25rem;
+    margin-left: 1rem;
+    margin-right: 1rem;
 }
 
 .face-scan-line {
@@ -224,11 +243,68 @@
         0 0 0 12px rgba(255, 255, 255, 0.08);
 }
 
-@media (max-width: 640px) {
-    .face-enroll-stage { aspect-ratio: 5 / 6; }
+@media (max-width: 768px) {
+    .face-enroll-stage {
+        aspect-ratio: 1 / 1.2;
+        min-height: auto;
+        padding: 1.5rem 1rem;
+    }
     .face-guide {
-        width: min(86vw, 21rem);
-        height: min(86vw, 21rem);
+        width: min(calc(100% - 1rem), 75vw);
+    }
+    #guideInstruction {
+        margin-top: 1rem;
+        margin-left: 0.75rem;
+        margin-right: 0.75rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .face-enroll-stage {
+        aspect-ratio: 1 / 1.15;
+        min-height: auto;
+        padding: 1.25rem 0.75rem;
+        gap: 1.25rem;
+    }
+    .face-guide {
+        width: min(calc(100% - 1rem), 85vw);
+    }
+    #guideInstruction {
+        margin-top: 0.875rem;
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+    }
+    .camera-guide-badge {
+        display: flex;
+        min-height: auto;
+        padding: 0.625rem 0.875rem;
+        font-size: 0.75rem;
+        line-height: 1.4;
+    }
+}
+
+@media (max-width: 480px) {
+    .face-enroll-stage {
+        aspect-ratio: 1 / 1.08;
+        min-height: auto;
+        padding: 1rem 0.5rem;
+        gap: 1rem;
+    }
+    .face-guide {
+        width: min(calc(100% - 0.5rem), 88vw);
+    }
+    #guideInstruction {
+        margin-top: 0.75rem;
+        margin-left: 0.375rem;
+        margin-right: 0.375rem;
+    }
+    .camera-guide-badge {
+        display: flex;
+        min-height: auto;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.7rem;
+        line-height: 1.3;
+        max-width: 90vw;
     }
 }
 </style>
@@ -301,13 +377,8 @@
                 <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
                         <p class="text-sm font-semibold uppercase tracking-[1.4px] text-blue-600">Area Kamera</p>
-                        <p class="mt-1 text-sm text-slate-500">Aktifkan kamera, lalu ikuti instruksi sampai 3 sampel wajah tersimpan.</p>
                     </div>
                     <div class="flex flex-col gap-3 w-full md:w-auto md:items-end">
-                        <div id="cameraStatusBadge" class="inline-flex items-center gap-2 self-start border border-gray-200 bg-gray-100 px-2 py-1.5 text-xs font-medium tracking-[.3px] text-slate-500 md:self-end">
-                            <i id="cameraStatusIcon" class="fa-solid fa-camera-slash"></i>
-                            <span id="cameraStatusText">Kamera mati</span>
-                        </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full md:min-w-[360px]">
                         <button id="startCamera" class="w-full rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold tracking-[.5px] text-white transition hover:bg-blue-700 hover:shadow-lg">
                             <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA

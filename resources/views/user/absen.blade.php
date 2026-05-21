@@ -25,6 +25,34 @@
         aspect-ratio: 1;
     }
 
+    .attendance-capture-shell {
+        position: relative;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        box-shadow:
+            0 24px 54px rgba(15, 23, 42, 0.2),
+            inset 0 1px 0 rgba(255, 250, 245, 0.05);
+    }
+
+    .attendance-capture-shell::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(circle at top left, rgba(251, 191, 36, 0.1), transparent 24%),
+            radial-gradient(circle at right center, rgba(96, 165, 250, 0.16), transparent 30%);
+        opacity: 0.82;
+    }
+
+    .attendance-capture-stage::after {
+        content: '';
+        position: absolute;
+        inset: 1.1rem;
+        border-radius: 1.4rem;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        pointer-events: none;
+    }
+
     .attendance-face-blur-outer {
         position: absolute;
         inset: 8%;
@@ -130,6 +158,30 @@
         opacity: 1;
     }
 
+    .attendance-datetime-chip {
+        backdrop-filter: blur(10px);
+        background: rgba(255, 247, 237, 0.16);
+        border: 1px solid rgba(255, 237, 213, 0.14);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+        color: #f8fafc;
+    }
+
+    .attendance-map-panel {
+        background: linear-gradient(180deg, rgba(30, 41, 59, 0.94), rgba(15, 23, 42, 0.96));
+    }
+
+    .attendance-map-frame {
+        box-shadow:
+            inset 0 1px 0 rgba(255, 255, 255, 0.08),
+            0 14px 30px rgba(15, 23, 42, 0.14);
+    }
+
+    .attendance-gps-badge {
+        backdrop-filter: blur(12px);
+        background: rgba(30, 41, 59, 0.56);
+        border: 1px solid rgba(255, 237, 213, 0.1);
+    }
+
     @media (min-width: 768px) {
         .user-attendance-main {
             display: grid;
@@ -147,10 +199,87 @@
     @media (max-width: 767px) {
         .user-attendance-main {
             padding-top: 0.75rem !important;
+            padding-left: 0.75rem !important;
+            padding-right: 0.75rem !important;
+            gap: 0.75rem;
         }
 
         .attendance-face-guide {
-            width: min(72%, 18rem);
+            width: min(78vw, 19rem);
+        }
+
+        .attendance-capture-shell {
+            border-radius: 0.375rem;
+        }
+
+        .attendance-capture-stage {
+            aspect-ratio: 1 / 1.02;
+            min-height: 23rem;
+        }
+
+        .attendance-overlay {
+            padding: 0 1.25rem;
+            text-align: center;
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .attendance-datetime-chip {
+            font-size: 0.72rem;
+            padding: 0.55rem 0.8rem;
+        }
+
+        .attendance-camera-badge {
+            left: 1rem;
+            right: 1rem;
+            bottom: 1rem;
+            font-size: 0.95rem;
+            padding: 0.75rem 1rem;
+        }
+
+        .attendance-map-panel {
+            padding: 0.75rem;
+        }
+
+        .attendance-map-frame {
+            border-radius: 0.375rem;
+        }
+
+        #attendanceMap {
+            height: 9.5rem;
+        }
+
+        .attendance-gps-badge {
+            left: 0.75rem;
+            right: 0.75rem;
+            bottom: 0.75rem;
+            max-width: none;
+        }
+
+        .attendance-action-card,
+        .attendance-info-card {
+            border-radius: 1.25rem;
+        }
+
+        .attendance-schedule-grid {
+            gap: 0.5rem;
+        }
+
+        .attendance-schedule-card {
+            padding: 0.75rem 0.5rem;
+        }
+
+        .attendance-schedule-card p.text-xs {
+            font-size: 0.72rem;
+        }
+
+        .attendance-status-grid {
+            gap: 0.75rem;
+        }
+
+        .attendance-status-text {
+            margin-top: 0;
+            line-height: 1.55;
         }
     }
 </style>
@@ -170,6 +299,16 @@
     $hasScheduledShift = isset($scheduledShift) && $scheduledShift;
     $isShiftOff = $hasScheduledShift && $scheduledShift->status === 'libur';
     $shiftLabel = $hasScheduledShift ? $scheduledShift->nama_shift : 'Belum Dijadwalkan';
+    $shiftDisplayName = 'Belum Dijadwalkan';
+
+    if ($hasScheduledShift && $scheduledShift?->jam_masuk) {
+        $shiftHour = (int) $scheduledShift->jam_masuk->format('H');
+        $shiftDisplayName = match (true) {
+            $shiftHour < 12 => 'Shift Pagi',
+            $shiftHour < 18 => 'Shift Sore',
+            default => 'Shift Malam',
+        };
+    }
 @endphp
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -190,171 +329,183 @@
                 <input type="hidden" name="blink_verified" id="blinkVerified" value="false">
             </form>
 
-            <section class="bg-slate-950 rounded-2xl overflow-hidden shadow-xl">
-                <div class="relative aspect-[4/3] bg-slate-900">
-                    @if($sudahPulang && $fotoAktif)
-                        <img src="{{ asset('storage/' . $fotoAktif) }}" alt="Foto presensi" class="w-full h-full object-cover">
-                    @elseif($sudahPulang && !$fotoAktif)
-                        <div class="w-full h-full flex flex-col items-center justify-center text-white/70 bg-gradient-to-br from-slate-800 to-slate-950">
-                            <i class="fa-solid fa-camera text-4xl"></i>
-                            <p class="text-xs mt-3">Foto presensi akan tampil di sini</p>
+            <div class="space-y-4">
+                <section class="attendance-capture-shell bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 rounded-md overflow-hidden shadow-xl">
+                    <div class="attendance-capture-stage relative aspect-[4/3] bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.08),_transparent_24%),radial-gradient(circle_at_right,_rgba(59,130,246,0.12),_transparent_30%),linear-gradient(135deg,_#111827_0%,_#172554_48%,_#1e293b_100%)]">
+                        @if($sudahPulang && $fotoAktif)
+                            <img src="{{ asset('storage/' . $fotoAktif) }}" alt="Foto presensi" class="w-full h-full object-cover">
+                        @elseif($sudahPulang && !$fotoAktif)
+                            <div class="w-full h-full flex flex-col items-center justify-center text-white/70 bg-gradient-to-br from-slate-800 to-slate-950">
+                                <i class="fa-solid fa-camera text-4xl"></i>
+                                <p class="text-xs mt-3">Foto presensi akan tampil di sini</p>
+                            </div>
+                        @else
+                            <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                            <div
+                                id="cameraOverlay"
+                                class="attendance-overlay absolute inset-0 z-20 flex items-center justify-center bg-black/35 text-white text-xs font-semibold"
+                                data-mobile-text="Tekan tombol Masuk"
+                                data-desktop-text="Tekan Masuk/Verifikasi untuk menyalakan kamera"
+                            >
+                                Tekan Masuk/Verifikasi untuk menyalakan kamera
+                            </div>
+                        @endif
+                        <div id="attendanceHeadGuide" class="attendance-face-guide pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+                            <div class="attendance-face-blur-outer"></div>
+                            <div class="attendance-face-inner-mask"></div>
+                            <div id="attendanceHeadFrame" class="attendance-face-frame"></div>
+                            <div id="attendanceScanTrack" class="attendance-face-scan-track">
+                                <div class="attendance-face-scan-glow"></div>
+                                <div class="attendance-face-scan-line"></div>
+                            </div>
                         </div>
-                    @else
-                        <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                        <div id="cameraOverlay" class="absolute inset-0 z-20 flex items-center justify-center bg-black/35 text-white text-xs font-semibold">
-                            Tekan Masuk/Verifikasi untuk menyalakan kamera
+                        <div class="attendance-datetime-chip absolute top-3 left-3 text-white text-xs font-semibold px-3 py-1 rounded-xl shadow">
+                            {{ now()->translatedFormat('d F Y') }}
                         </div>
-                    @endif
-                    <div id="attendanceHeadGuide" class="attendance-face-guide pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
-                        <div class="attendance-face-blur-outer"></div>
-                        <div class="attendance-face-inner-mask"></div>
-                        <div id="attendanceHeadFrame" class="attendance-face-frame"></div>
-                        <div id="attendanceScanTrack" class="attendance-face-scan-track">
-                            <div class="attendance-face-scan-glow"></div>
-                            <div class="attendance-face-scan-line"></div>
-                        </div>
-                    </div>
-                    <div class="absolute top-3 left-3 bg-white/95 text-slate-800 text-xs font-semibold px-3 py-1 rounded-md shadow">
-                        {{ now()->translatedFormat('d F Y') }}
-                    </div>
-                    <div id="clock" class="absolute top-3 right-3 bg-white/95 text-slate-800 text-xs font-bold px-3 py-1 rounded-md shadow">
-                        --:--:--
-                    </div>
-                    <div class="absolute bottom-3 left-3 right-3 bg-black/70 text-white text-xs px-3 py-2 rounded-xl">
-                        <i class="fa-solid fa-camera mr-1"></i>
-                        Kamera verifikasi wajah
-                    </div>
-                </div>
-
-                <div class="p-3">
-                    <div class="relative rounded-xl overflow-hidden border border-white/10">
-                        <div
-                            id="attendanceMap"
-                            class="h-28 bg-slate-700"
-                            data-office-lat="{{ (float) $officeLatitude }}"
-                            data-office-lng="{{ (float) $officeLongitude }}"
-                            data-office-radius="{{ (int) $officeRadius }}"
-                        ></div>
-                        <div class="absolute left-3 bottom-3 bg-black/75 text-white text-xs px-3 py-2 rounded-lg max-w-[88%]">
-                            <i class="fa-solid fa-location-dot mr-1"></i>
-                            <span id="gpsStatus">GPS belum diambil</span>
+                        <div id="clock" class="attendance-datetime-chip absolute top-3 right-3 text-white text-xs font-bold px-3 py-1 rounded-xl shadow">
+                            --:--:--
                         </div>
                     </div>
-                </div>
-            </section>
 
-            @if(!isset($scheduledShift) || !$scheduledShift)
-                <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
-                    Shift kamu belum diatur oleh admin. Hubungi admin untuk assign jadwal shift terlebih dulu.
-                </section>
-            @elseif($isShiftOff)
-                <section class="bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl p-4 text-sm shadow-sm">
-                    Hari ini kamu dijadwalkan libur, jadi absensi tidak dibuka.
-                </section>
-            @elseif(isset($approvedLeave) && $approvedLeave)
-                <section class="bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl p-4 text-sm shadow-sm">
-                    Anda memiliki izin yang telah disetujui hari ini: {{ ucfirst($approvedLeave->jenis_izin) }}. Absensi dilewati otomatis.
-                </section>
-            @elseif(empty($canAttend))
-                <section class="bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl p-4 text-sm shadow-sm">
-                    Shift kamu sudah dijadwalkan ({{ $shiftLabel }} {{ $jadwalMasuk }} - {{ $jadwalPulang }}), tapi belum masuk jam absensi.
-                </section>
-            @endif
-
-            <section class="grid grid-cols-3 gap-2">
-                <div class="bg-blue-700 text-white rounded-xl p-3 text-center shadow">
-                    <i class="fa-solid fa-user-clock text-sm"></i>
-                    <p class="text-[11px] mt-1 opacity-90">Shift</p>
-                    <p class="text-xs font-bold">{{ $shiftLabel }}</p>
-                </div>
-                <div class="bg-blue-700 text-white rounded-xl p-3 text-center shadow">
-                    <i class="fa-solid fa-right-to-bracket text-sm"></i>
-                    <p class="text-[11px] mt-1 opacity-90">Jam Masuk</p>
-                    <p class="text-xs font-bold">{{ $jamMasuk }}</p>
-                </div>
-                <div class="bg-red-600 text-white rounded-xl p-3 text-center shadow">
-                    <i class="fa-solid fa-right-from-bracket text-sm"></i>
-                    <p class="text-[11px] mt-1 opacity-90">Jam Pulang</p>
-                    <p class="text-xs font-bold">{{ $jamPulang }}</p>
-                </div>
-            </section>
-
-            <section class="bg-white/80 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-3">
-                <div class="relative h-14 rounded-full bg-slate-100 overflow-hidden">
-                    <div class="absolute inset-0 grid grid-cols-2">
-                        <div class="bg-blue-600/15"></div>
-                        <div class="bg-red-500/15"></div>
+                    <div class="attendance-map-panel p-3">
+                        <div class="attendance-map-frame relative rounded-md overflow-hidden border border-slate-200/10 bg-slate-900/20">
+                            <div
+                                id="attendanceMap"
+                                class="h-28 bg-blue-700"
+                                data-office-lat="{{ (float) $officeLatitude }}"
+                                data-office-lng="{{ (float) $officeLongitude }}"
+                                data-office-radius="{{ (int) $officeRadius }}"
+                            ></div>
+                            <div class="attendance-gps-badge absolute left-3 bottom-3 text-white text-xs px-3 py-2 rounded-xl max-w-[88%]">
+                                <i class="fa-solid fa-location-dot mr-1"></i>
+                                <span id="gpsStatus">GPS belum diambil</span>
+                            </div>
+                        </div>
                     </div>
+                </section>
 
-                    <div class="relative z-10 h-full grid grid-cols-2 gap-2 p-2">
-                        <button
-                            id="startVerification"
-                            type="button"
-                            class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
-                                {{ ($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) ? 'bg-slate-200 text-slate-400' : (!$sudahMasuk ? 'bg-blue-700 text-white' : 'bg-white text-blue-800 border border-blue-100') }}"
-                            @if($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) disabled @endif
-                        >
-                            <i class="fa-solid fa-fingerprint"></i>
-                            {{ ($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) ? 'Selesai' : ($jenisAbsen === 'Pulang' ? 'Verifikasi' : 'Masuk') }}
-                        </button>
+                <section class="attendance-action-card bg-white/80 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-3">
+                    <div class="relative h-14 rounded-full bg-slate-100 overflow-hidden">
+                        <div class="absolute inset-0 grid grid-cols-2">
+                            <div class="bg-blue-600/15"></div>
+                            <div class="bg-red-500/15"></div>
+                        </div>
 
-                        <button
-                            id="submitAttendance"
-                            type="button"
-                            class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
-                                bg-red-600 text-white disabled:bg-red-100 disabled:text-red-400"
-                            disabled
-                        >
-                            <i class="fa-solid fa-paper-plane"></i>
-                            {{ $jenisAbsen === 'Pulang' ? 'Pulang' : 'Kirim' }}
-                        </button>
+                        <div class="relative z-10 h-full grid grid-cols-2 gap-2 p-2">
+                            <button
+                                id="startVerification"
+                                type="button"
+                                class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
+                                    {{ ($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) ? 'bg-slate-200 text-slate-400' : (!$sudahMasuk ? 'bg-blue-700 text-white' : 'bg-white text-blue-800 border border-blue-100') }}"
+                                @if($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) disabled @endif
+                            >
+                                <i class="fa-solid fa-fingerprint"></i>
+                                {{ ($sudahPulang || empty($canAttend) || (isset($approvedLeave) && $approvedLeave)) ? 'Selesai' : ($jenisAbsen === 'Pulang' ? 'Verifikasi' : 'Masuk') }}
+                            </button>
+
+                            <button
+                                id="submitAttendance"
+                                type="button"
+                                class="h-full rounded-full flex items-center justify-center gap-2 font-bold text-sm shadow-sm transition
+                                    bg-red-600 text-white disabled:bg-red-100 disabled:text-red-400"
+                                disabled
+                            >
+                                <i class="fa-solid fa-paper-plane"></i>
+                                {{ $jenisAbsen === 'Pulang' ? 'Pulang' : 'Kirim' }}
+                            </button>
+                        </div>
+
+                        <div class="pointer-events-none absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-white shadow border border-slate-200 flex items-center justify-center">
+                            <span class="w-9 h-9 rounded-full bg-blue-700/10 flex items-center justify-center">
+                                <i class="fa-solid fa-circle text-amber-400 text-[10px]"></i>
+                            </span>
+                        </div>
                     </div>
+                </section>
 
-                    <div class="pointer-events-none absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-white shadow border border-slate-200 flex items-center justify-center">
-                        <span class="w-9 h-9 rounded-full bg-blue-700/10 flex items-center justify-center">
-                            <i class="fa-solid fa-circle text-amber-400 text-[10px]"></i>
+            </div>
+
+            <div class="space-y-4">
+                <section class="attendance-schedule-grid grid grid-cols-3 gap-2">
+                    <div class="attendance-schedule-card bg-blue-700 text-white rounded-xl p-3 text-center shadow">
+                        <i class="fa-solid fa-user-clock text-sm"></i>
+                        <p class="text-[11px] mt-1 opacity-90">Shift</p>
+                        <p class="text-xs font-bold">{{ $shiftDisplayName }}</p>
+                    </div>
+                    <div class="attendance-schedule-card bg-blue-700 text-white rounded-xl p-3 text-center shadow">
+                        <i class="fa-solid fa-right-to-bracket text-sm"></i>
+                        <p class="text-[11px] mt-1 opacity-90">Jam Masuk</p>
+                        <p class="text-xs font-bold">{{ $jamMasuk }}</p>
+                    </div>
+                    <div class="attendance-schedule-card bg-red-600 text-white rounded-xl p-3 text-center shadow">
+                        <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                        <p class="text-[11px] mt-1 opacity-90">Jam Pulang</p>
+                        <p class="text-xs font-bold">{{ $jamPulang }}</p>
+                    </div>
+                </section>
+
+                <section class="attendance-info-card bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500">Status Hari Ini</p>
+                            <p class="font-bold text-slate-800">{{ auth()->user()->name }}</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $sudahPulang ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700' }}">
+                            {{ $jenisAbsen }}
                         </span>
                     </div>
-                </div>
-            </section>
+                    <div class="attendance-status-grid grid grid-cols-2 gap-3 text-sm text-slate-600">
+                        <div>
+                            <p class="text-xs text-slate-400">Jarak dari kantor</p>
+                            <p id="officeDistanceStatus" class="font-semibold text-slate-800">Menunggu GPS</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400">Sampel wajah</p>
+                            <p id="sampleStatus" class="font-semibold text-slate-800">0/3 terekam</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400">Wajah</p>
+                            <p id="faceStatus" class="font-semibold text-slate-800">Menunggu scan</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400">Kedipan</p>
+                            <p id="blinkStatus" class="font-semibold text-slate-800">Belum terverifikasi</p>
+                        </div>
+                    </div>
+                    <p id="status" class="attendance-status-text text-sm text-slate-500">
+                        {{ $sudahPulang ? 'Absensi hari ini sudah selesai.' : 'Klik Masuk/Verifikasi untuk menyalakan kamera dan GPS.' }}
+                    </p>
+                </section>
 
-            <section class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4 space-y-3">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-xs text-slate-500">Status Hari Ini</p>
-                        <p class="font-bold text-slate-800">{{ auth()->user()->name }}</p>
+                <section class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">
+                    <h2 class="font-bold text-slate-800">Verifikasi Kehadiran</h2>
+                    <p class="mt-2 text-sm text-slate-600">Ikuti instruksi singkat di bawah ini. Sistem akan memastikan wajah terbaca jelas dan Anda hadir langsung sebelum absensi dikirim.</p>
+                    <div class="mt-3 rounded-xl bg-slate-50 border border-slate-200 p-3">
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Instruksi Saat Ini</p>
+                        <p id="challengeInstruction" class="mt-1 text-sm font-semibold text-slate-800">Tekan Masuk untuk memulai verifikasi.</p>
+                        <p id="challengeProgress" class="mt-2 text-xs text-slate-500">Langkah verifikasi: 0/2</p>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $sudahPulang ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700' }}">
-                        {{ $jenisAbsen }}
-                    </span>
-                </div>
-                <div class="grid grid-cols-2 gap-3 text-sm text-slate-600">
-                    <div>
-                        <p class="text-xs text-slate-400">Jarak dari kantor</p>
-                        <p id="officeDistanceStatus" class="font-semibold text-slate-800">Menunggu GPS</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-400">Sampel</p>
-                        <p id="sampleStatus" class="font-semibold text-slate-800">Belum dimulai</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-400">Wajah</p>
-                        <p id="faceStatus" class="font-semibold text-slate-800">Menunggu scan</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-400">Kedipan</p>
-                        <p id="blinkStatus" class="font-semibold text-slate-800">Belum terverifikasi</p>
-                    </div>
-                </div>
-                <p id="status" class="text-sm text-slate-500">
-                    {{ $sudahPulang ? 'Absensi hari ini sudah selesai.' : 'Klik Masuk/Verifikasi untuk menyalakan kamera dan GPS.' }}
-                </p>
-            </section>
+                </section>
 
-            <section class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">
-                <h2 class="font-bold text-slate-800">Liveness Kedipan</h2>
-                <p class="mt-2 text-sm text-slate-600">Hadapkan wajah ke kamera dan kedipkan mata satu kali. Sistem akan mengirim absensi otomatis setelah wajah jelas dan kedipan terverifikasi.</p>
-            </section>
+                @if(!isset($scheduledShift) || !$scheduledShift)
+                    <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
+                        Shift kamu belum diatur oleh admin. Hubungi admin untuk assign jadwal shift terlebih dulu.
+                    </section>
+                @elseif($isShiftOff)
+                    <section class="bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl p-4 text-sm shadow-sm">
+                        Hari ini kamu dijadwalkan libur, jadi absensi tidak dibuka.
+                    </section>
+                @elseif(isset($approvedLeave) && $approvedLeave)
+                    <section class="bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl p-4 text-sm shadow-sm">
+                        Anda memiliki izin yang telah disetujui hari ini: {{ ucfirst($approvedLeave->jenis_izin) }}. Absensi dilewati otomatis.
+                    </section>
+                @elseif(empty($canAttend))
+                    <section class="bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl p-4 text-sm shadow-sm">
+                        Shift kamu sudah dijadwalkan ({{ $shiftLabel }} {{ $jadwalMasuk }} - {{ $jadwalPulang }}), tapi belum masuk jam absensi.
+                    </section>
+                @endif
+
+            </div>
         </main>
 
         <nav class="user-bottom-nav">
@@ -401,9 +552,12 @@ const officeDistanceStatus = document.getElementById('officeDistanceStatus');
 const sampleStatus = document.getElementById('sampleStatus');
 const faceStatus = document.getElementById('faceStatus');
 const blinkStatus = document.getElementById('blinkStatus');
+const challengeInstruction = document.getElementById('challengeInstruction');
+const challengeProgress = document.getElementById('challengeProgress');
 const attendanceHeadGuide = document.getElementById('attendanceHeadGuide');
 const attendanceHeadFrame = document.getElementById('attendanceHeadFrame');
 const attendanceScanTrack = document.getElementById('attendanceScanTrack');
+const cameraOverlay = document.getElementById('cameraOverlay');
 const attendanceMapElement = document.getElementById('attendanceMap');
 const officeLatitude = Number(attendanceMapElement?.dataset.officeLat ?? 0);
 const officeLongitude = Number(attendanceMapElement?.dataset.officeLng ?? 0);
@@ -416,6 +570,18 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 updateClock();
+
+function updateCameraOverlayCopy() {
+    if (!cameraOverlay) return;
+
+    const isMobile = window.matchMedia('(max-width: 767px)').matches;
+    cameraOverlay.textContent = isMobile
+        ? (cameraOverlay.dataset.mobileText || cameraOverlay.textContent)
+        : (cameraOverlay.dataset.desktopText || cameraOverlay.textContent);
+}
+
+updateCameraOverlayCopy();
+window.addEventListener('resize', updateCameraOverlayCopy);
 
 let attendanceMap = null;
 let userMarker = null;
@@ -485,11 +651,65 @@ function updateOfficeDistance(latitude, longitude) {
         : 'font-semibold text-red-600';
 }
 
-function updateGeolocation(coords) {
-    geolocation = coords;
-    gpsStatus.textContent = `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
-    updateOfficeDistance(coords.latitude, coords.longitude);
-    updateAttendanceMap(coords.latitude, coords.longitude);
+function normalizeLocationSample(position) {
+    const coords = position.coords ?? position;
+    const timestampMs = typeof position.timestamp === 'number' ? position.timestamp : Date.now();
+
+    return {
+        latitude: Number(coords.latitude),
+        longitude: Number(coords.longitude),
+        accuracy: Number(coords.accuracy ?? 9999),
+        timestamp: new Date(timestampMs).toISOString(),
+        age_seconds: Math.max(0, (Date.now() - timestampMs) / 1000),
+    };
+}
+
+function appendLocationSample(position) {
+    const sample = normalizeLocationSample(position);
+    const lastSample = geolocationSamples[geolocationSamples.length - 1];
+
+    if (lastSample
+        && lastSample.timestamp === sample.timestamp
+        && Math.abs(lastSample.latitude - sample.latitude) < 0.000001
+        && Math.abs(lastSample.longitude - sample.longitude) < 0.000001) {
+        return sample;
+    }
+
+    geolocationSamples.push(sample);
+    if (geolocationSamples.length > MAX_LOCATION_SAMPLE_BUFFER) {
+        geolocationSamples = geolocationSamples.slice(-MAX_LOCATION_SAMPLE_BUFFER);
+    }
+
+    return sample;
+}
+
+function hasEnoughLocationSamples() {
+    if (!geolocation) return false;
+
+    if (Number.isFinite(geolocation.accuracy) && geolocation.accuracy <= FAST_LOCATION_ACCURACY) {
+        return geolocationSamples.length >= 1;
+    }
+
+    return geolocationSamples.length >= REQUIRED_LOCATION_SAMPLES;
+}
+
+function currentLocationAgeSeconds(timestamp) {
+    const timestampMs = Date.parse(timestamp);
+    if (Number.isNaN(timestampMs)) return 9999;
+    return Math.max(0, (Date.now() - timestampMs) / 1000);
+}
+
+function updateGeolocation(position) {
+    const sample = appendLocationSample(position);
+    geolocation = {
+        latitude: sample.latitude,
+        longitude: sample.longitude,
+        accuracy: sample.accuracy,
+        timestamp: sample.timestamp,
+    };
+    gpsStatus.textContent = `${sample.latitude.toFixed(6)}, ${sample.longitude.toFixed(6)} (akurasi ${Math.round(sample.accuracy)} m)`;
+    updateOfficeDistance(sample.latitude, sample.longitude);
+    updateAttendanceMap(sample.latitude, sample.longitude);
 }
 
 initializeAttendanceMap();
@@ -497,7 +717,9 @@ initializeAttendanceMap();
 let stream;
 let modelsLoaded = false;
 let geolocation = null;
+let geolocationSamples = [];
 let geolocationWatchId = null;
+let geolocationReadyPromise = null;
 let verificationReady = false;
 let latestDescriptor = null;
 let latestSnapshot = null;
@@ -513,7 +735,16 @@ let eyesWereOpen = false;
 let lastEar = null;
 let maxOpenEar = 0;
 let lastOpenEar = 0;
+let baselineFaceWidth = null;
+let livenessChallenge = [];
+let currentChallengeIndex = 0;
+let completedChallengeSteps = [];
+let movementHoldFrames = 0;
 const REQUIRED_SAMPLES = 3;
+const REQUIRED_LOCATION_SAMPLES = 2;
+const MAX_LOCATION_SAMPLE_BUFFER = 5;
+const FAST_LOCATION_ACCURACY = 25;
+const REQUIRED_LIVENESS_STEPS = 2;
 
 const MIN_BRIGHTNESS = 38;
 const MAX_BRIGHTNESS = 210;
@@ -556,6 +787,7 @@ function setBlinkVerified(value) {
     blinkStatus.className = value
         ? 'font-semibold text-blue-700'
         : 'font-semibold text-gray-800';
+    renderChallenge();
 }
 
 function setCameraGuideReady(isReady) {
@@ -570,20 +802,33 @@ function updateFrameIndicator(isValid) {
 
 function humanizeStep(step) {
     const labels = {
-        center: 'Arahkan wajah lurus ke tengah',
+        samples: 'Hadapkan wajah lurus ke kamera sampai sampel lengkap',
+        blink: 'Kedipkan mata satu kali untuk verifikasi',
     };
     return labels[step] || step;
 }
 
 function renderChallenge() {
-    sampleStatus.textContent = `${descriptorSamples.length}/${REQUIRED_SAMPLES}`;
-    return;
-    [].forEach((step, index) => {
-        const li = document.createElement('li');
-        const isDone = false;
-        li.textContent = `${index + 1}. ${humanizeStep(step)}${isDone ? ' – selesai' : ''}`;
-        li.className = isDone ? 'text-blue-600 font-semibold' : 'text-slate-600';
-    });
+    const sampleCount = Math.min(descriptorSamples.length, REQUIRED_SAMPLES);
+    const completedSteps = [
+        sampleCount >= REQUIRED_SAMPLES,
+        blinkVerified,
+    ].filter(Boolean).length;
+
+    sampleStatus.textContent = `${sampleCount}/${REQUIRED_SAMPLES} terekam`;
+    challengeProgress.textContent = `Langkah verifikasi: ${completedSteps}/2`;
+
+    if (sampleCount < REQUIRED_SAMPLES) {
+        challengeInstruction.textContent = humanizeStep('samples');
+        return;
+    }
+
+    if (!blinkVerified) {
+        challengeInstruction.textContent = humanizeStep('blink');
+        return;
+    }
+
+    challengeInstruction.textContent = 'Verifikasi selesai. Absensi sedang dikirim.';
 }
 
 async function loadModels() {
@@ -593,7 +838,7 @@ async function loadModels() {
 }
 
 async function requestChallenge() {
-    sampleStatus.textContent = '0/3';
+    sampleStatus.textContent = '0/3 terekam';
 }
 
 function distanceBetween(pointA, pointB) {
@@ -820,7 +1065,7 @@ function trackChallenge() {
                 updateFrameIndicator(false);
                 updateStatus(
                     descriptorSamples.length >= REQUIRED_SAMPLES
-                        ? 'Sampel wajah cukup. Hadapkan wajah dan kedipkan mata sekali.'
+                        ? 'Sampel wajah sudah cukup. Hadapkan wajah lalu kedipkan mata sekali.'
                         : 'Dekatkan wajah ke kamera.',
                     true
                 );
@@ -858,7 +1103,7 @@ function trackChallenge() {
                 latestSnapshot = captureSnapshot();
                 latestQualityMetrics = summarizeQuality(qualitySamples);
                 renderChallenge();
-                updateStatus(blinkVerified ? 'Sampel wajah cukup. Menyiapkan absensi...' : 'Wajah jelas. Kedipkan mata satu kali.');
+                updateStatus(blinkVerified ? 'Sampel wajah sudah lengkap. Menyiapkan absensi...' : 'Wajah sudah jelas. Kedipkan mata satu kali.');
             }
 
             if (blinkVerified && descriptorSamples.length >= REQUIRED_SAMPLES) {
@@ -880,25 +1125,53 @@ async function requestGeolocation() {
     if (!navigator.geolocation) throw new Error('Browser tidak mendukung geolokasi.');
     stopGeolocationWatch();
 
+    const waitForStableLocation = () => new Promise((resolve, reject) => {
+        const startedAt = Date.now();
+
+        const tick = () => {
+            if (hasEnoughLocationSamples()) {
+                resolve();
+                return;
+            }
+
+            if (Date.now() - startedAt >= 15000) {
+                if (geolocation) {
+                    resolve();
+                    return;
+                }
+
+                reject(new Error('GPS belum stabil. Tunggu beberapa detik lalu coba lagi.'));
+                return;
+            }
+
+            setTimeout(tick, 250);
+        };
+
+        tick();
+    });
+
     const currentLocation = await new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
-            pos => resolve(pos.coords),
+            pos => resolve(pos),
             () => reject(new Error('Izin lokasi ditolak atau GPS tidak tersedia.')),
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     });
     updateGeolocation(currentLocation);
+    updateStatus('GPS didapatkan. Lanjutkan verifikasi wajah.');
 
     geolocationWatchId = navigator.geolocation.watchPosition(
-        pos => updateGeolocation(pos.coords),
+        pos => updateGeolocation(pos),
         () => {},
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
+
+    await waitForStableLocation();
 }
 
 async function startVerification() {
     try {
-        updateStatus('Menyiapkan kamera, lokasi, dan verifikasi kedipan...');
+        updateStatus('Menyiapkan kamera, lokasi, dan verifikasi kehadiran...');
         isSubmitting = false;
         submitAttendanceButton.disabled = true;
         verificationReady = false;
@@ -907,13 +1180,16 @@ async function startVerification() {
         latestQualityMetrics = null;
         descriptorSamples = [];
         qualitySamples = [];
+        geolocation = null;
+        geolocationSamples = [];
+        geolocationReadyPromise = null;
         setBlinkVerified(false);
         eyesWereOpen = false;
         lastEar = null;
         maxOpenEar = 0;
         lastOpenEar = 0;
         lastCaptureAt = 0;
-        sampleStatus.textContent = '0/3';
+        sampleStatus.textContent = '0/3 terekam';
         faceStatus.textContent = 'Menunggu scan';
         renderChallenge();
         stopTracking();
@@ -921,15 +1197,16 @@ async function startVerification() {
 
         await startCamera();
         updateStatus('Mempersiapkan sistem...');
-        await Promise.all([
-            loadModels(),
-            requestGeolocation(),
-        ]);
+        geolocationReadyPromise = requestGeolocation().catch((error) => {
+            updateStatus(error.message || 'GPS gagal disiapkan.', true);
+            throw error;
+        });
+        await loadModels();
 
         // startCamera() sudah menyalakan kamera dan menunggu video siap.
 
         trackChallenge();
-        updateStatus('Hadapkan wajah ke kamera dan kedipkan mata.');
+        updateStatus('Hadapkan wajah ke kamera dan kedipkan mata. GPS sedang dipastikan di background.');
     } catch (error) {
         setCameraGuideReady(false);
         updateFrameIndicator(false);
@@ -944,8 +1221,27 @@ async function startVerification() {
 
 async function submitAttendance() {
     if (isSubmitting) return;
-    if (!verificationReady || !latestDescriptor || !latestSnapshot || !geolocation) {
+    if (!verificationReady || !latestDescriptor || !latestSnapshot) {
         updateStatus('Verifikasi belum lengkap.', true);
+        return;
+    }
+
+    if (!geolocation && geolocationReadyPromise) {
+        try {
+            await geolocationReadyPromise;
+        } catch (error) {
+            updateStatus(error.message || 'GPS gagal disiapkan.', true);
+            return;
+        }
+    }
+
+    if (!geolocation) {
+        updateStatus('Lokasi belum tersedia. Aktifkan GPS lalu coba lagi.', true);
+        return;
+    }
+
+    if (!hasEnoughLocationSamples()) {
+        updateStatus('GPS sedang dipastikan. Coba kirim lagi dalam 1-2 detik.', true);
         return;
     }
 
@@ -974,6 +1270,16 @@ async function submitAttendance() {
                 quality_metrics: latestQualityMetrics,
                 lat: geolocation.latitude,
                 lng: geolocation.longitude,
+                location_accuracy: geolocation.accuracy,
+                location_timestamp: geolocation.timestamp,
+                location_age_seconds: currentLocationAgeSeconds(geolocation.timestamp),
+                location_samples: geolocationSamples.slice(-MAX_LOCATION_SAMPLE_BUFFER).map(sample => ({
+                    latitude: sample.latitude,
+                    longitude: sample.longitude,
+                    accuracy: sample.accuracy,
+                    timestamp: sample.timestamp,
+                    age_seconds: currentLocationAgeSeconds(sample.timestamp),
+                })),
                 blink_verified: blinkVerifiedInput.value,
             }),
         });

@@ -6,10 +6,10 @@ use App\Models\EmployeeDetail;
 use App\Models\FaceEmbedding;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -30,10 +30,21 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
             'remember' => ['nullable', 'boolean'],
             'redirect_to' => ['nullable', 'string'],
+            'cf-turnstile-response' => [$this->turnstileEnabled() ? 'required' : 'nullable', 'string'],
         ], [
             'login.required' => 'NIP atau username wajib diisi.',
             'password.required' => 'Kata sandi wajib diisi.',
+            'cf-turnstile-response.required' => 'Verifikasi keamanan wajib diselesaikan.',
         ]);
+
+        if ($this->turnstileEnabled() && !$this->validateTurnstile(
+            $request->input('cf-turnstile-response'),
+            $request->ip()
+        )) {
+            return back()
+                ->withErrors(['cf-turnstile-response' => 'Verifikasi keamanan gagal. Silakan coba lagi.'])
+                ->withInput($request->only('login', 'remember', 'redirect_to'));
+        }
 
         $login = trim($validated['login']);
         $normalizedLogin = strtolower($login);
@@ -77,59 +88,53 @@ class AuthController extends Controller
         return redirect('/dashboard');
     }
 
+    private function validateTurnstile(?string $token, ?string $remoteIp = null): bool
+    {
+        if (!$token) {
+            return false;
+        }
+
+        try {
+            $response = Http::asForm()
+                ->timeout(5)
+                ->post(config('services.turnstile.verify_url'), [
+                    'secret' => config('services.turnstile.secret_key'),
+                    'response' => $token,
+                    'remoteip' => $remoteIp,
+                ]);
+
+            if (!$response->ok()) {
+                Log::warning('Turnstile verification request failed.', [
+                    'status' => $response->status(),
+                ]);
+
+                return false;
+            }
+
+            $payload = $response->json();
+
+            return (bool) ($payload['success'] ?? false);
+        } catch (\Throwable $e) {
+            Log::warning('Turnstile verification exception.', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return false;
+        }
+    }
+
+    private function turnstileEnabled(): bool
+    {
+        return (bool) config('services.turnstile.enabled')
+            && filled(config('services.turnstile.site_key'))
+            && filled(config('services.turnstile.secret_key'));
+    }
+
     public function userRegister(Request $request)
     {
-        $request->merge([
-            'username' => strtolower(trim((string) $request->input('username'))),
-            'email' => strtolower(trim((string) $request->input('email'))),
-            'nip' => trim((string) $request->input('nip')),
-        ]);
-
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:255', 'alpha_dash', 'unique:users,username'],
-            'nip' => ['required', 'string', 'max:50', Rule::unique('employee_details', 'nip')],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6', 'confirmed'],
-        ], [
-            'name.required' => 'Nama lengkap wajib diisi.',
-            'username.required' => 'Username wajib diisi.',
-            'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, strip, dan underscore.',
-            'username.unique' => 'Username sudah digunakan.',
-            'nip.required' => 'NIP wajib diisi.',
-            'nip.unique' => 'NIP sudah terdaftar.',
-            'email.required' => 'Email wajib diisi.',
-            'email.email' => 'Format email tidak valid.',
-            'email.unique' => 'Email sudah terdaftar.',
-            'password.required' => 'Kata sandi wajib diisi.',
-            'password.min' => 'Kata sandi minimal 6 karakter.',
-            'password.confirmed' => 'Konfirmasi kata sandi tidak sama.',
-        ]);
-
-        $user = DB::transaction(function () use ($validated) {
-            $user = User::create([
-                'name' => $validated['name'],
-                'username' => $validated['username'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'role' => 'user',
-            ]);
-
-            EmployeeDetail::create([
-                'user_id' => $user->id,
-                'nip' => $validated['nip'],
-                'departemen' => '-',
-                'jabatan' => '-',
-                'status_kerja' => 'tetap',
-            ]);
-
-            return $user;
-        });
-
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        return redirect()->route('face.enroll');
+        return redirect()
+            ->route('register')
+            ->with('info', 'Pendaftaran mandiri dinonaktifkan. Akun pegawai dibuat oleh admin rumah sakit.');
     }
 
     public function showAdminLogin()

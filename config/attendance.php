@@ -15,4 +15,12 @@ return [
     'min_brightness'           => (float) env('ATTENDANCE_MIN_BRIGHTNESS', 30),
     'max_brightness'           => (float) env('ATTENDANCE_MAX_BRIGHTNESS', 220),
     'min_sharpness'            => (float) env('ATTENDANCE_MIN_SHARPNESS', 8),
+    'max_location_accuracy_meters' => (float) env('ATTENDANCE_MAX_LOCATION_ACCURACY_METERS', 80),
+    'web_max_location_accuracy_meters' => (float) env('ATTENDANCE_WEB_MAX_LOCATION_ACCURACY_METERS', 180),
+    'fast_location_accuracy_meters' => (float) env('ATTENDANCE_FAST_LOCATION_ACCURACY_METERS', 25),
+    'max_location_age_seconds' => (int) env('ATTENDANCE_MAX_LOCATION_AGE_SECONDS', 20),
+    'max_client_time_skew_seconds' => (int) env('ATTENDANCE_MAX_CLIENT_TIME_SKEW_SECONDS', 120),
+    'required_location_samples' => (int) env('ATTENDANCE_REQUIRED_LOCATION_SAMPLES', 3),
+    'web_required_location_samples' => (int) env('ATTENDANCE_WEB_REQUIRED_LOCATION_SAMPLES', 2),
+    'max_location_sample_spread_meters' => (float) env('ATTENDANCE_MAX_LOCATION_SAMPLE_SPREAD_METERS', 35),
 ];
