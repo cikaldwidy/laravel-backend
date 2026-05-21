@@ -1,9 +1,11 @@
-const CACHE_NAME = "presensi-pwa-v1";
+const CACHE_NAME = "presensi-pwa-v2";
 
 const CORE_ASSETS = [
     "/",
     "/manifest.json",
     "/favicon.ico",
+    "/apple-touch-icon.png",
+    "/apple-touch-icon-precomposed.png",
     "/icons/apple-touch-icon.png",
     "/icons/icon-192.png",
     "/icons/icon-512.png"
