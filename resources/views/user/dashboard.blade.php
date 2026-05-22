@@ -458,11 +458,26 @@ function supportedPushEncoding() {
     return encodings.includes('aes128gcm') ? 'aes128gcm' : 'aesgcm';
 }
 
+function isIosDevice() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isStandalonePwa() {
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+}
+
 async function enablePushNotifications() {
     if (!pushEnableButton) return;
 
     if (!vapidPublicKey) {
         setPushStatus('VAPID public key belum dikonfigurasi.', 'danger');
+        return;
+    }
+
+    if (isIosDevice() && !isStandalonePwa()) {
+        setPushStatus('Di iPhone, buka aplikasi dari ikon Home Screen dulu, bukan dari Safari.', 'danger');
         return;
     }
 
@@ -531,6 +546,10 @@ async function enablePushNotifications() {
 }
 
 if (pushEnableButton) {
+    if (isIosDevice() && !isStandalonePwa()) {
+        setPushStatus('iPhone perlu membuka PWA dari ikon Home Screen untuk mengaktifkan notifikasi.', 'info');
+    }
+
     if ('Notification' in window && Notification.permission === 'granted') {
         pushEnableButton.textContent = 'Aktif';
     }
