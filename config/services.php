@@ -42,4 +42,10 @@ return [
         'whatsapp' => env('SUPPORT_WHATSAPP', '6281234567890'),
     ],
 
+    'webpush' => [
+        'subject' => env('WEBPUSH_SUBJECT', env('APP_URL', 'http://localhost')),
+        'public_key' => env('WEBPUSH_PUBLIC_KEY'),
+        'private_key' => env('WEBPUSH_PRIVATE_KEY'),
+    ],
+
 ];

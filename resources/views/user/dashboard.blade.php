@@ -102,8 +102,16 @@
 
                         <div id="notificationPanel" class="notification-panel hidden absolute right-0 top-11 z-50 rounded-2xl bg-white border border-slate-100 shadow-xl overflow-hidden">
                             <div class="px-3 py-2.5 border-b border-slate-100">
-                                <p class="text-sm font-bold text-slate-800">Notifikasi</p>
-                                <p id="notificationCountText" class="text-[11px] text-slate-500">{{ $announcementCount }} pemberitahuan aktif</p>
+                                <div class="flex items-start justify-between gap-2">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-800">Notifikasi</p>
+                                        <p id="notificationCountText" class="text-[11px] text-slate-500">{{ $announcementCount }} pemberitahuan aktif</p>
+                                    </div>
+                                    <button type="button" id="pushEnableButton" class="shrink-0 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm">
+                                        Aktifkan
+                                    </button>
+                                </div>
+                                <p id="pushStatusText" class="mt-2 hidden text-[11px] leading-snug text-slate-500"></p>
                             </div>
                             <div id="notificationList" class="max-h-[18rem] overflow-y-auto">
                                 @forelse($announcements as $announcement)
@@ -332,6 +340,11 @@ const notificationWrap = document.getElementById('notificationWrap');
 const notificationButton = document.getElementById('notificationButton');
 const notificationPanel = document.getElementById('notificationPanel');
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+const vapidPublicKey = @json(config('services.webpush.public_key'));
+const pushStoreUrl = @json(route('push-subscriptions.store', [], false));
+const pushTestUrl = @json(route('push-subscriptions.test', [], false));
+const pushEnableButton = document.getElementById('pushEnableButton');
+const pushStatusText = document.getElementById('pushStatusText');
 
 if (notificationWrap && notificationButton && notificationPanel) {
     notificationButton.addEventListener('click', (event) => {
@@ -413,5 +426,119 @@ document.querySelectorAll('.notification-item').forEach((item) => {
         });
     });
 });
+
+function setPushStatus(message, tone = 'muted') {
+    if (!pushStatusText) return;
+
+    pushStatusText.textContent = message;
+    pushStatusText.classList.remove('hidden', 'text-slate-500', 'text-red-600', 'text-blue-700', 'text-emerald-700');
+    pushStatusText.classList.add({
+        danger: 'text-red-600',
+        success: 'text-emerald-700',
+        info: 'text-blue-700',
+    }[tone] || 'text-slate-500');
+}
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; i += 1) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+
+    return outputArray;
+}
+
+function supportedPushEncoding() {
+    const encodings = PushManager.supportedContentEncodings || [];
+
+    return encodings.includes('aes128gcm') ? 'aes128gcm' : 'aesgcm';
+}
+
+async function enablePushNotifications() {
+    if (!pushEnableButton) return;
+
+    if (!vapidPublicKey) {
+        setPushStatus('VAPID public key belum dikonfigurasi.', 'danger');
+        return;
+    }
+
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+        setPushStatus('Browser ini belum mendukung push notification.', 'danger');
+        return;
+    }
+
+    pushEnableButton.disabled = true;
+    pushEnableButton.textContent = 'Memproses...';
+    setPushStatus('Menyiapkan izin notifikasi...', 'info');
+
+    try {
+        const permission = await Notification.requestPermission();
+
+        if (permission !== 'granted') {
+            setPushStatus('Izin notifikasi belum diberikan.', 'danger');
+            return;
+        }
+
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
+
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+            });
+        }
+
+        const payload = subscription.toJSON();
+        payload.contentEncoding = supportedPushEncoding();
+
+        const response = await fetch(pushStoreUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            throw new Error('Gagal menyimpan subscription.');
+        }
+
+        setPushStatus('Notifikasi aktif. Mengirim test...', 'success');
+
+        fetch(pushTestUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+        }).catch(() => null);
+
+        pushEnableButton.textContent = 'Aktif';
+    } catch (error) {
+        setPushStatus(error.message || 'Gagal mengaktifkan notifikasi.', 'danger');
+        pushEnableButton.disabled = false;
+        pushEnableButton.textContent = 'Aktifkan';
+    }
+}
+
+if (pushEnableButton) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+        pushEnableButton.textContent = 'Aktif';
+    }
+
+    pushEnableButton.addEventListener('click', (event) => {
+        event.stopPropagation();
+        enablePushNotifications();
+    });
+}
 </script>
 @endsection

@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\FaceDataController;
 use App\Http\Controllers\Admin\FeatureSettingController;
 use App\Http\Controllers\Admin\JadwalDinasController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\PushSubscriptionController;
 use App\Models\FeatureSetting;
 
 // ================= USER LOGIN =================
@@ -76,6 +77,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [UserBiodataController::class, 'index'])->name('profile.index');
     Route::get('/profile/edit', [UserBiodataController::class, 'edit'])->name('profile.edit');
     Route::post('/profile/update', [UserBiodataController::class, 'update'])->name('profile.update');
+    Route::get('/push-subscriptions/public-key', [PushSubscriptionController::class, 'publicKey'])->name('push-subscriptions.public-key');
+    Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push-subscriptions.store');
+    Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push-subscriptions.destroy');
+    Route::post('/push-subscriptions/test', [PushSubscriptionController::class, 'test'])->name('push-subscriptions.test');
 });
 
 Route::middleware(['auth', 'role:admin'])->group(function () {

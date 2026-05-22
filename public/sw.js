@@ -1,4 +1,4 @@
-const CACHE_NAME = "presensi-pwa-v2";
+const CACHE_NAME = "presensi-pwa-v3";
 
 const CORE_ASSETS = [
     "/",
@@ -30,6 +30,7 @@ const NEVER_CACHE_PATTERNS = [
     /^\/reports(?:\/|$)/,
     /^\/admin\/reports(?:\/|$)/,
     /^\/profile(?:\/|$)/,
+    /^\/push-subscriptions(?:\/|$)/,
     /^\/izin(?:\/|$)/,
     /^\/jadwal-shift(?:\/|$)/,
     /^\/tukar-shift(?:\/|$)/,
@@ -111,6 +112,58 @@ self.addEventListener("fetch", (event) => {
     }
 
     event.respondWith(fetch(request));
+});
+
+self.addEventListener("push", (event) => {
+    let payload = {};
+
+    try {
+        payload = event.data ? event.data.json() : {};
+    } catch (error) {
+        payload = {
+            title: "Aplikasi Presensi",
+            body: event.data ? event.data.text() : "Ada notifikasi baru.",
+        };
+    }
+
+    const title = payload.title || "Aplikasi Presensi";
+    const options = {
+        body: payload.body || "Ada notifikasi baru.",
+        icon: payload.icon || "/icons/icon-192.png",
+        badge: payload.badge || "/icons/icon-192.png",
+        tag: payload.tag || "presensi-notification",
+        renotify: Boolean(payload.renotify),
+        data: {
+            url: payload.url || "/dashboard",
+        },
+    };
+
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+    event.notification.close();
+
+    const targetUrl = new URL(event.notification.data?.url || "/dashboard", self.location.origin);
+
+    event.waitUntil(
+        clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+            for (const client of clientList) {
+                const clientUrl = new URL(client.url);
+
+                if (clientUrl.origin === targetUrl.origin && "focus" in client) {
+                    client.navigate(targetUrl.href);
+                    return client.focus();
+                }
+            }
+
+            if (clients.openWindow) {
+                return clients.openWindow(targetUrl.href);
+            }
+
+            return null;
+        })
+    );
 });
 
 async function cacheFirst(request) {
