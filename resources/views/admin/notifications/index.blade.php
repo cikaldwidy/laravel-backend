@@ -10,7 +10,7 @@
             <p class="mt-0.5 text-sm text-gray-500">Pantau izin pending, tukar shift, dan status presensi hari ini.</p>
         </div>
         <span class="inline-flex w-fit items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
-            <i class="fas fa-bell text-xs"></i>
+            <i class="fa-solid fa-bell text-xs"></i>
             {{ $notificationCount }} notifikasi
         </span>
     </div>
@@ -23,22 +23,28 @@
 
         <div class="divide-y divide-gray-50">
             @forelse($notifications as $notification)
-                <a href="{{ $notification['url'] }}" class="flex items-start gap-4 px-5 py-4 transition hover:bg-gray-50/70">
-                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md {{ $notification['tone'] }}">
-                        <i class="{{ $notification['icon'] }}"></i>
+                <a href="{{ $notification['url'] }}" class="group flex items-start gap-3 px-5 py-4 transition hover:bg-gray-50/70">
+                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl {{ $notification['tone'] }}">
+                        <i class="{{ $notification['icon'] }} text-sm"></i>
                     </span>
                     <span class="min-w-0 flex-1">
                         <span class="block text-sm font-semibold text-gray-800">{{ $notification['title'] }}</span>
                         <span class="mt-1 block text-sm text-gray-500">{{ $notification['message'] }}</span>
+                        <span class="mt-2 block text-xs font-medium text-gray-400 md:hidden">
+                            {{ $notification['time']?->diffForHumans() }}
+                        </span>
                     </span>
-                    <span class="hidden whitespace-nowrap text-xs text-gray-400 md:block">
+                    <span class="hidden whitespace-nowrap text-xs font-medium text-gray-400 md:block">
                         {{ $notification['time']?->diffForHumans() }}
+                    </span>
+                    <span class="mt-0.5 hidden h-8 w-8 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400 transition group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-600 md:inline-flex">
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
                     </span>
                 </a>
             @empty
                 <div class="py-14 text-center">
-                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-green-50 text-green-600">
-                        <i class="fas fa-check"></i>
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        <i class="fa-solid fa-bell text-sm"></i>
                     </div>
                     <p class="mt-3 text-sm font-semibold text-gray-700">Belum ada notifikasi</p>
                     <p class="text-xs text-gray-500">Semua aktivitas penting sedang aman.</p>

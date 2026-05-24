@@ -157,11 +157,20 @@
                                     <a href="{{ route('admin.users.show', $u->id) }}" class="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50">
                                         <i class="fas fa-eye text-[10px]"></i> Detail
                                     </a>
-                                    <button type="button" class="text-slate-700 font-semibold" data-toggle-detail="user-detail-{{ $u->id }}">Detail</button>
-                                    <form method="POST" action="{{ route('admin.users.destroy', $u->id) }}" data-confirm-form data-confirm-title="Hapus akun?" data-confirm-message="Akun user ini akan dihapus dari sistem." data-confirm-button="Hapus">
-                                        @csrf
-                                        <button class="text-red-600 font-semibold" @disabled($u->id === auth()->id())>Hapus</button>
-                                    </form>
+                                    <a href="{{ route('admin.users.edit', $u->id) }}" class="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">
+                                        <i class="fas fa-pen text-[10px]"></i> Akun
+                                    </a>
+                                    <a href="{{ route('admin.biodata.edit', $u) }}" class="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-100">
+                                        <i class="fas fa-id-card text-[10px]"></i> Biodata
+                                    </a>
+                                    <button
+                                        type="button"
+                                        onclick="openHapus('{{ $u->id }}', '{{ addslashes($u->name) }}', '{{ route('admin.users.destroy', $u->id) }}')"
+                                        class="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+                                        @disabled($u->id === auth()->id())
+                                    >
+                                        <i class="fas fa-trash-can text-[10px]"></i> Hapus
+                                    </button>
                                 </div>
                             </td>
                         </tr>

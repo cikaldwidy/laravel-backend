@@ -46,7 +46,6 @@
                 </button>
             </div>
         </form>
-<<<<<<< HEAD
         @error('department_id') <p class="text-xs text-red-600 mt-2">{{ $message }}</p> @enderror
         @error('nama_jabatan') <p class="text-xs text-red-600 mt-2">{{ $message }}</p> @enderror
     </div>
@@ -94,8 +93,6 @@
                 @endforelse
             </tbody>
         </table>
-=======
->>>>>>> cikal-fitur
     </div>
 </div>
 
