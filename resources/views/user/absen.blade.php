@@ -182,6 +182,11 @@
         border: 1px solid rgba(255, 237, 213, 0.1);
     }
 
+    .attendance-topbar {
+        min-height: calc(3.5rem + env(safe-area-inset-top));
+        padding-top: env(safe-area-inset-top);
+    }
+
     @media (min-width: 768px) {
         .user-attendance-main {
             display: grid;
@@ -315,7 +320,7 @@
 
 <div class="user-page">
     <div class="user-phone">
-        <header class="h-14 bg-blue-800 text-white flex items-center px-4 shadow">
+        <header class="attendance-topbar bg-blue-800 text-white flex items-center px-4 shadow">
             <a href="{{ route('dashboard') }}" class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10">
                 <i class="fa-solid fa-chevron-left"></i>
             </a>
@@ -378,7 +383,7 @@
                             ></div>
                             <div class="attendance-gps-badge absolute left-3 bottom-3 text-white text-xs px-3 py-2 rounded-xl max-w-[88%]">
                                 <i class="fa-solid fa-location-dot mr-1"></i>
-                                <span id="gpsStatus">GPS belum diambil</span>
+                                <span id="gpsStatus">Menunggu lokasi user</span>
                             </div>
                         </div>
                     </div>
@@ -456,7 +461,7 @@
                     </div>
                     <div class="attendance-status-grid grid grid-cols-2 gap-3 text-sm text-slate-600">
                         <div>
-                            <p class="text-xs text-slate-400">Jarak dari kantor</p>
+                            <p class="text-xs text-slate-400">User berada</p>
                             <p id="officeDistanceStatus" class="font-semibold text-slate-800">Menunggu GPS</p>
                         </div>
                         <div>
@@ -519,7 +524,7 @@
                     <p>Histori</p>
                 </a>
                 <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-red-600 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg shadow-red-600/20">
-                    <i class="fa-solid fa-fingerprint text-xl"></i>
+                    @include('user.partials.face-id-icon', ['class' => 'w-7 h-7'])
                 </a>
                 <a href="{{ route('user.shifts.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-calendar-days text-lg"></i>
@@ -612,13 +617,28 @@ function initializeAttendanceMap() {
         weight: 2,
     }).addTo(attendanceMap);
 
-    userMarker = L.marker([officeLatitude, officeLongitude]).addTo(attendanceMap);
+    attendanceMap.fitBounds(officeCircle.getBounds(), {
+        maxZoom: 17,
+        padding: [18, 18],
+    });
 }
 
 function updateAttendanceMap(latitude, longitude) {
-    if (!attendanceMap || !userMarker) return;
+    if (!attendanceMap) return;
 
     const latLng = [latitude, longitude];
+
+    if (!userMarker) {
+        userMarker = L.marker(latLng, {
+            title: 'User berada',
+        }).addTo(attendanceMap);
+        userMarker.bindTooltip('User berada', {
+            direction: 'top',
+            offset: [0, -12],
+            opacity: 0.95,
+        });
+    }
+
     userMarker.setLatLng(latLng);
     attendanceMap.setView(latLng, 17);
 }
@@ -707,7 +727,7 @@ function updateGeolocation(position) {
         accuracy: sample.accuracy,
         timestamp: sample.timestamp,
     };
-    gpsStatus.textContent = `${sample.latitude.toFixed(6)}, ${sample.longitude.toFixed(6)} (akurasi ${Math.round(sample.accuracy)} m)`;
+    gpsStatus.textContent = 'User berada';
     updateOfficeDistance(sample.latitude, sample.longitude);
     updateAttendanceMap(sample.latitude, sample.longitude);
 }

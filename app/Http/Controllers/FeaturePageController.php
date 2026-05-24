@@ -12,7 +12,9 @@ class FeaturePageController extends Controller
         abort_unless(isset(FeatureSetting::FEATURES[$featureKey]), 404);
 
         if (in_array($featureKey, ['sakit', 'cuti'], true)) {
-            return redirect()->route('leave_requests.create', ['jenis_izin' => $featureKey]);
+            return redirect()->route('leave_requests.create', [
+                'back' => 'dashboard',
+            ]);
         }
 
         return view('feature-placeholder', [

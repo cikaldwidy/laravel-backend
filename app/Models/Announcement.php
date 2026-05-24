@@ -16,6 +16,7 @@ class Announcement extends Model
         'target_type',
         'unit_id',
         'is_published',
+        'action_url',
     ];
 
     protected $casts = [

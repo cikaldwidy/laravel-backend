@@ -12,6 +12,11 @@ class ShiftController extends Controller
     public function index(Request $request)
     {
         $month = $request->query('month', now()->format('Y-m'));
+        $selectedShiftType = ShiftSchedule::normalizeShiftTypeCode($request->query('shift_type'));
+
+        if (!array_key_exists($selectedShiftType, ShiftSchedule::SHIFT_TYPE_OPTIONS)) {
+            $selectedShiftType = '';
+        }
 
         try {
             $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
@@ -25,36 +30,7 @@ class ShiftController extends Controller
         $schedules = ShiftSchedule::query()
             ->where('user_id', auth()->id())
             ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])
-            ->when($request->filled('shift_type'), function ($query) use ($request) {
-                $shiftType = strtoupper((string) $request->shift_type);
-
-                $query->where(function ($q) use ($shiftType) {
-                    match ($shiftType) {
-                        'P' => $q->where('shift_code', 'P')
-                            ->orWhere(function ($sub) {
-                                $sub->whereNull('shift_code')
-                                    ->whereTime('jam_masuk', '>=', '05:00:00')
-                                    ->whereTime('jam_masuk', '<', '12:00:00');
-                            }),
-                        'S' => $q->where('shift_code', 'S')
-                            ->orWhere(function ($sub) {
-                                $sub->whereNull('shift_code')
-                                    ->whereTime('jam_masuk', '>=', '12:00:00')
-                                    ->whereTime('jam_masuk', '<', '18:00:00');
-                            }),
-                        'M' => $q->where('shift_code', 'M')
-                            ->orWhere(function ($sub) {
-                                $sub->whereNull('shift_code')
-                                    ->where(function ($time) {
-                                        $time->whereTime('jam_masuk', '>=', '18:00:00')
-                                            ->orWhereTime('jam_masuk', '<', '05:00:00');
-                                    });
-                            }),
-                        'O' => $q->where('shift_code', 'O')->orWhere('status', 'libur'),
-                        default => null,
-                    };
-                });
-            })
+            ->when($selectedShiftType !== '', fn ($query) => $query->ofShiftType($selectedShiftType))
             ->orderBy('tanggal')
             ->orderBy('jam_masuk')
             ->get();
@@ -63,19 +39,35 @@ class ShiftController extends Controller
             return $schedule->tanggal->toDateString();
         });
 
-        $daysInMonth = $start->daysInMonth;
-        $calendar = collect(range(1, $daysInMonth))->map(function ($day) use ($start, $schedulesByDate) {
-            $date = (clone $start)->day($day)->toDateString();
-            return [
-                'date' => $date,
-                'label' => Carbon::parse($date)->translatedFormat('d M'),
-                'is_today' => $date === now()->toDateString(),
-                'items' => $schedulesByDate->get($date, collect()),
-            ];
-        });
+        if ($selectedShiftType !== '') {
+            $calendar = $schedules
+                ->groupBy(fn (ShiftSchedule $schedule) => $schedule->tanggal->toDateString())
+                ->map(function ($items, $date) {
+                    return [
+                        'date' => $date,
+                        'label' => Carbon::parse($date)->translatedFormat('d M'),
+                        'is_today' => $date === now()->toDateString(),
+                        'items' => $items,
+                    ];
+                })
+                ->values();
+        } else {
+            $daysInMonth = $start->daysInMonth;
+            $calendar = collect(range(1, $daysInMonth))->map(function ($day) use ($start, $schedulesByDate) {
+                $date = (clone $start)->day($day)->toDateString();
+                return [
+                    'date' => $date,
+                    'label' => Carbon::parse($date)->translatedFormat('d M'),
+                    'is_today' => $date === now()->toDateString(),
+                    'items' => $schedulesByDate->get($date, collect()),
+                ];
+            });
+        }
 
         return view('user.shifts.index', [
             'month' => $month,
+            'selectedShiftType' => $selectedShiftType,
+            'shiftTypeOptions' => ShiftSchedule::SHIFT_TYPE_OPTIONS,
             'calendar' => $calendar,
             'schedules' => $schedules,
         ]);

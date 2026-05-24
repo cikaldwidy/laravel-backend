@@ -8,7 +8,7 @@
         @include('user.partials.header', [
             'title' => 'Form Izin',
             'subtitle' => 'Ajukan izin, sakit, cuti, atau dinas luar.',
-            'back' => route('leave_requests.index'),
+            'back' => $backUrl ?? route('leave_requests.index'),
         ])
 
         <main class="px-4 pt-4">
@@ -18,13 +18,13 @@
                     <label class="text-xs font-semibold text-slate-600">Jenis Izin</label>
                     <select name="jenis_izin" class="user-field mt-1">
                         @if(\App\Models\FeatureSetting::enabled('sakit', 'user'))
-                            <option value="sakit" @selected(($selectedJenisIzin ?? old('jenis_izin')) === 'sakit')>Sakit</option>
+                            <option value="sakit" @selected($selectedJenisIzin === 'sakit')>Sakit</option>
                         @endif
                         @if(\App\Models\FeatureSetting::enabled('cuti', 'user'))
-                            <option value="cuti" @selected(($selectedJenisIzin ?? old('jenis_izin')) === 'cuti')>Cuti</option>
+                            <option value="cuti" @selected($selectedJenisIzin === 'cuti')>Cuti</option>
                         @endif
-                        <option value="izin" @selected(($selectedJenisIzin ?? old('jenis_izin')) === 'izin')>Izin</option>
-                        <option value="dinas" @selected(($selectedJenisIzin ?? old('jenis_izin')) === 'dinas')>Dinas Luar</option>
+                        <option value="izin" @selected($selectedJenisIzin === 'izin')>Izin</option>
+                        <option value="dinas" @selected($selectedJenisIzin === 'dinas')>Dinas Luar</option>
                     </select>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
@@ -46,7 +46,7 @@
                     <input type="file" name="lampiran" class="user-field mt-1">
                 </div>
                 <div class="grid grid-cols-2 gap-3 pt-1">
-                    <a href="{{ route('leave_requests.index') }}" class="user-btn-secondary">Kembali</a>
+                    <a href="{{ $backUrl ?? route('leave_requests.index') }}" class="user-btn-secondary">Kembali</a>
                     <button class="user-btn-primary">
                         <i class="fa-solid fa-paper-plane"></i>
                         Submit

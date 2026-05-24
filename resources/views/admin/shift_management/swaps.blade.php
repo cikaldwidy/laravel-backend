@@ -70,7 +70,7 @@
                         <td class="px-4 py-3">
                             @if($swap->status === 'pending')
                                 <div class="flex flex-col gap-2">
-                                    <form action="{{ route('admin.shift_management.swaps.approve', $swap) }}" method="POST" onsubmit="return confirm('Approve swap ini?')">
+                                    <form action="{{ route('admin.shift_management.swaps.approve', $swap) }}" method="POST" data-confirm-form data-confirm-title="Approve swap?" data-confirm-message="Jadwal shift akan ditukar sesuai request ini." data-confirm-button="Approve" data-confirm-tone="primary" data-confirm-icon="fa-solid fa-check">
                                         @csrf
                                         <button class="bg-emerald-600 text-white rounded-md px-3 py-1.5 text-xs font-semibold w-full">Approve</button>
                                     </form>

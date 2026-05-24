@@ -52,7 +52,7 @@
                                 <a href="{{ route('admin.biodata.edit', $u) }}" class="text-blue-600 font-semibold">
                                     {{ ($hasProfile || $hasDetail) ? 'Edit' : 'Lengkapi' }}
                                 </a>
-                                <form method="POST" action="{{ route('admin.biodata.destroy', $u) }}" onsubmit="return confirm('Hapus biodata pegawai ini?')">
+                                <form method="POST" action="{{ route('admin.biodata.destroy', $u) }}" data-confirm-form data-confirm-title="Hapus biodata pegawai?" data-confirm-message="Data biodata pegawai ini akan dihapus." data-confirm-button="Hapus">
                                     @csrf
                                     <button class="text-red-600 font-semibold disabled:text-gray-300" @disabled(!$hasProfile && !$hasDetail)>Hapus</button>
                                 </form>

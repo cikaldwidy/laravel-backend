@@ -35,7 +35,7 @@
                                 <a href="{{ route('admin.shifts.edit', $shift) }}" class="px-3 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-semibold">
                                     Edit
                                 </a>
-                                <form method="POST" action="{{ route('admin.shifts.destroy', $shift) }}" onsubmit="return confirm('Hapus shift ini?')">
+                                <form method="POST" action="{{ route('admin.shifts.destroy', $shift) }}" data-confirm-form data-confirm-title="Hapus shift?" data-confirm-message="Shift ini akan dihapus dari master shift." data-confirm-button="Hapus">
                                     @csrf
                                     @method('DELETE')
                                     <button class="px-3 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 text-xs font-semibold">

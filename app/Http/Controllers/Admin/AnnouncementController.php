@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\Department;
 use App\Models\User;
+use App\Services\AnnouncementPushService;
 use Illuminate\Http\Request;
 
 class AnnouncementController extends Controller
@@ -34,7 +35,7 @@ class AnnouncementController extends Controller
         return view('admin.announcements.index', compact('announcements', 'units', 'users'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, AnnouncementPushService $announcementPush)
     {
         $validated = $request->validate([
             'judul' => ['required', 'string', 'max:150'],
@@ -45,6 +46,20 @@ class AnnouncementController extends Controller
             'unit_id' => ['nullable', 'required_if:target_type,unit', 'exists:departments,id'],
             'user_ids' => ['nullable', 'required_if:target_type,users', 'array'],
             'user_ids.*' => ['integer', 'exists:users,id'],
+            'action_url' => ['nullable', 'string', 'max:255', 'regex:/^\/[^\s]*$/'],
+        ], [
+            'unit_id.required_if' => 'Unit kerja/bagian wajib dipilih saat target Per Unit Kerja/Bagian.',
+            'user_ids.required_if' => 'Pilih minimal satu user saat target Khusus User.',
+            'action_url.regex' => 'URL tujuan harus berupa path aplikasi, contoh: /pengumuman.',
+        ], [
+            'judul' => 'judul',
+            'isi' => 'isi pengumuman',
+            'tanggal_mulai' => 'tanggal mulai',
+            'tanggal_berakhir' => 'tanggal berakhir',
+            'target_type' => 'target',
+            'unit_id' => 'unit kerja/bagian',
+            'user_ids' => 'user khusus',
+            'action_url' => 'URL tujuan',
         ]);
 
         $targetType = $validated['target_type'] === 'unit' ? 'users' : $validated['target_type'];
@@ -57,6 +72,7 @@ class AnnouncementController extends Controller
             'target_type' => $targetType,
             'unit_id' => null,
             'is_published' => true,
+            'action_url' => $this->normalizeActionUrl($validated['action_url'] ?? null),
         ]);
 
         if ($validated['target_type'] === 'unit') {
@@ -70,10 +86,12 @@ class AnnouncementController extends Controller
             $announcement->users()->sync($validated['user_ids'] ?? []);
         }
 
+        $announcementPush->send($announcement);
+
         return back()->with('success', 'Pengumuman berhasil dipublikasikan.');
     }
 
-    public function update(Request $request, Announcement $announcement)
+    public function update(Request $request, Announcement $announcement, AnnouncementPushService $announcementPush)
     {
         $validated = $request->validate([
             'judul' => ['required', 'string', 'max:150'],
@@ -85,6 +103,20 @@ class AnnouncementController extends Controller
             'user_ids' => ['nullable', 'required_if:target_type,users', 'array'],
             'user_ids.*' => ['integer', 'exists:users,id'],
             'is_published' => ['nullable', 'boolean'],
+            'action_url' => ['nullable', 'string', 'max:255', 'regex:/^\/[^\s]*$/'],
+        ], [
+            'unit_id.required_if' => 'Unit kerja/bagian wajib dipilih saat target Per Unit Kerja/Bagian.',
+            'user_ids.required_if' => 'Pilih minimal satu user saat target Khusus User.',
+            'action_url.regex' => 'URL tujuan harus berupa path aplikasi, contoh: /pengumuman.',
+        ], [
+            'judul' => 'judul',
+            'isi' => 'isi pengumuman',
+            'tanggal_mulai' => 'tanggal mulai',
+            'tanggal_berakhir' => 'tanggal berakhir',
+            'target_type' => 'target',
+            'unit_id' => 'unit kerja/bagian',
+            'user_ids' => 'user khusus',
+            'action_url' => 'URL tujuan',
         ]);
 
         $targetType = $validated['target_type'] === 'unit' ? 'users' : $validated['target_type'];
@@ -97,6 +129,7 @@ class AnnouncementController extends Controller
             'target_type' => $targetType,
             'unit_id' => null,
             'is_published' => (bool) ($validated['is_published'] ?? false),
+            'action_url' => $this->normalizeActionUrl($validated['action_url'] ?? null),
         ]);
 
         if ($validated['target_type'] === 'unit') {
@@ -110,6 +143,8 @@ class AnnouncementController extends Controller
             $announcement->users()->sync($validated['target_type'] === 'users' ? ($validated['user_ids'] ?? []) : []);
         }
 
+        $announcementPush->send($announcement->refresh());
+
         return back()->with('success', 'Pengumuman berhasil diperbarui.');
     }
 
@@ -118,5 +153,12 @@ class AnnouncementController extends Controller
         $announcement->delete();
 
         return back()->with('success', 'Pengumuman berhasil dihapus.');
+    }
+
+    private function normalizeActionUrl(?string $url): ?string
+    {
+        $url = trim((string) $url);
+
+        return $url === '' ? null : $url;
     }
 }

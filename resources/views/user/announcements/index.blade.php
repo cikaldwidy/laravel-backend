@@ -31,6 +31,12 @@
                         </span>
                     </div>
                     <p class="mt-3 text-sm text-slate-600 whitespace-pre-line leading-relaxed">{{ $announcement->isi }}</p>
+                    @if($announcement->action_url)
+                        <a href="{{ $announcement->action_url }}" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-xs font-bold text-white shadow-sm shadow-blue-700/20">
+                            Buka
+                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </a>
+                    @endif
                 </article>
             @empty
                 <section class="user-card p-6 text-center">

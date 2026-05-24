@@ -110,7 +110,7 @@
                                         {{ $biodataComplete ? 'Edit Biodata' : 'Lengkapi Biodata' }}
                                     </a>
                                     <button type="button" class="text-slate-700 font-semibold" data-toggle-detail="user-detail-{{ $u->id }}">Detail</button>
-                                    <form method="POST" action="{{ route('admin.users.destroy', $u->id) }}" onsubmit="return confirm('Hapus akun ini?')">
+                                    <form method="POST" action="{{ route('admin.users.destroy', $u->id) }}" data-confirm-form data-confirm-title="Hapus akun?" data-confirm-message="Akun user ini akan dihapus dari sistem." data-confirm-button="Hapus">
                                         @csrf
                                         <button class="text-red-600 font-semibold" @disabled($u->id === auth()->id())>Hapus</button>
                                     </form>

@@ -251,7 +251,7 @@
                                         <i class="fa-solid fa-camera"></i>
                                         Capture Ulang
                                     </button>
-                                    <form method="POST" action="{{ route('admin.face_data.destroy', $faceEmbedding) }}" onsubmit="return confirm('Hapus data wajah user ini?')">
+                                    <form method="POST" action="{{ route('admin.face_data.destroy', $faceEmbedding) }}" data-confirm-form data-confirm-title="Hapus data wajah?" data-confirm-message="Data wajah user ini akan dihapus dan perlu didaftarkan ulang." data-confirm-button="Hapus">
                                         @csrf
                                         @method('DELETE')
                                         <button class="inline-flex items-center justify-center gap-2 rounded-md border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100">

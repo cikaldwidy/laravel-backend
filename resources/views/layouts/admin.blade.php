@@ -704,7 +704,7 @@
                                 Settings
                             </a>
                             <div class="border-t border-gray-100">
-                                <form method="POST" action="/logout">
+                                <form method="POST" action="/logout" data-logout-form>
                                     @csrf
                                     <button class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
                                         <i class="fas fa-sign-out-alt w-4"></i>
@@ -727,6 +727,8 @@
         </div>
     </main>
 </div>
+
+@include('partials.logout-confirm-modal')
 
 <script>
    // ─── Mobile menu ────────────────────────────────────────────────────────────
@@ -986,19 +988,7 @@ document.querySelectorAll('[data-auto-filter]').forEach((form) => {
     });
 });
 </script>
-<script>
-if ("serviceWorker" in navigator) {
-    window.addEventListener("load", function () {
-        navigator.serviceWorker.register("/sw.js")
-            .then(function () {
-                console.log("Service Worker registered successfully");
-            })
-            .catch(function (error) {
-                console.log("Service Worker registration failed:", error);
-            });
-    });
-}
-</script>
+@include('partials.pwa-service-worker')
 
 </body>
 </html>

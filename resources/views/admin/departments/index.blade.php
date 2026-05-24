@@ -330,10 +330,16 @@
     }
 
     // ── Bulk delete (placeholder – sesuaikan dengan endpoint Anda) ─────────
-    function bulkDelete() {
+    async function bulkDelete() {
         const ids = [...document.querySelectorAll('.row-check:checked')].map(cb => cb.value);
         if (!ids.length) return;
-        if (!confirm('Hapus ' + ids.length + ' unit kerja/bagian yang dipilih?')) return;
+        const confirmed = await window.presensiConfirm({
+            title: 'Hapus unit kerja/bagian?',
+            message: 'Sebanyak ' + ids.length + ' unit kerja/bagian yang dipilih akan dihapus.',
+            confirmText: 'Hapus',
+            icon: 'fa-solid fa-trash',
+        });
+        if (!confirmed) return;
 
         const form = document.createElement('form');
         form.method = 'POST';

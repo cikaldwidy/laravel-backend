@@ -11,7 +11,7 @@
             <p>Histori</p>
         </a>
         <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-red-600 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg shadow-red-600/20">
-            <i class="fa-solid fa-fingerprint text-xl"></i>
+            @include('user.partials.face-id-icon', ['class' => 'w-7 h-7'])
         </a>
         <a href="{{ route('user.shifts.index') }}" class="{{ $active === 'schedule' ? 'user-nav-link-active' : 'user-nav-link' }}">
             <i class="fa-solid fa-calendar-days text-lg"></i>

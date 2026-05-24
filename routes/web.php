@@ -61,6 +61,7 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::post('/izin', [LeaveRequestController::class, 'store'])->name('leave_requests.store');
     Route::post('/izin/{leaveRequest}/delete', [LeaveRequestController::class, 'destroy'])->name('leave_requests.destroy');
     Route::get('/pengumuman', [AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::get('/pengumuman/feed', [AnnouncementController::class, 'feed'])->name('announcements.feed');
     Route::post('/pengumuman/{announcement}/dismiss', [AnnouncementController::class, 'dismiss'])->name('announcements.dismiss');
     Route::get('/jadwal-shift', [UserShiftScheduleController::class, 'index'])->name('user.shifts.index');
     Route::get('/fitur/{featureKey}', [FeaturePageController::class, 'user'])

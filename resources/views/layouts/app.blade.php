@@ -175,6 +175,7 @@
 </head>
 <body class="bg-gray-100">
         @yield('content')
+        @include('partials.logout-confirm-modal')
         <script>
             document.querySelectorAll('[data-auto-filter]').forEach((form) => {
                 let timer;
@@ -201,18 +202,6 @@
                 });
             });
         </script>
-        <script>
-            if ("serviceWorker" in navigator) {
-                window.addEventListener("load", function () {
-                    navigator.serviceWorker.register("/sw.js")
-                        .then(function () {
-                            console.log("Service Worker registered successfully");
-                        })
-                        .catch(function (error) {
-                            console.log("Service Worker registration failed:", error);
-                        });
-                });
-            }
-        </script>
+        @include('partials.pwa-service-worker')
 </body>
 </html>

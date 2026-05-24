@@ -1,4 +1,4 @@
-const CACHE_NAME = "presensi-pwa-v3";
+const CACHE_NAME = "presensi-pwa-v4";
 
 const CORE_ASSETS = [
     "/",
@@ -134,7 +134,8 @@ self.addEventListener("push", (event) => {
         tag: payload.tag || "presensi-notification",
         renotify: Boolean(payload.renotify),
         data: {
-            url: payload.url || "/dashboard",
+            ...(payload.data || {}),
+            url: payload.url || payload.data?.url || "/dashboard",
         },
     };
 
@@ -152,7 +153,12 @@ self.addEventListener("notificationclick", (event) => {
                 const clientUrl = new URL(client.url);
 
                 if (clientUrl.origin === targetUrl.origin && "focus" in client) {
-                    client.navigate(targetUrl.href);
+                    if ("navigate" in client) {
+                        return client.navigate(targetUrl.href).then((navigatedClient) => {
+                            return (navigatedClient || client).focus();
+                        });
+                    }
+
                     return client.focus();
                 }
             }

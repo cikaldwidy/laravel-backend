@@ -2,12 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ShiftSchedule extends Model
 {
+    public const SHIFT_TYPE_OPTIONS = [
+        'P' => 'Pagi',
+        'S' => 'Sore',
+        'M' => 'Malam',
+        'O' => 'Libur',
+    ];
+
     protected $fillable = [
         'user_id',
         'tanggal',
@@ -34,11 +42,12 @@ class ShiftSchedule extends Model
 
     public function getShiftTypeCodeAttribute(): string
     {
-        if ($this->status === 'libur' || strtoupper((string) $this->shift_code) === 'O') {
+        $code = self::normalizeShiftTypeCode($this->shift_code);
+
+        if ($this->status === 'libur' || $code === 'O') {
             return 'O';
         }
 
-        $code = strtoupper((string) $this->shift_code);
         if (in_array($code, ['P', 'S', 'M'], true)) {
             return $code;
         }
@@ -58,12 +67,7 @@ class ShiftSchedule extends Model
 
     public function getShiftTypeLabelAttribute(): string
     {
-        return [
-            'P' => 'Pagi',
-            'S' => 'Sore',
-            'M' => 'Malam',
-            'O' => 'Libur',
-        ][$this->shift_type_code] ?? 'Shift';
+        return self::SHIFT_TYPE_OPTIONS[$this->shift_type_code] ?? 'Shift';
     }
 
     public function getShiftTypeBadgeClassAttribute(): string
@@ -74,6 +78,68 @@ class ShiftSchedule extends Model
             'M' => 'bg-slate-800 text-white',
             'O' => 'bg-red-100 text-red-700',
         ][$this->shift_type_code] ?? 'bg-slate-100 text-slate-700';
+    }
+
+    public function scopeOfShiftType(Builder $query, ?string $shiftType): Builder
+    {
+        $shiftType = self::normalizeShiftTypeCode($shiftType);
+
+        if (!array_key_exists($shiftType, self::SHIFT_TYPE_OPTIONS)) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $q) use ($shiftType) {
+            if ($shiftType === 'O') {
+                $q->where('status', 'libur')
+                    ->orWhereIn('shift_code', self::shiftCodeAliases('O'));
+
+                return;
+            }
+
+            $q->where(function (Builder $codeQuery) use ($shiftType) {
+                $codeQuery->where('status', 'aktif')
+                    ->whereIn('shift_code', self::shiftCodeAliases($shiftType));
+            })->orWhere(function (Builder $timeQuery) use ($shiftType) {
+                $timeQuery->where('status', 'aktif')
+                    ->where(function (Builder $emptyCode) {
+                        $emptyCode->whereNull('shift_code')->orWhere('shift_code', '');
+                    });
+
+                match ($shiftType) {
+                    'P' => $timeQuery->whereTime('jam_masuk', '>=', '05:00:00')
+                        ->whereTime('jam_masuk', '<', '12:00:00'),
+                    'S' => $timeQuery->whereTime('jam_masuk', '>=', '12:00:00')
+                        ->whereTime('jam_masuk', '<', '18:00:00'),
+                    'M' => $timeQuery->where(function (Builder $time) {
+                        $time->whereTime('jam_masuk', '>=', '18:00:00')
+                            ->orWhereTime('jam_masuk', '<', '05:00:00');
+                    }),
+                    default => null,
+                };
+            });
+        });
+    }
+
+    public static function normalizeShiftTypeCode(?string $value): string
+    {
+        return match (strtolower(trim((string) $value))) {
+            'p', 'pagi' => 'P',
+            's', 'sore' => 'S',
+            'm', 'malam' => 'M',
+            'o', 'off', 'l', 'libur' => 'O',
+            default => strtoupper(trim((string) $value)),
+        };
+    }
+
+    private static function shiftCodeAliases(string $shiftType): array
+    {
+        return match ($shiftType) {
+            'P' => ['P', 'p', 'Pagi', 'pagi'],
+            'S' => ['S', 's', 'Sore', 'sore'],
+            'M' => ['M', 'm', 'Malam', 'malam'],
+            'O' => ['O', 'o', 'Off', 'off', 'L', 'l', 'Libur', 'libur'],
+            default => [$shiftType],
+        };
     }
 
     public function user(): BelongsTo

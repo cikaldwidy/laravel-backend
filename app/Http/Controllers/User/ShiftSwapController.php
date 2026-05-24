@@ -8,6 +8,7 @@ use App\Models\Announcement;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
 use App\Models\User;
+use App\Services\AnnouncementPushService;
 use App\Support\ShiftTime;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -129,7 +130,7 @@ class ShiftSwapController extends Controller
         return response()->json($items);
     }
 
-    public function store(StoreShiftSwapRequest $request)
+    public function store(StoreShiftSwapRequest $request, AnnouncementPushService $announcementPush)
     {
         $data = $request->validated();
 
@@ -188,7 +189,7 @@ class ShiftSwapController extends Controller
             'note' => $data['note'] ?? null,
         ]);
 
-        $this->publishSwapAnnouncement($swap->load(['requester', 'targetUser', 'shift', 'targetShift']));
+        $this->publishSwapAnnouncement($swap->load(['requester', 'targetUser', 'shift', 'targetShift']), $announcementPush);
 
         return redirect()->route('shift-swaps.index')->with('success', 'Request tukar shift berhasil dikirim. Menunggu keputusan admin.');
     }
@@ -225,7 +226,7 @@ class ShiftSwapController extends Controller
         return $firstUnitId !== null && (int) $firstUnitId === (int) $secondUnitId;
     }
 
-    private function publishSwapAnnouncement(ShiftSwap $swap): void
+    private function publishSwapAnnouncement(ShiftSwap $swap, AnnouncementPushService $announcementPush): void
     {
         $requesterShift = $swap->shift
             ? $swap->shift->tanggal->format('d/m/Y') . ' ' . $this->toTime($swap->shift->jam_masuk, 'H:i') . ' - ' . $this->toTime($swap->shift->jam_pulang, 'H:i')
@@ -247,11 +248,14 @@ class ShiftSwapController extends Controller
             'target_type' => 'users',
             'unit_id' => null,
             'is_published' => true,
+            'action_url' => route('shift-swaps.index', [], false),
         ]);
 
         $announcement->users()->sync([
             $swap->requester_id,
             $swap->target_user_id,
         ]);
+
+        $announcementPush->send($announcement, route('shift-swaps.index', [], false));
     }
 }

@@ -105,7 +105,7 @@
                 </div>
 
                 <div class="dashboard-top-actions flex items-center gap-2 shrink-0">
-                    <div class="relative" id="notificationWrap">
+                    <div class="relative" id="notificationWrap" data-feed-url="{{ route('announcements.feed', [], false) }}">
                         <button type="button" id="notificationButton" class="dashboard-top-button relative w-11 h-11 rounded-xl bg-white/70 hover:bg-white text-blue-700 flex items-center justify-center shadow-sm border border-white/60">
                             <i class="fa-solid fa-bell"></i>
                             @if($announcementCount > 0)
@@ -139,6 +139,8 @@
                             <div id="notificationList" class="max-h-[18rem] overflow-y-auto">
                                 @forelse($announcements as $announcement)
                                     <div class="notification-item px-3 py-2.5 border-b border-slate-100 last:border-b-0 transition-transform duration-150"
+                                         data-notification-id="{{ $announcement->id }}"
+                                         data-action-url="{{ $announcement->action_url }}"
                                          data-dismiss-url="{{ route('announcements.dismiss', $announcement, false) }}">
                                         <div class="flex items-start justify-between gap-2">
                                             <p class="text-xs font-bold text-slate-800 leading-snug">{{ $announcement->judul }}</p>
@@ -158,7 +160,7 @@
                         </div>
                     </div>
 
-                    <form method="POST" action="/logout">
+                    <form method="POST" action="/logout" data-logout-form>
                         @csrf
                         <button type="submit" class="dashboard-top-button w-11 h-11 rounded-xl bg-white/70 hover:bg-white text-slate-700 flex items-center justify-center shadow-sm border border-white/60">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -214,9 +216,7 @@
                 @php
                     $menu = [
                         ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir, 'url' => route('history.index')],
-                        ['label' => 'Sakit', 'icon' => 'fa-user-injured', 'badge' => 0, 'url' => route('features.show', 'sakit'), 'feature' => 'sakit'],
-                        ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => $izin, 'url' => route('leave_requests.index')],
-                        ['label' => 'Cuti', 'icon' => 'fa-plane-departure', 'badge' => 0, 'url' => route('features.show', 'cuti'), 'feature' => 'cuti'],
+                        ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => $izin, 'url' => route('leave_requests.create', ['back' => 'dashboard'])],
                         ['label' => 'ID Card', 'icon' => 'fa-id-card', 'badge' => 0, 'url' => route('profile.index')],
                         ['label' => 'Lembur', 'icon' => 'fa-clock', 'badge' => 0, 'url' => route('features.show', 'lembur'), 'feature' => 'lembur'],
                         ['label' => 'Jadwal', 'icon' => 'fa-calendar-days', 'badge' => 0, 'url' => route('user.shifts.index')],
@@ -332,7 +332,7 @@
                     <p>Histori</p>
                 </a>
                 <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-red-600 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg shadow-red-600/20">
-                    <i class="fa-solid fa-fingerprint text-xl"></i>
+                    @include('user.partials.face-id-icon', ['class' => 'w-7 h-7'])
                 </a>
                 <a href="{{ route('user.shifts.index') }}" class="text-gray-500 text-center text-xs">
                     <i class="fa-solid fa-calendar-days text-lg"></i>
@@ -362,6 +362,9 @@ updateClock();
 const notificationWrap = document.getElementById('notificationWrap');
 const notificationButton = document.getElementById('notificationButton');
 const notificationPanel = document.getElementById('notificationPanel');
+const notificationList = document.getElementById('notificationList');
+const notificationCountText = document.getElementById('notificationCountText');
+const notificationFeedUrl = notificationWrap?.dataset.feedUrl || '';
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 const pushEnableButton = document.getElementById('pushEnableButton');
 const pushStatusText = document.getElementById('pushStatusText');
@@ -369,6 +372,8 @@ let vapidPublicKey = pushEnableButton?.dataset.vapidPublicKey || '';
 const pushPublicKeyUrl = pushEnableButton?.dataset.publicKeyUrl || '';
 const pushStoreUrl = pushEnableButton?.dataset.storeUrl || '';
 const pushTestUrl = pushEnableButton?.dataset.testUrl || '';
+let notificationSignature = '';
+let notificationFetchInFlight = false;
 
 if (notificationWrap && notificationButton && notificationPanel) {
     notificationButton.addEventListener('click', (event) => {
@@ -383,10 +388,138 @@ if (notificationWrap && notificationButton && notificationPanel) {
     });
 }
 
-document.querySelectorAll('.notification-item').forEach((item) => {
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function setNotificationBadge(count) {
+    let badge = document.getElementById('notificationBadge');
+
+    if (count <= 0) {
+        badge?.remove();
+        return;
+    }
+
+    if (!badge && notificationButton) {
+        badge = document.createElement('span');
+        badge.id = 'notificationBadge';
+        badge.className = 'absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white';
+        notificationButton.appendChild(badge);
+    }
+
+    if (badge) {
+        badge.textContent = count > 9 ? '9+' : String(count);
+    }
+}
+
+function renderEmptyNotifications() {
+    if (!notificationList) return;
+
+    notificationList.innerHTML = '<div class="px-4 py-6 text-center text-sm text-slate-500">Belum ada notifikasi.</div>';
+}
+
+function notificationItemHtml(announcement) {
+    const targetLabel = announcement.target_label
+        ? `<span class="shrink-0 rounded-full bg-blue-50 text-blue-700 px-2 py-0.5 text-[10px] font-bold">${escapeHtml(announcement.target_label)}</span>`
+        : '';
+
+    return `
+        <div class="notification-item px-3 py-2.5 border-b border-slate-100 last:border-b-0 transition-transform duration-150"
+             data-notification-id="${escapeHtml(announcement.id)}"
+             data-action-url="${escapeHtml(announcement.action_url || '')}"
+             data-dismiss-url="${escapeHtml(announcement.dismiss_url)}">
+            <div class="flex items-start justify-between gap-2">
+                <p class="text-xs font-bold text-slate-800 leading-snug">${escapeHtml(announcement.title)}</p>
+                ${targetLabel}
+            </div>
+            <p class="mt-1 text-[11px] text-slate-500">${escapeHtml(announcement.date_range)}</p>
+            <p class="mt-2 text-[11px] text-slate-600 leading-relaxed line-clamp-2">${escapeHtml(announcement.body)}</p>
+        </div>
+    `;
+}
+
+function syncNotificationHeader(count) {
+    if (notificationCountText) {
+        notificationCountText.textContent = `${count} pemberitahuan aktif`;
+    }
+
+    setNotificationBadge(count);
+}
+
+function renderNotificationFeed(data, force = false) {
+    const announcements = Array.isArray(data.announcements) ? data.announcements : [];
+    const count = Number(data.count || 0);
+    const nextSignature = `${count}:${announcements.map((item) => `${item.id}:${item.updated_at || ''}`).join('|')}`;
+
+    syncNotificationHeader(count);
+
+    if (!force && nextSignature === notificationSignature) {
+        return;
+    }
+
+    notificationSignature = nextSignature;
+
+    if (!notificationList) return;
+
+    if (announcements.length === 0) {
+        renderEmptyNotifications();
+        return;
+    }
+
+    notificationList.innerHTML = announcements.map(notificationItemHtml).join('');
+    bindNotificationItems();
+}
+
+async function fetchNotifications({ force = false } = {}) {
+    if (!notificationFeedUrl || notificationFetchInFlight || document.hidden) return;
+
+    notificationFetchInFlight = true;
+
+    try {
+        const response = await fetch(notificationFeedUrl, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            cache: 'no-store',
+        });
+
+        if (!response.ok) return;
+
+        renderNotificationFeed(await response.json(), force);
+    } catch (error) {
+        // Polling berikutnya akan mencoba lagi.
+    } finally {
+        notificationFetchInFlight = false;
+    }
+}
+
+function bindNotificationItem(item) {
+    if (!item || item.dataset.bound === 'true') return;
+
+    item.dataset.bound = 'true';
+    if (item.dataset.actionUrl) {
+        item.classList.add('cursor-pointer', 'hover:bg-slate-50');
+    }
+
     let startX = 0;
     let currentX = 0;
     let dragging = false;
+    let swiped = false;
+
+    item.addEventListener('click', () => {
+        if (swiped || !item.dataset.actionUrl) {
+            swiped = false;
+            return;
+        }
+
+        window.location.href = item.dataset.actionUrl;
+    });
 
     item.addEventListener('touchstart', (event) => {
         startX = event.touches[0].clientX;
@@ -415,6 +548,7 @@ document.querySelectorAll('.notification-item').forEach((item) => {
             return;
         }
 
+        swiped = true;
         const dismissDirection = diff > 0 ? 120 : -120;
         item.style.transform = `translateX(${dismissDirection}%)`;
         item.style.opacity = '0';
@@ -429,26 +563,34 @@ document.querySelectorAll('.notification-item').forEach((item) => {
         }).then((response) => {
             if (!response.ok) throw new Error('Dismiss failed');
             item.remove();
-            const countText = document.getElementById('notificationCountText');
-            const badge = document.getElementById('notificationBadge');
-            const list = document.getElementById('notificationList');
             const remaining = document.querySelectorAll('.notification-item').length;
-            if (countText) countText.textContent = `${remaining} pemberitahuan aktif`;
-            if (badge) {
-                if (remaining > 0) {
-                    badge.textContent = remaining > 9 ? '9+' : String(remaining);
-                } else {
-                    badge.remove();
-                }
+            syncNotificationHeader(remaining);
+            if (notificationList && remaining === 0) {
+                renderEmptyNotifications();
             }
-            if (list && remaining === 0) {
-                list.innerHTML = '<div class="px-4 py-6 text-center text-sm text-slate-500">Belum ada notifikasi.</div>';
-            }
+            fetchNotifications({ force: true });
         }).catch(() => {
             item.style.transform = '';
             item.style.opacity = '';
         });
     });
+}
+
+function bindNotificationItems() {
+    document.querySelectorAll('.notification-item').forEach(bindNotificationItem);
+}
+
+bindNotificationItems();
+fetchNotifications({ force: true });
+
+setInterval(() => {
+    fetchNotifications();
+}, 12000);
+
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        fetchNotifications({ force: true });
+    }
 });
 
 function setPushStatus(message, tone = 'muted') {

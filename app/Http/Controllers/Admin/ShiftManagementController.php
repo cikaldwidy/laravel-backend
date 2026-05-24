@@ -10,6 +10,7 @@ use App\Models\Shift;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
 use App\Models\User;
+use App\Services\AnnouncementPushService;
 use App\Support\ShiftTime;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
@@ -338,7 +339,7 @@ class ShiftManagementController extends Controller
         return view('admin.shift_management.swaps', compact('swaps', 'status'));
     }
 
-    public function approveSwap(ShiftSwap $shiftSwap)
+    public function approveSwap(ShiftSwap $shiftSwap, AnnouncementPushService $announcementPush)
     {
         try {
             DB::transaction(function () use ($shiftSwap) {
@@ -405,12 +406,12 @@ class ShiftManagementController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        $this->publishSwapDecisionAnnouncement($shiftSwap->fresh(['requester', 'targetUser', 'shift', 'targetShift']), 'approved');
+        $this->publishSwapDecisionAnnouncement($shiftSwap->fresh(['requester', 'targetUser', 'shift', 'targetShift']), 'approved', null, $announcementPush);
 
         return back()->with('success', 'Swap shift berhasil di-approve dan kepemilikan shift sudah ditukar.');
     }
 
-    public function rejectSwap(Request $request, ShiftSwap $shiftSwap)
+    public function rejectSwap(Request $request, ShiftSwap $shiftSwap, AnnouncementPushService $announcementPush)
     {
         $validated = $request->validate([
             'note' => ['nullable', 'string', 'max:1000'],
@@ -427,7 +428,7 @@ class ShiftManagementController extends Controller
             'approved_at' => now(),
         ]);
 
-        $this->publishSwapDecisionAnnouncement($shiftSwap->fresh(['requester', 'targetUser', 'shift', 'targetShift']), 'rejected', $validated['note'] ?? null);
+        $this->publishSwapDecisionAnnouncement($shiftSwap->fresh(['requester', 'targetUser', 'shift', 'targetShift']), 'rejected', $validated['note'] ?? null, $announcementPush);
 
         return back()->with('success', 'Request swap berhasil ditolak.');
     }
@@ -657,7 +658,7 @@ class ShiftManagementController extends Controller
         ];
     }
 
-    private function publishSwapDecisionAnnouncement(?ShiftSwap $swap, string $decision, ?string $adminNote = null): void
+    private function publishSwapDecisionAnnouncement(?ShiftSwap $swap, string $decision, ?string $adminNote = null, ?AnnouncementPushService $announcementPush = null): void
     {
         if (!$swap) {
             return;
@@ -687,12 +688,15 @@ class ShiftManagementController extends Controller
             'target_type' => 'users',
             'unit_id' => null,
             'is_published' => true,
+            'action_url' => route('shift-swaps.index', [], false),
         ]);
 
         $announcement->users()->sync([
             $swap->requester_id,
             $swap->target_user_id,
         ]);
+
+        $announcementPush?->send($announcement, route('shift-swaps.index', [], false));
     }
 
     private function usersAreInSameUnit(?User $firstUser, ?User $secondUser): bool

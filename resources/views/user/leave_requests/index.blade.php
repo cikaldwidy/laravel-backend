@@ -91,7 +91,7 @@
                         @endif
 
                         @if($requestItem->status === 'pending')
-                            <form method="POST" action="{{ route('leave_requests.destroy', $requestItem) }}" onsubmit="return confirm('Hapus pengajuan ini?')" class="mt-3">
+                            <form method="POST" action="{{ route('leave_requests.destroy', $requestItem) }}" data-confirm-form data-confirm-title="Hapus pengajuan?" data-confirm-message="Pengajuan izin ini akan dihapus." data-confirm-button="Hapus" class="mt-3">
                                 @csrf
                                 <button class="w-full rounded-xl bg-red-50 text-red-700 px-4 py-2 text-sm font-bold">
                                     <i class="fa-solid fa-trash-can mr-1"></i>

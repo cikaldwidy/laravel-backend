@@ -50,7 +50,7 @@
                             <td class="p-3">
                                 <div class="flex flex-wrap gap-3">
                                     <a href="{{ route('admin.settings.admin_accounts.edit', $admin) }}" class="text-blue-600 font-semibold">Edit</a>
-                                    <form method="POST" action="{{ route('admin.settings.admin_accounts.destroy', $admin) }}" onsubmit="return confirm('Hapus akun admin ini?')">
+                                    <form method="POST" action="{{ route('admin.settings.admin_accounts.destroy', $admin) }}" data-confirm-form data-confirm-title="Hapus akun admin?" data-confirm-message="Akun admin ini akan dihapus dari sistem." data-confirm-button="Hapus">
                                         @csrf
                                         @method('DELETE')
                                         <button class="text-red-600 font-semibold" @disabled($admin->id === auth()->id())>Hapus</button>

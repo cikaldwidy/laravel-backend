@@ -50,7 +50,7 @@
                             </form>
                         </td>
                         <td class="p-3 w-28">
-                            <form method="POST" action="{{ route('admin.units.destroy', $unit) }}" onsubmit="return confirm('Hapus unit ini?')">
+                            <form method="POST" action="{{ route('admin.units.destroy', $unit) }}" data-confirm-form data-confirm-title="Hapus unit?" data-confirm-message="Unit ini akan dihapus dari master data." data-confirm-button="Hapus">
                                 @csrf
                                 @method('DELETE')
                                 <button class="text-red-600 font-semibold">Hapus</button>

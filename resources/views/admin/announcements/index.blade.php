@@ -3,6 +3,10 @@
 @section('title', 'Pengumuman')
 
 @section('content')
+@php
+    $createTargetType = old('target_type', 'all');
+    $createUserIds = collect(old('user_ids', []))->map(fn ($id) => (string) $id);
+@endphp
 <div class="space-y-6">
     <div class="bg-white p-6 rounded-xl shadow">
         <h2 class="text-lg font-bold text-gray-800 mb-4">Buat Pengumuman</h2>
@@ -10,45 +14,74 @@
             @csrf
             <label class="md:col-span-2">
                 <span class="block text-xs font-semibold text-gray-600 mb-1">Judul</span>
-                <input name="judul" placeholder="Judul" class="border rounded px-3 py-2 w-full">
+                <input name="judul" value="{{ old('judul') }}" placeholder="Judul" class="border rounded px-3 py-2 w-full">
+                @error('judul')
+                    <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
+                @enderror
             </label>
             <label class="md:col-span-2">
                 <span class="block text-xs font-semibold text-gray-600 mb-1">Isi Pengumuman</span>
-                <textarea name="isi" rows="4" placeholder="Isi pengumuman" class="border rounded px-3 py-2 w-full"></textarea>
+                <textarea name="isi" rows="4" placeholder="Isi pengumuman" class="border rounded px-3 py-2 w-full">{{ old('isi') }}</textarea>
+                @error('isi')
+                    <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
+                @enderror
             </label>
             <label>
                 <span class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Mulai</span>
-                <input type="date" name="tanggal_mulai" class="border rounded px-3 py-2 w-full">
+                <input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" class="border rounded px-3 py-2 w-full">
+                @error('tanggal_mulai')
+                    <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
+                @enderror
             </label>
             <label>
                 <span class="block text-xs font-semibold text-gray-600 mb-1">Tanggal Berakhir</span>
-                <input type="date" name="tanggal_berakhir" class="border rounded px-3 py-2 w-full">
+                <input type="date" name="tanggal_berakhir" value="{{ old('tanggal_berakhir') }}" class="border rounded px-3 py-2 w-full">
+                @error('tanggal_berakhir')
+                    <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
+                @enderror
             </label>
             <label>
                 <span class="block text-xs font-semibold text-gray-600 mb-1">Target</span>
                 <select name="target_type" class="border rounded px-3 py-2 w-full js-target-type">
-                    <option value="all">Semua User</option>
-                    <option value="unit">Per Unit Kerja/Bagian</option>
-                    <option value="users">Khusus User</option>
+                    <option value="all" @selected($createTargetType === 'all')>Semua User</option>
+                    <option value="unit" @selected($createTargetType === 'unit')>Per Unit Kerja/Bagian</option>
+                    <option value="users" @selected($createTargetType === 'users')>Khusus User</option>
                 </select>
+                @error('target_type')
+                    <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
+                @enderror
             </label>
             <label class="js-unit-field hidden">
                 <span class="block text-xs font-semibold text-gray-600 mb-1">Unit Kerja/Bagian</span>
                 <select name="unit_id" class="border rounded px-3 py-2 w-full">
                     <option value="">Pilih Unit Kerja/Bagian</option>
                     @foreach($units as $unit)
-                        <option value="{{ $unit->id }}">{{ $unit->nama_departemen }}</option>
+                        <option value="{{ $unit->id }}" @selected((string) old('unit_id') === (string) $unit->id)>{{ $unit->nama_departemen }}</option>
                     @endforeach
                 </select>
+                @error('unit_id')
+                    <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
+                @enderror
             </label>
             <label class="md:col-span-2 js-users-field hidden">
                 <span class="block text-xs font-semibold text-gray-600 mb-1">User Khusus</span>
                 <select name="user_ids[]" multiple class="border rounded px-3 py-2 w-full min-h-32">
                     @foreach($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                        <option value="{{ $user->id }}" @selected($createUserIds->contains((string) $user->id))>{{ $user->name }}</option>
                     @endforeach
                 </select>
                 <span class="block mt-1 text-xs text-gray-500">Tahan Ctrl untuk memilih lebih dari satu user.</span>
+                @error('user_ids')
+                    <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
+                @enderror
+            </label>
+            <label class="md:col-span-2">
+                <span class="block text-xs font-semibold text-gray-600 mb-1">URL Saat Notifikasi Diklik</span>
+                <input name="action_url" value="{{ old('action_url', '/pengumuman') }}" placeholder="/pengumuman" class="border rounded px-3 py-2 w-full">
+                <span class="block mt-1 text-xs text-gray-500">Gunakan path aplikasi, misalnya /pengumuman, /jadwal-shift, atau /tukar-shift.</span>
+                @error('action_url')
+                    <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
+                @enderror
             </label>
             <button class="bg-blue-600 text-white px-4 py-2 rounded font-semibold md:col-span-2">Publish</button>
         </form>
@@ -80,6 +113,7 @@
                             <option value="{{ $user->id }}" @selected($announcement->users->contains('id', $user->id))>{{ $user->name }}</option>
                         @endforeach
                     </select>
+                    <input name="action_url" value="{{ old('action_url', $announcement->action_url ?? '/pengumuman') }}" placeholder="/pengumuman" class="border rounded px-3 py-2 md:col-span-2">
                     <label class="flex items-center gap-2 md:col-span-2">
                         <input type="checkbox" name="is_published" value="1" @checked($announcement->is_published)>
                         <span>Published</span>
@@ -88,7 +122,7 @@
                         <button class="bg-amber-500 text-white px-4 py-2 rounded font-semibold">Update</button>
                     </div>
                 </form>
-                <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" class="mt-3" onsubmit="return confirm('Hapus pengumuman ini?')">
+                <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" class="mt-3" data-confirm-form data-confirm-title="Hapus pengumuman?" data-confirm-message="Pengumuman ini akan dihapus dari daftar aktif." data-confirm-button="Hapus">
                     @csrf
                     @method('DELETE')
                     <button class="text-red-600 font-semibold">Hapus</button>
@@ -110,6 +144,13 @@ document.querySelectorAll('.announcement-form').forEach((form) => {
         const value = targetEl?.value;
         unitField?.classList.toggle('hidden', value !== 'unit');
         usersField?.classList.toggle('hidden', value !== 'users');
+
+        unitField?.querySelectorAll('select, input, textarea').forEach((field) => {
+            field.disabled = value !== 'unit';
+        });
+        usersField?.querySelectorAll('select, input, textarea').forEach((field) => {
+            field.disabled = value !== 'users';
+        });
     }
 
     targetEl?.addEventListener('change', syncTargetFields);

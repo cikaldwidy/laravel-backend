@@ -39,13 +39,16 @@ class LeaveRequestController extends Controller
 
     public function create(Request $request)
     {
-        $selectedJenisIzin = $request->query('jenis_izin');
+        $selectedJenisIzin = old('jenis_izin', $request->query('jenis_izin', 'izin'));
+        $backUrl = $request->query('back') === 'dashboard'
+            ? route('dashboard')
+            : route('leave_requests.index');
 
         if (in_array($selectedJenisIzin, ['sakit', 'cuti'], true)) {
             abort_unless(FeatureSetting::enabled($selectedJenisIzin, 'user'), 403, 'Anda tidak memiliki akses ke fitur ini.');
         }
 
-        return view('user.leave_requests.create', compact('selectedJenisIzin'));
+        return view('user.leave_requests.create', compact('selectedJenisIzin', 'backUrl'));
     }
 
     public function store(Request $request)

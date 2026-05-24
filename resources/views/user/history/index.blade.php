@@ -8,6 +8,7 @@
         @include('user.partials.header', [
             'title' => 'Riwayat Presensi',
             'subtitle' => 'Filter dan pantau catatan presensi pribadi.',
+            'back' => route('dashboard'),
         ])
 
         <main class="px-4 pt-4 space-y-4">

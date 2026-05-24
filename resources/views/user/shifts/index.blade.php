@@ -8,6 +8,7 @@
         @include('user.partials.header', [
             'title' => 'Jadwal Shift',
             'subtitle' => 'Jadwal pribadi bulan ini.',
+            'back' => route('dashboard'),
         ])
 
         <main class="px-4 pt-4 space-y-4">
@@ -25,20 +26,19 @@
                         <label class="text-[11px] font-semibold text-slate-500">Jenis Shift</label>
                         <select name="shift_type" class="user-field mt-1">
                             <option value="">Semua Shift</option>
-                            <option value="P" @selected(request('shift_type') === 'P')>Pagi</option>
-                            <option value="S" @selected(request('shift_type') === 'S')>Sore</option>
-                            <option value="M" @selected(request('shift_type') === 'M')>Malam</option>
-                            <option value="O" @selected(request('shift_type') === 'O')>Libur</option>
+                            @foreach($shiftTypeOptions as $code => $label)
+                                <option value="{{ $code }}" @selected($selectedShiftType === $code)>{{ $label }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
-                @if(request()->has('shift_type'))
+                @if($selectedShiftType !== '')
                     <a href="{{ route('user.shifts.index', ['month' => $month]) }}" class="user-btn-secondary w-full">Reset</a>
                 @endif
             </form>
 
             <section class="grid grid-cols-2 gap-3">
-                @foreach($calendar as $day)
+                @forelse($calendar as $day)
                     @php
                         $item = $day['items']->first();
                         $isActive = $item && $item->status === 'aktif';
@@ -61,7 +61,15 @@
                             <p class="mt-2 text-xs text-slate-400">Belum ada jadwal</p>
                         @endif
                     </div>
-                @endforeach
+                @empty
+                    <div class="user-card col-span-2 p-6 text-center">
+                        <div class="w-12 h-12 mx-auto rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
+                            <i class="fa-solid fa-calendar-days"></i>
+                        </div>
+                        <p class="mt-3 text-sm font-semibold text-slate-700">Tidak ada jadwal {{ strtolower($shiftTypeOptions[$selectedShiftType] ?? 'shift') }}.</p>
+                        <p class="text-xs text-slate-500">Coba pilih jenis shift lain atau reset filter.</p>
+                    </div>
+                @endforelse
             </section>
 
             <section class="user-card p-4">
