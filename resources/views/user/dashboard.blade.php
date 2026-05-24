@@ -127,6 +127,7 @@
                                         id="pushEnableButton"
                                         class="shrink-0 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm"
                                         data-vapid-public-key="{{ config('services.webpush.public_key') }}"
+                                        data-public-key-url="{{ route('push-subscriptions.public-key', [], false) }}"
                                         data-store-url="{{ route('push-subscriptions.store', [], false) }}"
                                         data-test-url="{{ route('push-subscriptions.test', [], false) }}"
                                     >
@@ -364,7 +365,8 @@ const notificationPanel = document.getElementById('notificationPanel');
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
 const pushEnableButton = document.getElementById('pushEnableButton');
 const pushStatusText = document.getElementById('pushStatusText');
-const vapidPublicKey = pushEnableButton?.dataset.vapidPublicKey || '';
+let vapidPublicKey = pushEnableButton?.dataset.vapidPublicKey || '';
+const pushPublicKeyUrl = pushEnableButton?.dataset.publicKeyUrl || '';
 const pushStoreUrl = pushEnableButton?.dataset.storeUrl || '';
 const pushTestUrl = pushEnableButton?.dataset.testUrl || '';
 
@@ -490,13 +492,28 @@ function isStandalonePwa() {
         || window.navigator.standalone === true;
 }
 
+async function resolveVapidPublicKey() {
+    if (vapidPublicKey) return vapidPublicKey;
+    if (!pushPublicKeyUrl) return '';
+
+    const response = await fetch(pushPublicKeyUrl, {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        cache: 'no-store',
+    });
+
+    if (!response.ok) return '';
+
+    const data = await response.json();
+    vapidPublicKey = data.publicKey || '';
+
+    return vapidPublicKey;
+}
+
 async function enablePushNotifications() {
     if (!pushEnableButton) return;
-
-    if (!vapidPublicKey) {
-        setPushStatus('VAPID public key belum dikonfigurasi.', 'danger');
-        return;
-    }
 
     if (isIosDevice() && !isStandalonePwa()) {
         setPushStatus('Di iPhone, buka aplikasi dari ikon Home Screen dulu, bukan dari Safari.', 'danger');
@@ -510,13 +527,26 @@ async function enablePushNotifications() {
 
     pushEnableButton.disabled = true;
     pushEnableButton.textContent = 'Memproses...';
-    setPushStatus('Menyiapkan izin notifikasi...', 'info');
+    setPushStatus('Memeriksa konfigurasi notifikasi...', 'info');
 
     try {
+        const publicKey = await resolveVapidPublicKey();
+
+        if (!publicKey) {
+            setPushStatus('VAPID public key belum terbaca. Coba refresh aplikasi, lalu aktifkan lagi.', 'danger');
+            pushEnableButton.disabled = false;
+            pushEnableButton.textContent = 'Aktifkan';
+            return;
+        }
+
+        setPushStatus('Menyiapkan izin notifikasi...', 'info');
+
         const permission = await Notification.requestPermission();
 
         if (permission !== 'granted') {
             setPushStatus('Izin notifikasi belum diberikan.', 'danger');
+            pushEnableButton.disabled = false;
+            pushEnableButton.textContent = 'Aktifkan';
             return;
         }
 
@@ -526,7 +556,7 @@ async function enablePushNotifications() {
         if (!subscription) {
             subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
-                applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+                applicationServerKey: urlBase64ToUint8Array(publicKey),
             });
         }
 
