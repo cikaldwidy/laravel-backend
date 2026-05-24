@@ -28,6 +28,21 @@
         max-height: min(23rem, calc(100vh - 8.5rem));
     }
 
+    .dashboard-header {
+        padding-top: calc(1.25rem + env(safe-area-inset-top));
+    }
+
+    .dashboard-top-actions {
+        position: relative;
+        z-index: 20;
+    }
+
+    .dashboard-top-button {
+        min-width: 2.75rem;
+        min-height: 2.75rem;
+        touch-action: manipulation;
+    }
+
     @media (max-width: 360px) {
         .dashboard-menu-grid {
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -82,16 +97,16 @@
 
 <div class="user-page">
     <div class="user-phone">
-        <header class="px-4 pt-4">
-            <div class="flex items-start justify-between">
-                <div>
+        <header class="dashboard-header px-4">
+            <div class="flex items-center justify-between gap-3">
+                <div class="min-w-0">
                     <p class="text-sm font-semibold text-slate-700 leading-tight">{{ auth()->user()->name }}</p>
                     <p class="text-xs text-slate-500 leading-tight">Akun User</p>
                 </div>
 
-                <div class="flex items-center gap-2 shrink-0">
+                <div class="dashboard-top-actions flex items-center gap-2 shrink-0">
                     <div class="relative" id="notificationWrap">
-                        <button type="button" id="notificationButton" class="relative w-9 h-9 rounded-xl bg-white/70 hover:bg-white text-blue-700 flex items-center justify-center shadow-sm border border-white/60">
+                        <button type="button" id="notificationButton" class="dashboard-top-button relative w-11 h-11 rounded-xl bg-white/70 hover:bg-white text-blue-700 flex items-center justify-center shadow-sm border border-white/60">
                             <i class="fa-solid fa-bell"></i>
                             @if($announcementCount > 0)
                                 <span id="notificationBadge" class="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
@@ -107,7 +122,14 @@
                                         <p class="text-sm font-bold text-slate-800">Notifikasi</p>
                                         <p id="notificationCountText" class="text-[11px] text-slate-500">{{ $announcementCount }} pemberitahuan aktif</p>
                                     </div>
-                                    <button type="button" id="pushEnableButton" class="shrink-0 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm">
+                                    <button
+                                        type="button"
+                                        id="pushEnableButton"
+                                        class="shrink-0 rounded-full bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm"
+                                        data-vapid-public-key="{{ config('services.webpush.public_key') }}"
+                                        data-store-url="{{ route('push-subscriptions.store', [], false) }}"
+                                        data-test-url="{{ route('push-subscriptions.test', [], false) }}"
+                                    >
                                         Aktifkan
                                     </button>
                                 </div>
@@ -137,14 +159,14 @@
 
                     <form method="POST" action="/logout">
                         @csrf
-                        <button type="submit" class="w-9 h-9 rounded-xl bg-white/70 hover:bg-white text-slate-700 flex items-center justify-center shadow-sm border border-white/60">
+                        <button type="submit" class="dashboard-top-button w-11 h-11 rounded-xl bg-white/70 hover:bg-white text-slate-700 flex items-center justify-center shadow-sm border border-white/60">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i>
                         </button>
                     </form>
                 </div>
             </div>
 
-            <div class="mt-3 flex flex-col items-center">
+            <div class="mt-5 flex flex-col items-center">
                 <div id="bigClock" class="text-4xl font-extrabold tracking-tight text-blue-800 leading-none">--:--:--</div>
                 <div class="mt-1 text-xs text-slate-500">{{ now()->translatedFormat('l, d F Y') }}</div>
             </div>
@@ -340,11 +362,11 @@ const notificationWrap = document.getElementById('notificationWrap');
 const notificationButton = document.getElementById('notificationButton');
 const notificationPanel = document.getElementById('notificationPanel');
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
-const vapidPublicKey = @json(config('services.webpush.public_key'));
-const pushStoreUrl = @json(route('push-subscriptions.store', [], false));
-const pushTestUrl = @json(route('push-subscriptions.test', [], false));
 const pushEnableButton = document.getElementById('pushEnableButton');
 const pushStatusText = document.getElementById('pushStatusText');
+const vapidPublicKey = pushEnableButton?.dataset.vapidPublicKey || '';
+const pushStoreUrl = pushEnableButton?.dataset.storeUrl || '';
+const pushTestUrl = pushEnableButton?.dataset.testUrl || '';
 
 if (notificationWrap && notificationButton && notificationPanel) {
     notificationButton.addEventListener('click', (event) => {
