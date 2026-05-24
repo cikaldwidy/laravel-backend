@@ -52,8 +52,8 @@
                 @enderror
             </label>
             <label class="js-unit-field hidden">
-                <span class="block text-xs font-semibold text-gray-600 mb-1">Unit Kerja/Bagian</span>
-                <select name="unit_id" class="border rounded px-3 py-2 w-full">
+                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">Unit Kerja/Bagian</span>
+                <select name="unit_id" class="w-full rounded-md border border-gray-200 px-3.5 py-2.5 text-sm text-gray-800 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Pilih Unit Kerja/Bagian</option>
                     @foreach($units as $unit)
                         <option value="{{ $unit->id }}" @selected((string) old('unit_id') === (string) $unit->id)>{{ $unit->nama_departemen }}</option>
@@ -63,9 +63,9 @@
                     <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
                 @enderror
             </label>
-            <label class="md:col-span-2 js-users-field hidden">
-                <span class="block text-xs font-semibold text-gray-600 mb-1">User Khusus</span>
-                <select name="user_ids[]" multiple class="border rounded px-3 py-2 w-full min-h-32">
+            <label class="js-users-field hidden md:col-span-2">
+                <span class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">User Khusus</span>
+                <select name="user_ids[]" multiple class="min-h-32 w-full rounded-md border border-gray-200 px-3.5 py-2.5 text-sm text-gray-800 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500">
                     @foreach($users as $user)
                         <option value="{{ $user->id }}" @selected($createUserIds->contains((string) $user->id))>{{ $user->name }}</option>
                     @endforeach
@@ -83,7 +83,12 @@
                     <span class="block mt-1 text-xs text-red-600">{{ $message }}</span>
                 @enderror
             </label>
-            <button class="bg-blue-600 text-white px-4 py-2 rounded font-semibold md:col-span-2">Publish</button>
+            <div class="flex justify-end border-t border-gray-100 pt-4 md:col-span-2">
+                <button class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                    <i class="fas fa-paper-plane text-xs"></i>
+                    Publish
+                </button>
+            </div>
         </form>
     </div>
 
@@ -128,13 +133,43 @@
                     <button class="text-red-600 font-semibold">Hapus</button>
                 </form>
             </div>
-        @empty
-            <div class="bg-white p-6 rounded-xl shadow text-gray-500">Belum ada pengumuman.</div>
-        @endforelse
+        @endif
     </div>
 </div>
 
+<style>
+    .animate-modal {
+        animation: modalIn .2s ease;
+    }
+    @keyframes modalIn {
+        from { opacity: 0; transform: scale(.96) translateY(8px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+</style>
+
 <script>
+function openModal(id) {
+    const el = document.getElementById(id);
+    el.classList.remove('hidden');
+    el.classList.add('flex');
+}
+
+function closeModal(id) {
+    const el = document.getElementById(id);
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+}
+
+document.getElementById('modal-hapus').addEventListener('click', function (event) {
+    if (event.target === this) closeModal('modal-hapus');
+});
+
+function openHapus(nama, actionUrl) {
+    document.getElementById('hapus-nama').textContent = nama;
+    document.getElementById('form-hapus').action = actionUrl;
+    openModal('modal-hapus');
+}
+
 document.querySelectorAll('.announcement-form').forEach((form) => {
     const targetEl = form.querySelector('.js-target-type');
     const unitField = form.querySelector('.js-unit-field');

@@ -3,116 +3,181 @@
 @section('title', 'Login Admin')
 
 @section('content')
-<div class="min-h-screen bg-gray-100 flex items-center justify-center px-4 py-10">
-    <div class="w-full max-w-5xl bg-white rounded-lg shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
-        <div class="bg-gray-900 text-white p-8 lg:p-10 flex flex-col justify-between min-h-[420px]">
-            <div>
-                <div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-blue-600 mb-6">
-                    <i class="fa-solid fa-shield-halved text-xl"></i>
-                </div>
+<style>
+    .admin-login-page {
+        background: #ffffff;
+    }
 
-                <h1 class="text-3xl font-bold leading-tight">
-                    Admin Presensi
-                </h1>
-                <p class="text-gray-300 mt-3 text-sm leading-6 max-w-md">
-                    Masuk untuk memantau data presensi, mengelola user, dan mengatur jam kerja pegawai.
-                </p>
-            </div>
+    .admin-login-shell {
+        box-shadow: 0 28px 70px rgba(15, 23, 42, 0.22);
+    }
 
-            <div class="grid grid-cols-3 gap-3 mt-8">
-                <div class="bg-white/10 border border-white/10 rounded-lg p-4">
-                    <p class="text-2xl font-bold">01</p>
-                    <p class="text-xs text-gray-300 mt-1">Dashboard</p>
-                </div>
-                <div class="bg-white/10 border border-white/10 rounded-lg p-4">
-                    <p class="text-2xl font-bold">02</p>
-                    <p class="text-xs text-gray-300 mt-1">Presensi</p>
-                </div>
-                <div class="bg-white/10 border border-white/10 rounded-lg p-4">
-                    <p class="text-2xl font-bold">03</p>
-                    <p class="text-xs text-gray-300 mt-1">Jam Kerja</p>
-                </div>
-            </div>
-        </div>
+    .admin-login-input:focus ~ .admin-login-icon,
+    .admin-login-input:not(:placeholder-shown) ~ .admin-login-icon {
+        color: #2563eb;
+    }
 
-        <div class="p-8 lg:p-10 flex items-center">
-            <div class="w-full">
-                <div class="mb-8">
-                    <p class="text-sm font-semibold text-blue-600">PORTAL ADMIN</p>
-                    <h2 class="text-2xl font-bold text-gray-900 mt-2">Login Admin</h2>
-                    <p class="text-sm text-gray-500 mt-2">
-                        Gunakan akun dengan role admin untuk melanjutkan.
-                    </p>
-                </div>
+    .admin-float-label {
+        left: 1.55rem;
+        top: 50%;
+        max-width: calc(100% - 5.5rem);
+        color: #64748b;
+        line-height: 1;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-50%);
+        transition: 160ms ease;
+    }
 
-                @if($errors->any())
-                    <div class="mb-5 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                        {{ $errors->first() }}
+    .admin-login-input::placeholder {
+        color: #64748b;
+        opacity: 1;
+        transition: 120ms ease;
+    }
+
+    .admin-login-input:focus::placeholder,
+    .admin-login-input:not(:placeholder-shown)::placeholder {
+        opacity: 0;
+    }
+
+    .admin-login-input:focus ~ .admin-float-label,
+    .admin-login-input:not(:placeholder-shown) ~ .admin-float-label {
+        top: -0.05rem;
+        color: #2563eb;
+        opacity: 1;
+        transform: translateY(-50%);
+    }
+
+    .admin-hero-panel {
+        background-image:
+            linear-gradient(90deg, rgba(30, 64, 175, 0.70), rgba(14, 116, 144, 0.50)),
+            url("{{ asset('img/login-admin.png') }}");
+        background-size: cover;
+        background-position: center;
+    }
+</style>
+
+<div class="admin-login-page min-h-[100dvh] flex items-center justify-center px-4 py-8 sm:px-6 lg:px-10">
+    <div class="admin-login-shell w-full overflow-hidden rounded-xl bg-white grid grid-cols-1 lg:grid-cols-[0.92fr_1.18fr]">
+        <section class="flex min-h-[560px] items-center justify-center px-6 py-10 sm:px-10 lg:px-16">
+            <div class="w-full max-w-md">
+                <div class="mb-9 flex justify-center">
+                    <div class="relative h-20 w-20">
+                        <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-700 to-cyan-400 opacity-20 blur-xl"></div>
+                        <img src="{{ asset('img/logo.jpeg') }}" alt="Logo SPH" class="relative h-20 w-20 rounded-2xl border border-gray-100 object-contain shadow-sm">
                     </div>
-                @endif
+                </div>
 
                 <form method="POST" action="/admin/login" class="space-y-5">
                     @csrf
 
                     <div>
-                        <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">
-                            Email
-                        </label>
                         <div class="relative">
-                            <i class="fa-solid fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input
                                 id="email"
                                 type="email"
                                 name="email"
                                 value="{{ old('email') }}"
-                                placeholder="admin@email.com"
-                                class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Email"
+                                class="admin-login-input h-12 w-full rounded-full border border-gray-300 px-6 pr-12 text-sm text-gray-700 outline-none transition focus:border-2 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10"
                                 required
                                 autofocus
                             >
+                            <label for="email" class="admin-float-label absolute z-10 bg-white px-2 text-xs font-semibold">
+                                Email
+                            </label>
+                            <i class="admin-login-icon fa-solid fa-envelope absolute right-6 top-1/2 -translate-y-1/2 text-gray-500 transition"></i>
                         </div>
                         @error('email')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            <div class="mt-3 px-2 text-xs text-red-700">
+                                {{ $message }}
+                            </div>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
-                            Password
-                        </label>
                         <div class="relative">
-                            <i class="fa-solid fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input
                                 id="password"
                                 type="password"
                                 name="password"
-                                placeholder="Masukkan password"
-                                class="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Kata Sandi"
+                                class="admin-login-input h-12 w-full rounded-full border border-gray-300 px-6 pr-12 text-sm text-gray-700 outline-none transition focus:border-2 focus:border-blue-500 focus:ring-4 focus:ring-blue-600/10"
                                 required
                             >
+                            <label for="password" class="admin-float-label absolute z-10 bg-white px-2 text-xs font-semibold">
+                                Kata Sandi
+                            </label>
+                            <button
+                                type="button"
+                                id="togglePassword"
+                                class="admin-login-icon absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 transition hover:text-blue-700"
+                                aria-label="Tampilkan kata sandi"
+                                aria-pressed="false"
+                            >
+                                <i id="togglePasswordIcon" class="fa-solid fa-eye-slash"></i>
+                            </button>
                         </div>
                         @error('password')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            <div class="mt-3 px-2 text-xs text-red-700">
+                                {{ $message }}
+                            </div>
                         @enderror
+                    </div>
+
+                    <div class="flex items-center justify-end">
+                        <a href="{{ route('login') }}" class="hover:underline text-sm font-medium text-gray-500 transition hover:text-blue-700">
+                            Login User
+                        </a>
                     </div>
 
                     <button
                         type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition shadow-sm">
-                        Login Admin
+                        class="h-14 w-full rounded-full bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 text-sm font-bold tracking-wide text-white shadow-lg shadow-blue-700/25 transition hover:brightness-105 focus:outline-none focus:ring-4 focus:ring-blue-600/20">
+                        MASUK
                     </button>
+
                 </form>
 
-                <div class="mt-6 flex items-center justify-between text-sm">
-                    <a href="{{ route('landing') }}" class="text-gray-500 hover:text-gray-700">
-                        Kembali
-                    </a>
-                    <a href="{{ route('login') }}" class="text-blue-600 font-semibold hover:underline">
-                        Login User
+                <div class="mt-8 text-center">
+                    <a href="{{ route('landing') }}" class="text-sm text-gray-500 transition hover:text-blue-700 hover:underline">
+                        Kembali ke halaman utama
                     </a>
                 </div>
             </div>
-        </div>
+        </section>
+
+        <section class="admin-hero-panel relative hidden min-h-[560px] items-center justify-center overflow-hidden px-10 text-center text-white lg:flex">
+            <div class="absolute inset-0 bg-gray-950/5"></div>
+            <div class="relative max-w-md">
+                <p class="text-sm font-semibold uppercase tracking-[0.18em]">Selamat Datang di</p>
+                <h1 class="mt-5 text-5xl font-black tracking-wide">PRESENSI RS</h1>
+                <p class="mt-2 text-sm font-semibold uppercase tracking-[0.3em] text-white/85">
+                    Sistem Biometrik Kehadiran
+                </p>
+                <p class="mt-7 text-sm leading-6 text-white/90">
+                    Portal admin untuk memantau presensi, mengelola akun pegawai, dan mengatur jadwal kerja rumah sakit.
+                </p>
+            </div>
+        </section>
     </div>
 </div>
+
+<script>
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('togglePassword');
+    const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+    if (passwordInput && togglePassword && togglePasswordIcon) {
+        togglePassword.addEventListener('click', () => {
+            const shouldShow = passwordInput.type === 'password';
+
+            passwordInput.type = shouldShow ? 'text' : 'password';
+            togglePassword.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+            togglePassword.setAttribute('aria-label', shouldShow ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi');
+            togglePasswordIcon.classList.toggle('fa-eye', shouldShow);
+            togglePasswordIcon.classList.toggle('fa-eye-slash', !shouldShow);
+        });
+    }
+</script>
 @endsection

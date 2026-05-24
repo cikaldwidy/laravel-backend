@@ -3,7 +3,7 @@
 @section('title', 'Data Wajah')
 
 @section('content')
-<div class="space-y-5">
+<div class="space-y-6">
     <div id="alertBox" class="hidden"></div>
     <div
         id="faceDataConfig"
@@ -14,83 +14,125 @@
         data-csrf-token="{{ csrf_token() }}"
     ></div>
 
-    <section class="bg-white border border-white/70 rounded-lg shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-100 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-                <div class="flex items-center gap-3">
-                    <span class="w-10 h-10 rounded-md bg-slate-900 text-white flex items-center justify-center">
-                        <i class="fa-solid fa-face-smile"></i>
-                    </span>
-                    <div>
-                        <h2 id="formTitle" class="text-lg font-bold text-slate-900">Capture Data Wajah</h2>
-                        <p id="formSubtitle" class="text-sm text-slate-500 mt-0.5">Pilih pegawai, verifikasi kedipan, lalu simpan template wajah.</p>
-                    </div>
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <div class="flex items-center gap-3">
+                <span class="flex h-12 w-12 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-sky-500 text-white shadow-lg shadow-blue-500/20">
+                    <i class="fa-solid fa-face-smile text-lg"></i>
+                </span>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">Data Wajah</h1>
+                    <p class="mt-1 text-sm text-gray-500">Kelola template wajah pegawai untuk presensi biometrik.</p>
                 </div>
             </div>
-            <button id="resetMode" type="button" class="hidden inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+        </div>
+
+        <form method="GET" action="{{ route('admin.face_data.index') }}" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select
+                id="unitFilter"
+                name="unit_id"
+                class="h-11 rounded-md border border-blue-100 bg-white px-3 text-sm font-medium text-gray-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                onchange="this.form.submit()"
+            >
+                <option value="">Semua unit kerja/bagian</option>
+                @foreach($units as $unit)
+                    <option value="{{ $unit->id }}" @selected((string) $selectedUnitId === (string) $unit->id)>
+                        {{ $unit->nama_departemen }}
+                    </option>
+                @endforeach
+            </select>
+            @if($selectedUnitId)
+                <a href="{{ route('admin.face_data.index') }}" class="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                    Reset
+                </a>
+            @endif
+        </form>
+    </div>
+
+    <div class="grid gap-4 md:grid-cols-3">
+        <div class="rounded-md border border-blue-100 bg-white p-5 shadow-sm">
+            <p class="text-sm font-semibold text-gray-500">Sudah Terdaftar</p>
+            <p class="mt-2 text-3xl font-bold text-gray-900">{{ $usersWithFaceData->count() }}</p>
+        </div>
+        <div class="rounded-md border border-blue-100 bg-white p-5 shadow-sm">
+            <p class="text-sm font-semibold text-gray-500">Belum Terdaftar</p>
+            <p class="mt-2 text-3xl font-bold text-gray-900">{{ $usersWithoutFaceData->count() }}</p>
+        </div>
+        <div class="rounded-md border border-blue-100 bg-white p-5 shadow-sm">
+            <p class="text-sm font-semibold text-gray-500">Template Wajah</p>
+            <p class="mt-2 text-3xl font-bold text-gray-900">{{ $faceEmbeddings->count() }}</p>
+        </div>
+    </div>
+
+    <section class="overflow-hidden rounded-md border border-blue-100 bg-white shadow-sm">
+        <div class="flex flex-col gap-3 border-b border-blue-50 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+                <h2 id="formTitle" class="text-lg font-bold text-gray-900">Capture Data Wajah</h2>
+                <p id="formSubtitle" class="mt-1 text-sm text-gray-500">Pilih pegawai, aktifkan kamera, verifikasi kedipan, lalu simpan.</p>
+            </div>
+            <button id="resetMode" type="button" class="hidden inline-flex h-10 items-center justify-center gap-2 rounded-md border border-blue-100 bg-white px-4 text-sm font-semibold text-blue-600 transition hover:bg-blue-50">
                 <i class="fa-solid fa-plus"></i>
                 Mode Tambah
             </button>
         </div>
 
-        <div class="grid xl:grid-cols-[minmax(0,1.35fr)_22rem]">
-            <div class="p-5 border-b xl:border-b-0 xl:border-r border-slate-100">
-                <div class="relative overflow-hidden rounded-md bg-slate-950 aspect-[4/3] shadow-inner">
+        <div class="grid gap-0 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div class="p-6">
+                <div class="relative aspect-[4/3] overflow-hidden rounded-md bg-gray-950">
                     <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
-                    <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_46%,rgba(15,23,42,.44)_100%)]"></div>
-                    <div class="absolute inset-[7%] rounded-md border-2 border-white/85 pointer-events-none"></div>
-                    <div class="absolute inset-x-[18%] top-[18%] h-[46%] rounded-full border border-emerald-300/80 pointer-events-none"></div>
+                    <div class="pointer-events-none absolute inset-0 bg-black/10"></div>
                     <div id="previewWrap" class="hidden absolute inset-0 bg-black">
                         <img id="previewImage" src="" alt="Preview wajah" class="w-full h-full object-cover">
                     </div>
-                    <div class="absolute left-4 top-4 inline-flex items-center gap-2 rounded-md bg-white/95 px-3 py-2 text-xs font-bold text-slate-800 shadow">
-                        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                    <div class="absolute left-4 top-4 inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm">
+                        <span class="h-2 w-2 rounded-full bg-blue-500"></span>
                         <span id="cameraBadge">Kamera belum aktif</span>
                     </div>
-                    <div class="absolute bottom-4 left-4 right-4 rounded-md bg-slate-950/78 px-4 py-3 text-white shadow">
+                    <div class="absolute bottom-4 left-4 right-4 rounded-md bg-gray-950/80 px-4 py-3 text-white shadow-sm">
                         <p id="status" class="text-sm">Siapkan kamera untuk capture wajah.</p>
                     </div>
                 </div>
 
-                <div class="mt-4 grid sm:grid-cols-2 gap-3">
-                    <div class="rounded-md border border-slate-200 bg-slate-50 px-4 py-3">
-                        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                            <i class="fa-solid fa-user-check text-slate-400"></i>
+                <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div class="rounded-md border border-blue-100 bg-blue-50/50 px-4 py-3">
+                        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <i class="fa-solid fa-user-check text-blue-500"></i>
                             Wajah
                         </div>
-                        <p id="faceStatus" class="mt-1 text-sm font-bold text-slate-900">Menunggu kamera</p>
+                        <p id="faceStatus" class="mt-1 text-sm font-semibold text-gray-900">Menunggu kamera</p>
                     </div>
-                    <div class="rounded-md border border-slate-200 bg-slate-50 px-4 py-3">
-                        <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-slate-500">
-                            <i class="fa-solid fa-eye text-slate-400"></i>
+                    <div class="rounded-md border border-blue-100 bg-blue-50/50 px-4 py-3">
+                        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                            <i class="fa-solid fa-eye text-blue-500"></i>
                             Kedipan
                         </div>
-                        <p id="blinkStatus" class="mt-1 text-sm font-bold text-slate-900">Belum terverifikasi</p>
+                        <p id="blinkStatus" class="mt-1 text-sm font-semibold text-gray-900">Belum terverifikasi</p>
                     </div>
                 </div>
 
-                <div class="mt-4 grid sm:grid-cols-3 gap-3">
-                    <button id="startCamera" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800">
+                <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                    <button id="startCamera" type="button" class="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-blue-600 to-sky-500 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:from-blue-700 hover:to-sky-600">
                         <i class="fa-solid fa-video"></i>
                         Aktifkan
                     </button>
-                    <button id="captureFace" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none" disabled>
+                    <button id="captureFace" type="button" class="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none" disabled>
                         <i class="fa-solid fa-camera-retro"></i>
                         Capture
                     </button>
-                    <button id="saveFace" type="button" class="inline-flex items-center justify-center gap-2 rounded-md bg-amber-500 px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none" disabled>
+                    <button id="saveFace" type="button" class="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-sky-600 px-4 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:bg-sky-700 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none" disabled>
                         <i class="fa-solid fa-floppy-disk"></i>
                         Simpan
                     </button>
                 </div>
             </div>
 
-            <aside class="p-5 bg-slate-50/80">
+            <aside class="border-t border-blue-50 bg-blue-50/30 p-6 xl:border-l xl:border-t-0">
                 <input type="hidden" id="mode" value="store">
                 <input type="hidden" id="updateUrl" value="">
 
-                <label for="userId" class="block text-sm font-bold text-slate-800 mb-2">Pegawai</label>
-                <select id="userId" class="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                <label for="userId" class="mb-2 block text-sm font-semibold text-gray-700">Pegawai</label>
+                <select id="userId" class="h-11 w-full rounded-md border border-blue-100 bg-white px-3 text-sm font-medium text-gray-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100">
                     <option value="">Pilih pegawai</option>
                     @foreach($usersWithoutFaceData as $user)
                         <option value="{{ $user->id }}">
@@ -100,55 +142,60 @@
                 </select>
 
                 @if($selectedUnit)
-                    <div class="mt-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
+                    <div class="mt-3 rounded-md border border-blue-100 bg-white px-3 py-2 text-sm text-gray-500">
                         Unit Kerja/Bagian aktif:
-                        <span class="font-bold text-slate-900">{{ $selectedUnit->nama_departemen }}</span>
+                        <span class="font-semibold text-gray-900">{{ $selectedUnit->nama_departemen }}</span>
                     </div>
                 @endif
 
-                <div id="selectedUserCard" class="hidden mt-4 rounded-md border border-blue-100 bg-blue-50 p-4">
+                <div id="selectedUserCard" class="hidden mt-4 rounded-md border border-blue-100 bg-white p-4">
                     <div class="flex items-start gap-3">
-                        <span class="w-9 h-9 rounded-md bg-blue-600 text-white flex items-center justify-center">
+                        <span class="flex h-9 w-9 items-center justify-center rounded-md bg-blue-600 text-white">
                             <i class="fa-solid fa-rotate"></i>
                         </span>
                         <div class="min-w-0">
-                            <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Update data wajah</p>
-                            <p id="selectedUserName" class="mt-1 truncate text-sm font-bold text-slate-900"></p>
-                            <p id="selectedUserEmail" class="truncate text-xs text-slate-500"></p>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">Update data wajah</p>
+                            <p id="selectedUserName" class="mt-1 truncate text-sm font-semibold text-gray-900"></p>
+                            <p id="selectedUserEmail" class="truncate text-xs text-gray-500"></p>
                         </div>
                     </div>
                 </div>
 
-                <div class="mt-5 grid grid-cols-2 gap-3">
-                    <div class="rounded-md border border-slate-200 bg-white p-4">
-                        <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Belum Terdaftar</p>
-                        <p class="mt-2 text-3xl font-black text-slate-900">{{ $usersWithoutFaceData->count() }}</p>
-                    </div>
-                    <div class="rounded-md border border-slate-200 bg-white p-4">
-                        <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Sudah Ada</p>
-                        <p class="mt-2 text-3xl font-black text-slate-900">{{ $faceEmbeddings->count() }}</p>
-                    </div>
-                </div>
-
-                <div class="mt-5 rounded-md border border-slate-200 bg-white p-4">
-                    <p class="text-sm font-bold text-slate-900">Cakupan Data</p>
-                    <div class="mt-3 space-y-3">
-                        <div class="flex items-center justify-between gap-3 text-sm">
-                            <span class="text-slate-500">Pegawai terdaftar</span>
-                            <span class="font-bold text-slate-900">{{ $usersWithFaceData->count() }}</span>
+                <div class="mt-5 rounded-md border border-blue-100 bg-white p-4">
+                    <p class="font-semibold text-gray-900">Langkah Capture</p>
+                    <div class="mt-4 space-y-0">
+                        <div class="relative flex gap-3 pb-5">
+                            <span class="absolute left-[15px] top-8 h-full w-px bg-blue-100"></span>
+                            <span class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-500">
+                                <i class="fa-solid fa-user-check text-xs"></i>
+                            </span>
+                            <div>
+                                <p class="text-xs font-semibold text-blue-500">Step 1</p>
+                                <p class="text-sm font-semibold text-gray-700">Pilih pegawai</p>
+                                <p class="mt-1 text-sm leading-relaxed text-gray-500">Pilih pegawai yang belum punya data wajah.</p>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-between gap-3 text-sm">
-                            <span class="text-slate-500">Menunggu capture</span>
-                            <span class="font-bold text-slate-900">{{ $usersWithoutFaceData->count() }}</span>
+                        <div class="relative flex gap-3 pb-5">
+                            <span class="absolute left-[15px] top-8 h-full w-px bg-blue-100"></span>
+                            <span class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-500">
+                                <i class="fa-solid fa-video text-xs"></i>
+                            </span>
+                            <div>
+                                <p class="text-xs font-semibold text-blue-500">Step 2</p>
+                                <p class="text-sm font-semibold text-gray-700">Aktifkan kamera</p>
+                                <p class="mt-1 text-sm leading-relaxed text-gray-500">Posisikan wajah dengan jelas di area kamera.</p>
+                            </div>
                         </div>
-                        <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-                            @php
-                                $totalFaceUsers = $usersWithFaceData->count() + $usersWithoutFaceData->count();
-                                $faceCoverage = $totalFaceUsers > 0 ? round(($usersWithFaceData->count() / $totalFaceUsers) * 100) : 0;
-                            @endphp
-                            <div id="faceCoverageBar" class="h-full rounded-full bg-slate-900" data-face-coverage="{{ $faceCoverage }}"></div>
+                        <div class="relative flex gap-3">
+                            <span class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-blue-50 text-blue-500">
+                                <i class="fa-solid fa-camera text-xs"></i>
+                            </span>
+                            <div>
+                                <p class="text-xs font-semibold text-blue-500">Step 3</p>
+                                <p class="text-sm font-semibold text-gray-700">Capture dan simpan</p>
+                                <p class="mt-1 text-sm leading-relaxed text-gray-500">Kedipkan mata, capture wajah, lalu simpan data.</p>
+                            </div>
                         </div>
-                        <p class="text-xs font-bold text-slate-500">{{ $faceCoverage }}% lengkap</p>
                     </div>
                 </div>
             </aside>
@@ -157,91 +204,60 @@
         <canvas id="captureCanvas" class="hidden"></canvas>
     </section>
 
-    <section class="bg-white border border-white/70 rounded-lg shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-slate-100 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <section class="overflow-hidden rounded-md border border-blue-100 bg-white shadow-sm">
+        <div class="flex flex-col gap-2 border-b border-blue-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h2 class="text-lg font-bold text-slate-900">Daftar Data Wajah</h2>
-                <p class="text-sm text-slate-500">
+                <h2 class="text-lg font-bold text-gray-900">Daftar Data Wajah</h2>
+                <p class="text-sm text-gray-500">
                     {{ $faceEmbeddings->count() }} template wajah tersimpan{{ $selectedUnit ? ' di ' . $selectedUnit->nama_departemen : '' }}
                 </p>
             </div>
-            <span class="inline-flex w-fit items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700">
+            <span class="inline-flex w-fit items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600">
                 <i class="fa-solid fa-database"></i>
                 {{ $faceEmbeddings->count() }} data
             </span>
         </div>
 
-        <form method="GET" action="{{ route('admin.face_data.index') }}" class="px-5 py-4 border-b border-slate-100 bg-slate-50/70">
-            <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
-                <div>
-                    <label for="unitFilter" class="block text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">Filter Unit Kerja/Bagian</label>
-                    <select
-                        id="unitFilter"
-                        name="unit_id"
-                        class="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
-                        onchange="this.form.submit()"
-                    >
-                        <option value="">Semua unit kerja/bagian</option>
-                        @foreach($units as $unit)
-                            <option value="{{ $unit->id }}" @selected((string) $selectedUnitId === (string) $unit->id)>
-                                {{ $unit->nama_departemen }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <button class="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2.5 text-sm font-bold text-white hover:bg-slate-800">
-                    <i class="fa-solid fa-filter"></i>
-                    Tampilkan
-                </button>
-                @if($selectedUnitId)
-                    <a href="{{ route('admin.face_data.index') }}" class="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50">
-                        <i class="fa-solid fa-xmark"></i>
-                        Reset
-                    </a>
-                @endif
-            </div>
-        </form>
-
         <div class="overflow-x-auto">
             <table class="w-full min-w-[760px] text-sm">
-                <thead class="bg-slate-50 text-xs font-bold uppercase tracking-wide text-slate-500">
+                <thead class="bg-blue-50/70 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     <tr>
-                        <th class="px-5 py-3 text-left">Foto</th>
-                        <th class="px-5 py-3 text-left">Pegawai</th>
-                        <th class="px-5 py-3 text-left">Unit Kerja/Bagian</th>
-                        <th class="px-5 py-3 text-left">Update</th>
-                        <th class="px-5 py-3 text-right">Aksi</th>
+                        <th class="px-6 py-3 text-left">Foto</th>
+                        <th class="px-6 py-3 text-left">Pegawai</th>
+                        <th class="px-6 py-3 text-left">Unit Kerja/Bagian</th>
+                        <th class="px-6 py-3 text-left">Update</th>
+                        <th class="px-6 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100">
+                <tbody class="divide-y divide-blue-50">
                     @forelse($faceEmbeddings as $faceEmbedding)
-                        <tr class="hover:bg-slate-50/80">
-                            <td class="px-5 py-4">
-                                <div class="w-16 h-16 rounded-md overflow-hidden bg-slate-100 border border-slate-200">
+                        <tr class="hover:bg-blue-50/40">
+                            <td class="px-6 py-4">
+                                <div class="h-14 w-14 overflow-hidden rounded-md border border-blue-100 bg-blue-50">
                                     @if($faceEmbedding->photo_path)
                                         <img src="{{ asset('storage/' . $faceEmbedding->photo_path) }}" alt="Foto wajah {{ $faceEmbedding->user?->name }}" class="w-full h-full object-cover">
                                     @else
-                                        <div class="w-full h-full flex items-center justify-center text-slate-400">
+                                        <div class="flex h-full w-full items-center justify-center text-blue-300">
                                             <i class="fa-regular fa-image text-xl"></i>
                                         </div>
                                     @endif
                                 </div>
                             </td>
-                            <td class="px-5 py-4">
-                                <div class="font-bold text-slate-900">{{ $faceEmbedding->user?->name ?? '-' }}</div>
-                                <div class="text-xs text-slate-500">{{ $faceEmbedding->user?->email ?? '-' }}</div>
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-900">{{ $faceEmbedding->user?->name ?? '-' }}</div>
+                                <div class="text-xs text-gray-500">{{ $faceEmbedding->user?->email ?? '-' }}</div>
                             </td>
-                            <td class="px-5 py-4">
-                                <span class="inline-flex rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                            <td class="px-6 py-4">
+                                <span class="inline-flex rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
                                     {{ $faceEmbedding->user?->employeeDetail?->department?->nama_departemen ?? $faceEmbedding->user?->employeeDetail?->departemen ?? '-' }}
                                 </span>
                             </td>
-                            <td class="px-5 py-4 whitespace-nowrap text-slate-600">{{ $faceEmbedding->updated_at?->format('d M Y H:i') }}</td>
-                            <td class="px-5 py-4">
+                            <td class="whitespace-nowrap px-6 py-4 text-gray-500">{{ $faceEmbedding->updated_at?->format('d M Y H:i') }}</td>
+                            <td class="px-6 py-4">
                                 <div class="flex justify-end gap-2">
                                     <button
                                         type="button"
-                                        class="inline-flex items-center justify-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100"
+                                        class="inline-flex items-center justify-center gap-2 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-100"
                                         data-edit-face
                                         data-user-id="{{ $faceEmbedding->user_id }}"
                                         data-user-name="{{ $faceEmbedding->user?->name }}"
@@ -254,7 +270,7 @@
                                     <form method="POST" action="{{ route('admin.face_data.destroy', $faceEmbedding) }}" data-confirm-form data-confirm-title="Hapus data wajah?" data-confirm-message="Data wajah user ini akan dihapus dan perlu didaftarkan ulang." data-confirm-button="Hapus">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="inline-flex items-center justify-center gap-2 rounded-md border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100">
+                                        <button class="inline-flex items-center justify-center gap-2 rounded-md border border-red-100 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100">
                                             <i class="fa-solid fa-trash"></i>
                                             Hapus
                                         </button>
@@ -264,12 +280,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-12 text-center">
-                                <div class="mx-auto w-12 h-12 rounded-md bg-slate-100 text-slate-400 flex items-center justify-center">
+                            <td colspan="5" class="px-6 py-12 text-center">
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-blue-50 text-blue-400">
                                     <i class="fa-regular fa-face-smile text-xl"></i>
                                 </div>
-                                <p class="mt-3 font-bold text-slate-800">Belum ada data wajah</p>
-                                <p class="text-sm text-slate-500">Data akan muncul setelah template wajah pegawai disimpan.</p>
+                                <p class="mt-3 font-semibold text-gray-800">Belum ada data wajah</p>
+                                <p class="text-sm text-gray-500">Data akan muncul setelah template wajah pegawai disimpan.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -368,7 +384,7 @@ function resetBlinkVerification() {
 function setBlinkVerified(value) {
     blinkVerified = value;
     blinkStatus.textContent = value ? 'Terverifikasi' : 'Belum terverifikasi';
-    blinkStatus.className = value ? 'mt-1 text-sm font-bold text-emerald-700' : 'mt-1 text-sm font-bold text-slate-900';
+    blinkStatus.className = value ? 'mt-1 text-sm font-semibold text-blue-600' : 'mt-1 text-sm font-semibold text-gray-900';
 }
 
 function distanceBetween(pointA, pointB) {
@@ -708,7 +724,7 @@ function resetMode() {
     selectedUserCard.classList.add('hidden');
     resetModeButton.classList.add('hidden');
     formTitle.textContent = 'Capture Data Wajah';
-    formSubtitle.textContent = 'Pilih user, aktifkan kamera, lalu ambil foto wajah.';
+    formSubtitle.textContent = 'Pilih pegawai, aktifkan kamera, verifikasi kedipan, lalu simpan.';
     clearCapture();
     resetBlinkVerification();
 }

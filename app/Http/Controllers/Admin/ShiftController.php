@@ -12,7 +12,7 @@ class ShiftController extends Controller
     {
         $shifts = Shift::query()
             ->orderBy('nama_shift')
-            ->get();
+            ->paginate(10);
 
         return view('admin.shifts.index', compact('shifts'));
     }
@@ -68,4 +68,3 @@ class ShiftController extends Controller
         return redirect()->route('admin.shifts.index')->with('success', 'Shift berhasil dihapus.');
     }
 }
-

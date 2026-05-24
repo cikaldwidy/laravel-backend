@@ -67,7 +67,8 @@ class UserController extends Controller
                     : $query->whereDoesntHave('faceEmbedding');
             })
             ->latest()
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         $units = User::query()
             ->with(['employeeDetail.department'])
@@ -79,6 +80,16 @@ class UserController extends Controller
             ->values();
 
         return view('admin.users.index', compact('users', 'units'));
+    }
+
+    public function show($id)
+    {
+        $user = User::query()
+            ->with(['employeeDetail.department', 'employeeDetail.position', 'userProfile', 'faceEmbedding'])
+            ->where('role', 'user')
+            ->findOrFail($id);
+
+        return view('admin.users.show', compact('user'));
     }
 
     // ================= CREATE =================
@@ -216,5 +227,28 @@ class UserController extends Controller
         $user->delete();
 
         return back()->with('success', 'User berhasil dihapus');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer', 'exists:users,id'],
+        ]);
+
+        $ids = collect($validated['ids'])
+            ->reject(fn ($id) => (int) $id === (int) auth()->id())
+            ->values();
+
+        $deleted = User::query()
+            ->where('role', 'user')
+            ->whereIn('id', $ids)
+            ->delete();
+
+        if ($deleted === 0) {
+            return back()->with('error', 'Tidak ada akun pegawai yang bisa dihapus.');
+        }
+
+        return back()->with('success', $deleted . ' akun pegawai berhasil dihapus.');
     }
 }

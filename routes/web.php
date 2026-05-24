@@ -103,6 +103,8 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::post('/users/bulk-delete', [UserController::class, 'bulkDelete'])->name('users.bulk-delete');
+        Route::get('/users/{id}', [UserController::class, 'show'])->name('users.show');
         Route::get('/users/{id}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::post('/users/{id}/update', [UserController::class, 'update'])->name('users.update');
         Route::post('/users/{id}/delete', [UserController::class, 'destroy'])->name('users.destroy');
@@ -118,6 +120,7 @@ Route::middleware(['auth', 'role:admin'])
         Route::delete('/departments/{department}', [DepartmentController::class, 'destroy'])->name('departments.destroy');
         Route::get('/positions', [PositionController::class, 'index'])->name('positions.index');
         Route::post('/positions', [PositionController::class, 'store'])->name('positions.store');
+        Route::delete('/positions/bulk-delete', [PositionController::class, 'bulkDelete'])->name('positions.bulk-delete');
         Route::put('/positions/{position}', [PositionController::class, 'update'])->name('positions.update');
         Route::delete('/positions/{position}', [PositionController::class, 'destroy'])->name('positions.destroy');
 
