@@ -1126,6 +1126,7 @@ document.querySelectorAll('[data-auto-filter]').forEach((form) => {
 
             const response = await fetch(storeUrl, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrfToken,
@@ -1136,7 +1137,16 @@ document.querySelectorAll('[data-auto-filter]').forEach((form) => {
             });
 
             if (!response.ok) {
-                throw new Error('Gagal menyimpan subscription admin.');
+                let message = `Gagal menyimpan subscription admin. (${response.status})`;
+
+                try {
+                    const data = await response.json();
+                    message = data.message || Object.values(data.errors || {})?.flat()?.[0] || message;
+                } catch (error) {
+                    // Response hosting kadang berupa HTML error page.
+                }
+
+                throw new Error(message);
             }
 
             setPushStatus('Notifikasi admin aktif.', 'success');
@@ -1144,6 +1154,7 @@ document.querySelectorAll('[data-auto-filter]').forEach((form) => {
 
             fetch(testUrl, {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
                     'X-Requested-With': 'XMLHttpRequest',

@@ -309,10 +309,10 @@
                             <span id="cameraStatusText">Kamera mati</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full md:min-w-[360px]">
-                        <button id="startCamera" class="w-full rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold tracking-[.5px] text-white transition hover:bg-blue-700 hover:shadow-lg">
+                        <button type="button" id="startCamera" class="w-full rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold tracking-[.5px] text-white transition hover:bg-blue-700 hover:shadow-lg">
                             <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA
                         </button>
-                        <button id="resetSamples" class="w-full rounded-md border border-red-200 bg-white px-4 py-2 text-xs font-semibold tracking-[.5px] text-red-500 transition hover:bg-red-50">
+                        <button type="button" id="resetSamples" class="w-full rounded-md border border-red-200 bg-white px-4 py-2 text-xs font-semibold tracking-[.5px] text-red-500 transition hover:bg-red-50">
                             RESET
                         </button>
                         </div>
@@ -397,8 +397,8 @@ const descriptors = [];
 const sampleQualities = [];
 const modelBaseUrl = '/face-api/models';
 const detectorOptions = new faceapi.TinyFaceDetectorOptions({
-    inputSize: 224,
-    scoreThreshold: 0.5,
+    inputSize: 160,
+    scoreThreshold: 0.4,
 });
 const MIN_BRIGHTNESS = 38;
 const MAX_BRIGHTNESS = 210;
@@ -409,6 +409,9 @@ const BLINK_DROP_RATIO = 0.9;
 const TURN_THRESHOLD = 0.035;
 const BLINK_CAPTURE_WINDOW_MS = 2200;
 const BLINK_COOLDOWN_MS = 900;
+const CAMERA_RESPONSE_TIMEOUT_MS = 7000;
+const CAMERA_PLAY_TIMEOUT_MS = 5000;
+const CAMERA_TIMEOUT_MESSAGE = 'Kamera tidak merespons di PWA. Tutup aplikasi dari app switcher, buka lagi dari Home Screen, lalu tekan Aktifkan Kamera.';
 const ENROLLMENT_STEPS = [
     'Langkah 1: Kedipkan mata.',
     'Langkah 2: Hadapkan wajah ke kanan.',
@@ -431,6 +434,10 @@ let lastEar = null;
 let maxOpenEar = 0;
 let blinkCloseFrames = 0;
 let blinkCooldownUntil = 0;
+let lastNoFaceFeedbackAt = 0;
+let lastVideoWaitingFeedbackAt = 0;
+let detectionErrorCount = 0;
+let cameraStartToken = 0;
 
 function setScanAnimationActive(isActive) {
     if (!scanTrack) return;
@@ -700,7 +707,153 @@ function stopCameraStream() {
         stream.getTracks().forEach((track) => track.stop());
         stream = null;
     }
+    if (video) {
+        video.pause();
+        video.srcObject = null;
+    }
     setScanAnimationActive(false);
+}
+
+function cameraErrorMessage(error) {
+    if (/tidak merespons di PWA|belum bisa diputar|belum siap/i.test(error?.message || '')) {
+        return error.message;
+    }
+
+    if (error?.name === 'NotAllowedError' || error?.name === 'SecurityError') {
+        return 'Izin kamera ditolak. Buka pengaturan browser, izinkan kamera untuk situs ini, lalu coba lagi.';
+    }
+
+    if (error?.name === 'NotFoundError' || error?.name === 'DevicesNotFoundError') {
+        return 'Kamera depan tidak ditemukan di perangkat ini.';
+    }
+
+    if (error?.name === 'NotReadableError' || error?.name === 'TrackStartError') {
+        return 'Kamera sedang dipakai aplikasi lain. Tutup aplikasi kamera/meeting lain, lalu coba lagi.';
+    }
+
+    if (error?.name === 'AbortError' || /aborted/i.test(error?.message || '')) {
+        return 'Kamera batal dinyalakan oleh browser. Tutup tab/aplikasi lain yang memakai kamera, lalu tekan Aktifkan Kamera lagi.';
+    }
+
+    if (error?.name === 'OverconstrainedError') {
+        return 'Pengaturan kamera tidak cocok dengan perangkat. Coba aktifkan kamera lagi.';
+    }
+
+    return error?.message || 'Kamera atau model wajah gagal diinisialisasi.';
+}
+
+function waitForVideoReady(timeoutMs = 5000) {
+    if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+        return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+        const timeout = window.setTimeout(() => {
+            cleanup();
+            reject(new Error('Gambar kamera belum siap. Coba tekan Aktifkan Kamera lagi.'));
+        }, timeoutMs);
+
+        const check = () => {
+            if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+                cleanup();
+                resolve();
+            }
+        };
+
+        const cleanup = () => {
+            window.clearTimeout(timeout);
+            video.removeEventListener('loadedmetadata', check);
+            video.removeEventListener('canplay', check);
+            video.removeEventListener('playing', check);
+        };
+
+        video.addEventListener('loadedmetadata', check);
+        video.addEventListener('canplay', check);
+        video.addEventListener('playing', check);
+        check();
+    });
+}
+
+function withTimeout(promise, timeoutMs, message) {
+    return new Promise((resolve, reject) => {
+        let settled = false;
+        const timeout = window.setTimeout(() => {
+            settled = true;
+            const error = new Error(message);
+            error.name = 'TimeoutError';
+            reject(error);
+        }, timeoutMs);
+
+        promise
+            .then((value) => {
+                if (settled) {
+                    if (value?.getTracks) {
+                        value.getTracks().forEach((track) => track.stop());
+                    }
+                    return;
+                }
+
+                settled = true;
+                window.clearTimeout(timeout);
+                resolve(value);
+            })
+            .catch((error) => {
+                if (settled) return;
+
+                settled = true;
+                window.clearTimeout(timeout);
+                reject(error);
+            });
+    });
+}
+
+async function openCameraStream() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Browser tidak mendukung akses kamera. Gunakan Safari/Chrome terbaru lewat HTTPS.');
+    }
+
+    const constraints = [
+        {
+            video: {
+                facingMode: { ideal: 'user' },
+                width: { ideal: 480 },
+                height: { ideal: 360 },
+            },
+            audio: false,
+        },
+        {
+            video: {
+                facingMode: { ideal: 'user' },
+                width: { ideal: 320 },
+                height: { ideal: 240 },
+            },
+            audio: false,
+        },
+        {
+            video: true,
+            audio: false,
+        },
+    ];
+
+    let lastError = null;
+
+    for (const constraint of constraints) {
+        try {
+            return await withTimeout(
+                navigator.mediaDevices.getUserMedia(constraint),
+                CAMERA_RESPONSE_TIMEOUT_MS,
+                CAMERA_TIMEOUT_MESSAGE
+            );
+        } catch (error) {
+            lastError = error;
+
+            if (error?.name === 'TimeoutError') {
+                break;
+            }
+        }
+    }
+
+    throw lastError || new Error('Kamera tidak bisa dinyalakan.');
 }
 
 function resetSamples() {
@@ -709,6 +862,9 @@ function resetSamples() {
     lastCaptureAt = 0;
     isSaving = false;
     processingDetection = false;
+    detectionErrorCount = 0;
+    lastNoFaceFeedbackAt = 0;
+    lastVideoWaitingFeedbackAt = 0;
     eyesWereOpen = false;
     lastEar = null;
     maxOpenEar = 0;
@@ -722,6 +878,10 @@ function resetSamples() {
 }
 
 async function loadModels() {
+    if (!window.faceapi) {
+        throw new Error('Library face recognition belum termuat. Periksa koneksi internet lalu refresh halaman.');
+    }
+
     if (modelsLoaded) return;
     if (modelsPromise) {
         await modelsPromise;
@@ -760,6 +920,14 @@ function startEnrollmentTracking() {
         const now = performance.now();
         if (now - lastDetectionAt < 60) return;
 
+        if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) {
+            if (now - lastVideoWaitingFeedbackAt > 1200) {
+                lastVideoWaitingFeedbackAt = now;
+                updateStatus('Menunggu gambar kamera siap...', true);
+            }
+            return;
+        }
+
         processingDetection = true;
         lastDetectionAt = now;
 
@@ -771,10 +939,15 @@ function startEnrollmentTracking() {
 
             if (!detection) {
                 updateFrameIndicator(false);
-                updateStatus('Wajah belum terdeteksi. Posisikan wajah di dalam bingkai.', true);
+                guideInstruction.textContent = 'Dekatkan wajah ke tengah bingkai.';
+                if (now - lastNoFaceFeedbackAt > 1200) {
+                    lastNoFaceFeedbackAt = now;
+                    updateStatus('Wajah belum terdeteksi. Pastikan wajah masuk lingkaran dan cahaya cukup.', true);
+                }
                 return;
             }
 
+            detectionErrorCount = 0;
             const isInsideGuide = isFaceInsideGuide(detection.detection.box);
             const quality = getFrameQuality(detection.detection.box);
             const isClear = isInsideGuide && isFrameQualityGood(quality);
@@ -830,6 +1003,17 @@ function startEnrollmentTracking() {
             }
 
             await captureSample(detection.descriptor, quality);
+        } catch (error) {
+            detectionErrorCount += 1;
+            console.error('Face enrollment detection error:', error);
+            updateFrameIndicator(false);
+
+            if (detectionErrorCount >= 3) {
+                updateStatus('Deteksi wajah belum berjalan stabil. Tekan Reset, lalu aktifkan kamera lagi.', true);
+                return;
+            }
+
+            updateStatus('Menyiapkan deteksi wajah, tahan posisi sebentar...', true);
         } finally {
             processingDetection = false;
         }
@@ -839,31 +1023,51 @@ function startEnrollmentTracking() {
 }
 
 async function startCamera() {
+    const token = ++cameraStartToken;
+    let slowStartTimer = null;
+
     try {
+        startCameraButton.disabled = true;
         stopEnrollmentTracking();
         stopCameraStream();
         resetSamples();
         updateStatus('Menyalakan kamera...');
+        slowStartTimer = window.setTimeout(() => {
+            if (token === cameraStartToken && !stream) {
+                updateStatus('Kamera masih belum merespons. Jika tetap seperti ini, tutup PWA dari app switcher lalu buka lagi.', true);
+            }
+        }, 3500);
 
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: 'user',
-                width: { ideal: 480 },
-                height: { ideal: 360 },
-                frameRate: { ideal: 24, max: 24 }
-            },
-            audio: false
-        });
+        const nextStream = await openCameraStream();
+
+        if (token !== cameraStartToken) {
+            nextStream.getTracks().forEach((track) => track.stop());
+            return;
+        }
+
+        stream = nextStream;
 
         video.srcObject = stream;
-        await video.play();
+        await withTimeout(
+            video.play(),
+            CAMERA_PLAY_TIMEOUT_MS,
+            'Video kamera belum bisa diputar. Tutup PWA lalu buka ulang dari Home Screen.'
+        );
+        await waitForVideoReady();
         setScanAnimationActive(true);
         updateStatus('Kamera aktif. Menyiapkan deteksi wajah...');
         await loadModels();
         startEnrollmentTracking();
         updateStatus('Kamera aktif. Sistem akan mengambil sampel otomatis saat wajah jelas.');
     } catch (error) {
-        updateStatus(error.message || 'Kamera atau model wajah gagal diinisialisasi.', true);
+        stopEnrollmentTracking();
+        stopCameraStream();
+        updateStatus(cameraErrorMessage(error), true);
+    } finally {
+        if (slowStartTimer) {
+            window.clearTimeout(slowStartTimer);
+        }
+        startCameraButton.disabled = false;
     }
 }
 
@@ -919,5 +1123,12 @@ window.addEventListener('load', () => {
     loadModels().catch(() => {});
 });
 window.addEventListener('beforeunload', stopCameraStream);
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        stopEnrollmentTracking();
+        stopCameraStream();
+        cameraStartToken += 1;
+    }
+});
 </script>
 @endsection
