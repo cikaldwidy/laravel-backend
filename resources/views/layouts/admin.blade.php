@@ -670,13 +670,26 @@
                         </button>
 
                         <div class="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 overflow-hidden">
-                            <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                            <div class="p-4 border-b border-slate-100 flex items-center justify-between gap-3">
                                 <div>
                                     <p class="text-sm font-bold text-slate-900">Notifikasi</p>
                                     <p class="text-xs text-slate-500">{{ $adminNotificationCount }} aktivitas perlu dicek</p>
                                 </div>
-                                <a href="{{ route('admin.notifications.index') }}" class="text-xs font-bold text-slate-950">Lihat semua</a>
+                                <div class="flex shrink-0 items-center gap-2">
+                                    <button
+                                        type="button"
+                                        id="adminPushEnableButton"
+                                        class="rounded-full bg-blue-50 px-3 py-1.5 text-[11px] font-bold text-blue-700 hover:bg-blue-100"
+                                        data-public-key-url="{{ route('push-subscriptions.public-key', [], false) }}"
+                                        data-store-url="{{ route('push-subscriptions.store', [], false) }}"
+                                        data-test-url="{{ route('push-subscriptions.test', [], false) }}"
+                                    >
+                                        Aktifkan
+                                    </button>
+                                    <a href="{{ route('admin.notifications.index') }}" class="text-xs font-bold text-slate-950">Lihat semua</a>
+                                </div>
                             </div>
+                            <p id="adminPushStatusText" class="hidden border-b border-slate-100 px-4 py-2 text-[11px] text-slate-500"></p>
 
                             <div class="max-h-80 overflow-y-auto">
                                 @forelse($adminNotifications as $notification)
@@ -1012,6 +1025,148 @@ document.querySelectorAll('[data-auto-filter]').forEach((form) => {
         field.addEventListener('input', () => submitForm(450));
     });
 });
+</script>
+<script>
+(() => {
+    const pushEnableButton = document.getElementById('adminPushEnableButton');
+    const pushStatusText = document.getElementById('adminPushStatusText');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+    let vapidPublicKey = '';
+
+    if (!pushEnableButton) return;
+
+    const publicKeyUrl = pushEnableButton.dataset.publicKeyUrl || '';
+    const storeUrl = pushEnableButton.dataset.storeUrl || '';
+    const testUrl = pushEnableButton.dataset.testUrl || '';
+
+    const setPushStatus = (message, tone = 'muted') => {
+        if (!pushStatusText) return;
+
+        pushStatusText.textContent = message;
+        pushStatusText.classList.remove('hidden', 'text-slate-500', 'text-red-600', 'text-blue-700');
+        pushStatusText.classList.add(tone === 'danger' ? 'text-red-600' : (tone === 'success' ? 'text-blue-700' : 'text-slate-500'));
+    };
+
+    const urlBase64ToUint8Array = (base64String) => {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; i++) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+
+        return outputArray;
+    };
+
+    const supportedPushEncoding = () => {
+        if (!('PushManager' in window) || typeof PushManager.supportedContentEncodings === 'undefined') {
+            return 'aes128gcm';
+        }
+
+        return PushManager.supportedContentEncodings.includes('aes128gcm') ? 'aes128gcm' : 'aesgcm';
+    };
+
+    const resolveVapidPublicKey = async () => {
+        if (vapidPublicKey) return vapidPublicKey;
+        if (!publicKeyUrl) return '';
+
+        const response = await fetch(publicKeyUrl, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            cache: 'no-store',
+        });
+
+        if (!response.ok) return '';
+
+        const data = await response.json();
+        vapidPublicKey = data.publicKey || '';
+
+        return vapidPublicKey;
+    };
+
+    const enableAdminPush = async () => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+            setPushStatus('Browser ini belum mendukung push notification.', 'danger');
+            return;
+        }
+
+        pushEnableButton.disabled = true;
+        pushEnableButton.textContent = 'Memproses...';
+        setPushStatus('Menyiapkan notifikasi admin...', 'info');
+
+        try {
+            const publicKey = await resolveVapidPublicKey();
+
+            if (!publicKey) {
+                throw new Error('VAPID public key belum terbaca.');
+            }
+
+            const permission = await Notification.requestPermission();
+
+            if (permission !== 'granted') {
+                throw new Error('Izin notifikasi belum diberikan.');
+            }
+
+            const registration = await navigator.serviceWorker.ready;
+            let subscription = await registration.pushManager.getSubscription();
+
+            if (!subscription) {
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey),
+                });
+            }
+
+            const payload = subscription.toJSON();
+            payload.contentEncoding = supportedPushEncoding();
+
+            const response = await fetch(storeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                throw new Error('Gagal menyimpan subscription admin.');
+            }
+
+            setPushStatus('Notifikasi admin aktif.', 'success');
+            pushEnableButton.textContent = 'Aktif';
+
+            fetch(testUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                },
+            }).catch(() => null);
+        } catch (error) {
+            setPushStatus(error.message || 'Gagal mengaktifkan notifikasi admin.', 'danger');
+            pushEnableButton.disabled = false;
+            pushEnableButton.textContent = 'Aktifkan';
+        }
+    };
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+        pushEnableButton.textContent = 'Aktif';
+    }
+
+    pushEnableButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        enableAdminPush();
+    });
+})();
 </script>
 @include('partials.pwa-service-worker')
 

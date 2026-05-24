@@ -66,10 +66,14 @@ class PushSubscriptionController extends Controller
 
     public function test(Request $request, WebPushService $webPush): JsonResponse
     {
+        $targetUrl = $request->user()?->role === 'admin'
+            ? route('admin.notifications.index', [], false)
+            : route('dashboard', [], false);
+
         $result = $webPush->sendToUser($request->user(), [
             'title' => 'Notifikasi Presensi Aktif',
             'body' => 'PWA siap menerima notifikasi presensi.',
-            'url' => route('dashboard', [], false),
+            'url' => $targetUrl,
             'tag' => 'presensi-test',
         ]);
 

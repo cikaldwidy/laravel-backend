@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\FeatureSetting;
 use App\Models\LeaveRequest;
+use App\Services\AdminPushService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -51,7 +52,7 @@ class LeaveRequestController extends Controller
         return view('user.leave_requests.create', compact('selectedJenisIzin', 'backUrl'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, AdminPushService $adminPush)
     {
         $validated = $request->validate([
             'jenis_izin' => ['required', 'string', 'max:50'],
@@ -69,7 +70,7 @@ class LeaveRequestController extends Controller
             ? $request->file('lampiran')->store('leave-attachments', 'public')
             : null;
 
-        LeaveRequest::create([
+        $leaveRequest = LeaveRequest::create([
             'user_id' => Auth::id(),
             'jenis_izin' => $validated['jenis_izin'],
             'tanggal_mulai' => $validated['tanggal_mulai'],
@@ -77,6 +78,14 @@ class LeaveRequestController extends Controller
             'keterangan' => $validated['keterangan'],
             'lampiran' => $lampiranPath,
             'status' => 'pending',
+        ]);
+
+        $adminPush->send([
+            'title' => 'Pengajuan Izin Baru',
+            'body' => (Auth::user()?->name ?? 'Pegawai') . ' mengajukan ' . ucfirst($leaveRequest->jenis_izin) . '.',
+            'url' => route('admin.leave_requests.index', ['status' => 'pending'], false),
+            'tag' => 'admin-leave-request-' . $leaveRequest->id,
+            'renotify' => true,
         ]);
 
         return redirect()->route('leave_requests.index')->with('success', 'Pengajuan izin berhasil dikirim.');

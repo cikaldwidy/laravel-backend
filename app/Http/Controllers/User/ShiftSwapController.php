@@ -8,6 +8,7 @@ use App\Models\Announcement;
 use App\Models\ShiftSchedule;
 use App\Models\ShiftSwap;
 use App\Models\User;
+use App\Services\AdminPushService;
 use App\Services\AnnouncementPushService;
 use App\Support\ShiftTime;
 use Carbon\Carbon;
@@ -130,7 +131,7 @@ class ShiftSwapController extends Controller
         return response()->json($items);
     }
 
-    public function store(StoreShiftSwapRequest $request, AnnouncementPushService $announcementPush)
+    public function store(StoreShiftSwapRequest $request, AnnouncementPushService $announcementPush, AdminPushService $adminPush)
     {
         $data = $request->validated();
 
@@ -189,7 +190,10 @@ class ShiftSwapController extends Controller
             'note' => $data['note'] ?? null,
         ]);
 
-        $this->publishSwapAnnouncement($swap->load(['requester', 'targetUser', 'shift', 'targetShift']), $announcementPush);
+        $swap->load(['requester', 'targetUser', 'shift', 'targetShift']);
+
+        $this->publishSwapAnnouncement($swap, $announcementPush);
+        $this->notifyAdminsAboutSwap($swap, $adminPush);
 
         return redirect()->route('shift-swaps.index')->with('success', 'Request tukar shift berhasil dikirim. Menunggu keputusan admin.');
     }
@@ -257,5 +261,16 @@ class ShiftSwapController extends Controller
         ]);
 
         $announcementPush->send($announcement, route('shift-swaps.index', [], false));
+    }
+
+    private function notifyAdminsAboutSwap(ShiftSwap $swap, AdminPushService $adminPush): void
+    {
+        $adminPush->send([
+            'title' => 'Tukar Shift Baru',
+            'body' => ($swap->requester?->name ?? 'Pegawai') . ' mengajukan tukar shift dengan ' . ($swap->targetUser?->name ?? 'pegawai lain') . '.',
+            'url' => route('admin.shift_management.swaps', ['status' => 'pending'], false),
+            'tag' => 'admin-shift-swap-' . $swap->id,
+            'renotify' => true,
+        ]);
     }
 }
