@@ -21,7 +21,8 @@ class AttendanceHistoryController extends Controller
             })
             ->orderByDesc('tanggal')
             ->orderByDesc('created_at')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         $units = Department::query()->orderBy('nama_departemen')->get();
 

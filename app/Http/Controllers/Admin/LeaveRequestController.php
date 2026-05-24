@@ -33,7 +33,8 @@ class LeaveRequestController extends Controller
                     ->whereDate('tanggal_selesai', '>=', $tanggal);
             })
             ->latest('created_at')
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         $users = User::query()->where('role', 'user')->orderBy('name')->get();
         $units = Department::query()->orderBy('nama_departemen')->get();

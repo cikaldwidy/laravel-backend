@@ -144,24 +144,40 @@ class AuthController extends Controller
 
     public function adminLogin(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
+        $validated = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'password.required' => 'Kata sandi wajib diisi.',
         ]);
 
-        if (Auth::attempt($request->only('email', 'password'))) {
-            if (Auth::user()->role !== 'admin') {
-                Auth::logout();
+        $email = strtolower(trim($validated['email']));
+        $user = User::where('email', $email)->first();
 
-                return back()->withErrors(['email' => 'Akses hanya untuk admin']);
-            }
-
-            $request->session()->regenerate();
-
-            return redirect('/admin/dashboard');
+        if (!$user) {
+            return back()
+                ->withErrors(['email' => 'Email admin yang Anda masukkan salah atau tidak terdaftar.'])
+                ->withInput($request->only('email'));
         }
 
-        return back()->withErrors(['email' => 'Login gagal']);
+        if ($user->role !== 'admin') {
+            return back()
+                ->withErrors(['email' => 'Email ini bukan akun admin.'])
+                ->withInput($request->only('email'));
+        }
+
+        if (!Hash::check($validated['password'], $user->password)) {
+            return back()
+                ->withErrors(['password' => 'Password yang Anda masukkan salah.'])
+                ->withInput($request->only('email'));
+        }
+
+        Auth::login($user);
+        $request->session()->regenerate();
+
+        return redirect('/admin/dashboard');
     }
 
     public function logout(Request $request)

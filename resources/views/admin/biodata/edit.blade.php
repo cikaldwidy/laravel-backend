@@ -3,152 +3,214 @@
 @section('title', 'Edit Biodata Pegawai')
 
 @section('content')
-<div class="bg-white p-6 rounded-xl shadow max-w-5xl mx-auto space-y-5">
-    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-        <div>
-            <h2 class="font-bold text-lg text-gray-800">Biodata: {{ $user->name }}</h2>
-            <p class="text-sm text-gray-500">{{ $user->email }}</p>
+@php
+    $departmentOptions = $departments->map(fn ($department) => [
+        'id' => $department->id,
+        'name' => $department->nama_departemen,
+        'positions' => $department->positions->map(fn ($position) => ['id' => $position->id, 'name' => $position->nama_jabatan])->values(),
+    ])->values();
+    $selectedDepartmentId = old('department_id', $employeeDetail?->department_id);
+    $selectedPositionId = old('position_id', $employeeDetail?->position_id);
+@endphp
+
+<style>
+    .admin-edit-field {
+        width: 100%;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.5rem;
+        background: #f9fafb;
+        padding: 0.75rem 0.875rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #1f2937;
+        outline: none;
+        transition: 150ms ease;
+    }
+    .admin-edit-field:focus {
+        border-color: #2563eb;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12);
+    }
+    .admin-edit-label {
+        margin-bottom: 0.4rem;
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #6b7280;
+    }
+</style>
+
+<div class="space-y-4">
+    <a href="{{ route('admin.users.show', $user->id) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-blue-700">
+        <i class="fas fa-arrow-left text-xs"></i>
+        Kembali ke Detail Pegawai
+    </a>
+
+    <section class="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+        <div class="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50 text-blue-700">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-gray-800">Edit Biodata Pegawai</h1>
+                    <p class="text-xs text-gray-500">Perbarui profil pribadi, pekerjaan, alamat, dan foto pegawai.</p>
+                </div>
+            </div>
+            <a href="{{ route('admin.users.edit', $user->id) }}" class="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
+                <i class="fas fa-user-pen text-[10px]"></i> Edit Akun
+            </a>
         </div>
-        <a href="{{ route('admin.biodata.index') }}" class="px-4 py-2 rounded border text-sm font-semibold hover:bg-gray-50">Kembali</a>
-    </div>
 
-    <form method="POST" action="{{ route('admin.biodata.update', $user) }}" enctype="multipart/form-data" class="space-y-6">
-        @csrf
+        <div class="grid xl:grid-cols-[17rem_1fr]">
+            <aside class="border-b border-gray-100 bg-gray-50/60 p-5 xl:border-b-0 xl:border-r">
+                <div class="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+                    <div class="aspect-square overflow-hidden rounded-md bg-blue-50">
+                        @if($profile?->foto)
+                            <img src="{{ asset('storage/' . $profile->foto) }}" alt="Foto {{ $user->name }}" class="h-full w-full object-cover">
+                        @else
+                            <div class="flex h-full w-full items-center justify-center text-5xl font-bold text-blue-700">
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                            </div>
+                        @endif
+                    </div>
+                    <div class="mt-4 text-center">
+                        <h2 class="text-base font-bold text-gray-800">{{ $user->name }}</h2>
+                        <p class="mt-1 text-sm text-gray-500">{{ $user->email }}</p>
+                    </div>
+                </div>
 
-        <section class="space-y-4">
-            <div>
-                <h3 class="font-bold text-gray-800">Data Akun</h3>
-                <p class="text-sm text-gray-500">Nama dan email diubah dari menu Akun Pegawai.</p>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">Nama</label>
-                    <input value="{{ $user->name }}" readonly class="w-full p-2 border rounded bg-gray-50 mt-1">
+                <div class="mt-4 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Foto Profil</p>
+                    <p class="mt-2 text-xs leading-5 text-gray-500">Format JPG/PNG, maksimal 2 MB.</p>
                 </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">Email</label>
-                    <input value="{{ $user->email }}" readonly class="w-full p-2 border rounded bg-gray-50 mt-1">
-                </div>
-            </div>
-        </section>
+            </aside>
 
-        <section class="space-y-4 border-t pt-5">
-            <h3 class="font-bold text-gray-800">Profil Pribadi</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">No. HP</label>
-                    <input name="no_hp" value="{{ old('no_hp', $profile?->no_hp) }}" class="w-full p-2 border rounded mt-1">
-                    @error('no_hp') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">Tanggal Lahir</label>
-                    <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', optional($profile?->tanggal_lahir)->toDateString()) }}" class="w-full p-2 border rounded mt-1">
-                    @error('tanggal_lahir') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">Jenis Kelamin</label>
-                    <select name="jenis_kelamin" class="w-full p-2 border rounded mt-1">
-                        <option value="">Pilih jenis kelamin</option>
-                        <option value="L" @selected(old('jenis_kelamin', $profile?->jenis_kelamin) === 'L')>Laki-laki</option>
-                        <option value="P" @selected(old('jenis_kelamin', $profile?->jenis_kelamin) === 'P')>Perempuan</option>
-                    </select>
-                    @error('jenis_kelamin') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">Agama</label>
-                    <select name="agama" class="w-full p-2 border rounded mt-1">
-                        <option value="">Pilih agama</option>
-                        @foreach(['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'] as $agama)
-                            <option value="{{ $agama }}" @selected(old('agama', $profile?->agama) === $agama)>{{ $agama }}</option>
-                        @endforeach
-                    </select>
-                    @error('agama') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">NIK</label>
-                    <input name="nik" value="{{ old('nik', $profile?->nik) }}" class="w-full p-2 border rounded mt-1">
-                    @error('nik') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-            </div>
-            <div>
-                <label class="text-sm font-semibold text-gray-700">Alamat</label>
-                <textarea name="alamat" rows="3" class="w-full p-2 border rounded mt-1">{{ old('alamat', $profile?->alamat) }}</textarea>
-                @error('alamat') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-            </div>
-        </section>
+            <main class="p-5 lg:p-6">
+                <form method="POST" action="{{ route('admin.biodata.update', $user) }}" enctype="multipart/form-data" class="space-y-8">
+                    @csrf
 
-        <section class="space-y-4 border-t pt-5">
-            <h3 class="font-bold text-gray-800">Data Pekerjaan</h3>
-            @php
-                $departmentOptions = $departments->map(fn ($department) => [
-                    'id' => $department->id,
-                    'name' => $department->nama_departemen,
-                    'positions' => $department->positions->map(fn ($position) => ['id' => $position->id, 'name' => $position->nama_jabatan])->values(),
-                ])->values();
-                $selectedDepartmentId = old('department_id', $employeeDetail?->department_id);
-                $selectedPositionId = old('position_id', $employeeDetail?->position_id);
-            @endphp
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">NIP</label>
-                    <input name="nip" value="{{ old('nip', $employeeDetail?->nip) }}" class="w-full p-2 border rounded mt-1">
-                    @error('nip') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">Status Kerja</label>
-                    <select name="status_kerja" class="w-full p-2 border rounded mt-1">
-                        <option value="">Pilih status</option>
-                        <option value="tetap" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'tetap')>Tetap</option>
-                        <option value="kontrak" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'kontrak')>Kontrak</option>
-                        <option value="magang" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'magang')>Magang</option>
-                    </select>
-                    @error('status_kerja') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">Unit Kerja/Bagian</label>
-                    <select name="department_id" id="department_id" class="w-full p-2 border rounded mt-1">
-                        <option value="">Pilih unit kerja/bagian</option>
-                        @foreach($departments as $department)
-                            <option value="{{ $department->id }}" @selected((string) $selectedDepartmentId === (string) $department->id)>{{ $department->nama_departemen }}</option>
-                        @endforeach
-                    </select>
-                    @error('department_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">Jabatan</label>
-                    <select name="position_id" id="position_id" class="w-full p-2 border rounded mt-1">
-                        <option value="">Pilih jabatan</option>
-                    </select>
-                    @error('position_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-            </div>
-        </section>
+                    <section>
+                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Data Akun</h3>
+                        <div class="mt-4 grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label class="admin-edit-label">Nama</label>
+                                <input value="{{ $user->name }}" readonly class="admin-edit-field">
+                            </div>
+                            <div>
+                                <label class="admin-edit-label">Email</label>
+                                <input value="{{ $user->email }}" readonly class="admin-edit-field">
+                            </div>
+                        </div>
+                    </section>
 
-        <section class="space-y-4 border-t pt-5">
-            <h3 class="font-bold text-gray-800">Foto Profil</h3>
-            <div class="grid md:grid-cols-[8rem_1fr] gap-4 items-start">
-                <div class="w-28 h-28 rounded-lg overflow-hidden bg-gray-100 border flex items-center justify-center">
-                    @if($profile?->foto)
-                        <img src="{{ asset('storage/' . $profile->foto) }}" alt="Foto {{ $user->name }}" class="w-full h-full object-cover">
-                    @else
-                        <i class="fa-regular fa-user text-3xl text-gray-400"></i>
-                    @endif
-                </div>
-                <div>
-                    <label class="text-sm font-semibold text-gray-700">Upload Foto Baru</label>
-                    <input type="file" name="foto" accept="image/png,image/jpeg" class="w-full p-2 border rounded mt-1 bg-white">
-                    <p class="text-xs text-gray-500 mt-1">Format JPG/PNG, maksimal 2 MB.</p>
-                    @error('foto') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-                </div>
-            </div>
-        </section>
+                    <section>
+                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Profil Pribadi</h3>
+                        <div class="mt-4 grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label class="admin-edit-label">No. HP</label>
+                                <input name="no_hp" value="{{ old('no_hp', $profile?->no_hp) }}" class="admin-edit-field">
+                                @error('no_hp') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="admin-edit-label">Tanggal Lahir</label>
+                                <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', optional($profile?->tanggal_lahir)->toDateString()) }}" class="admin-edit-field">
+                                @error('tanggal_lahir') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="admin-edit-label">Jenis Kelamin</label>
+                                <select name="jenis_kelamin" class="admin-edit-field">
+                                    <option value="">Pilih jenis kelamin</option>
+                                    <option value="L" @selected(old('jenis_kelamin', $profile?->jenis_kelamin) === 'L')>Laki-laki</option>
+                                    <option value="P" @selected(old('jenis_kelamin', $profile?->jenis_kelamin) === 'P')>Perempuan</option>
+                                </select>
+                                @error('jenis_kelamin') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="admin-edit-label">Agama</label>
+                                <select name="agama" class="admin-edit-field">
+                                    <option value="">Pilih agama</option>
+                                    @foreach(['Islam', 'Kristen Protestan', 'Katolik', 'Hindu', 'Buddha', 'Konghucu', 'Lainnya'] as $agama)
+                                        <option value="{{ $agama }}" @selected(old('agama', $profile?->agama) === $agama)>{{ $agama }}</option>
+                                    @endforeach
+                                </select>
+                                @error('agama') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="admin-edit-label">NIK</label>
+                                <input name="nik" value="{{ old('nik', $profile?->nik) }}" class="admin-edit-field">
+                                @error('nik') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <label class="admin-edit-label">Alamat</label>
+                            <textarea name="alamat" rows="4" class="admin-edit-field">{{ old('alamat', $profile?->alamat) }}</textarea>
+                            @error('alamat') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    </section>
 
-        <div class="flex items-center gap-2 border-t pt-5">
-            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold">Simpan Biodata</button>
-            <a href="{{ route('admin.biodata.index') }}" class="px-4 py-2 rounded border font-semibold">Batal</a>
+                    <section>
+                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Data Pekerjaan</h3>
+                        <div class="mt-4 grid gap-4 md:grid-cols-2">
+                            <div>
+                                <label class="admin-edit-label">NIP</label>
+                                <input name="nip" value="{{ old('nip', $employeeDetail?->nip) }}" class="admin-edit-field">
+                                @error('nip') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="admin-edit-label">Status Kerja</label>
+                                <select name="status_kerja" class="admin-edit-field">
+                                    <option value="">Pilih status</option>
+                                    <option value="tetap" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'tetap')>Tetap</option>
+                                    <option value="kontrak" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'kontrak')>Kontrak</option>
+                                    <option value="magang" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'magang')>Magang</option>
+                                </select>
+                                @error('status_kerja') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="admin-edit-label">Unit Kerja/Bagian</label>
+                                <select name="department_id" id="department_id" class="admin-edit-field">
+                                    <option value="">Pilih unit kerja/bagian</option>
+                                    @foreach($departments as $department)
+                                        <option value="{{ $department->id }}" @selected((string) $selectedDepartmentId === (string) $department->id)>{{ $department->nama_departemen }}</option>
+                                    @endforeach
+                                </select>
+                                @error('department_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                            <div>
+                                <label class="admin-edit-label">Jabatan</label>
+                                <select name="position_id" id="position_id" class="admin-edit-field">
+                                    <option value="">Pilih jabatan</option>
+                                </select>
+                                @error('position_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Foto Profil</h3>
+                        <div class="mt-4">
+                            <label class="admin-edit-label">Upload Foto Baru</label>
+                            <input type="file" name="foto" accept="image/png,image/jpeg" class="admin-edit-field bg-white">
+                            <p class="mt-1 text-xs text-gray-500">Format JPG/PNG, maksimal 2 MB.</p>
+                            @error('foto') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
+                        </div>
+                    </section>
+
+                    <div class="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-5">
+                        <button class="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                            Simpan Biodata
+                        </button>
+                        <a href="{{ route('admin.users.show', $user->id) }}" class="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                            Batal
+                        </a>
+                    </div>
+                </form>
+            </main>
         </div>
-    </form>
+    </section>
 </div>
+
 <script>
 const departmentOptions = @json($departmentOptions);
 const departmentSelect = document.getElementById('department_id');

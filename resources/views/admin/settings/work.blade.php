@@ -5,16 +5,28 @@
 @section('content')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
-<div class="max-w-5xl mx-auto">
-    <div class="bg-white rounded-lg shadow">
-        <div class="p-5 border-b">
-            <h2 class="font-bold text-lg text-gray-800">Lokasi Presensi</h2>
-            <p class="text-sm text-gray-500 mt-1">
+<div class="space-y-5">
+    <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div>
+            <h1 class="text-xl font-bold tracking-tight text-gray-700">Lokasi Presensi</h1>
+            <p class="mt-0.5 text-sm text-gray-500">
                 Atur titik GPS kantor, radius presensi, dan toleransi waktu absen untuk jadwal shift.
             </p>
         </div>
+    </div>
 
-        <form method="POST" action="{{ route('admin.settings.work.update') }}" class="p-5 space-y-5">
+    @if(session('success'))
+        <div class="rounded-md border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <div class="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+        <div class="border-b border-gray-100 px-5 py-3.5">
+            <h2 class="text-sm font-semibold text-gray-700">Pengaturan Lokasi dan Toleransi</h2>
+        </div>
+
+        <form method="POST" action="{{ route('admin.settings.work.update') }}" class="space-y-5 p-5">
             @csrf
 
             <div>
@@ -26,7 +38,8 @@
                     <button
                         id="useCurrentLocation"
                         type="button"
-                        class="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-semibold">
+                        class="inline-flex items-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800">
+                        <i class="fas fa-location-crosshairs text-xs"></i>
                         Ambil GPS Saya
                     </button>
                 </div>
@@ -44,7 +57,7 @@
                             max="90"
                             name="office_latitude"
                             value="{{ old('office_latitude', $setting->office_latitude ?? config('attendance.office_latitude')) }}"
-                            class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
                         >
                     </div>
@@ -61,7 +74,7 @@
                             max="180"
                             name="office_longitude"
                             value="{{ old('office_longitude', $setting->office_longitude ?? config('attendance.office_longitude')) }}"
-                            class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                             required
                         >
                     </div>
@@ -78,7 +91,7 @@
                                 max="5000"
                                 name="radius_meters"
                                 value="{{ old('radius_meters', $setting->radius_meters ?? config('attendance.radius_meters', 100)) }}"
-                                class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             >
                             <span class="text-sm text-gray-600">meter</span>
@@ -90,12 +103,12 @@
                     Klik peta untuk memilih titik kantor, atau klik Ambil GPS Saya saat perangkat berada di lokasi kantor.
                 </p>
 
-                <div class="mt-4 overflow-hidden rounded-lg border">
+                <div class="mt-4 overflow-hidden rounded-md border border-gray-200">
                     <div id="officeMap" class="h-[360px] w-full bg-gray-100"></div>
                 </div>
             </div>
 
-            <div class="border rounded-lg p-4">
+            <div class="rounded-md border border-gray-200 p-4">
                 <div class="mb-4">
                     <h3 class="font-bold text-gray-800">Toleransi Absen Shift</h3>
                     <p class="text-sm text-gray-500">Jadwal utama tetap mengikuti shift per pegawai. Pengaturan ini hanya menentukan kapan tombol absen boleh aktif.</p>
@@ -114,7 +127,7 @@
                                 max="240"
                                 name="checkin_early_minutes"
                                 value="{{ old('checkin_early_minutes', $setting->checkin_early_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKIN_EARLY_MINUTES) }}"
-                                class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             >
                             <span class="text-sm text-gray-600">menit</span>
@@ -133,7 +146,7 @@
                                 max="480"
                                 name="checkout_late_minutes"
                                 value="{{ old('checkout_late_minutes', $setting->checkout_late_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKOUT_LATE_MINUTES) }}"
-                                class="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 required
                             >
                             <span class="text-sm text-gray-600">menit</span>
@@ -142,7 +155,7 @@
                 </div>
             </div>
 
-            <div class="bg-gray-50 border rounded-lg p-4 text-sm text-gray-600">
+            <div class="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
                 <p>
                     Titik GPS kantor:
                     <span class="font-semibold text-gray-800">
@@ -162,7 +175,8 @@
             </div>
 
             <div class="flex justify-end">
-                <button class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-md font-semibold">
+                <button class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                    <i class="fas fa-save text-xs"></i>
                     Simpan Pengaturan
                 </button>
             </div>

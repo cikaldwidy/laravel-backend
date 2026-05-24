@@ -24,7 +24,8 @@ class AdminAccountController extends Controller
                 });
             })
             ->latest()
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('admin.admin_accounts.index', compact('admins'));
     }

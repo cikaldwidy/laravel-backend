@@ -23,7 +23,7 @@ class AnnouncementController extends Controller
             })
             ->latest('tanggal_mulai')
             ->latest('created_at')
-            ->get();
+            ->paginate(10);
 
         $units = Department::query()->orderBy('nama_departemen')->get();
         $users = User::query()

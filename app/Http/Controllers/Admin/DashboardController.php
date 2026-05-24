@@ -20,6 +20,7 @@ class DashboardController extends Controller
     {
         $request->validate([
             'tanggal' => ['nullable', 'date'],
+            'chart_period' => ['nullable', 'in:7_days,1_month,1_year'],
         ]);
 
         $tanggalPresensiTerbaru = Presensi::query()->latest('tanggal')->value('tanggal');
@@ -104,17 +105,53 @@ class DashboardController extends Controller
             ->where('status', 'pending')
             ->count();
 
-        $chart = collect(range(6, 0))
-            ->map(function ($minusDay) {
-                $day = today()->subDays($minusDay)->toDateString();
-                return [
-                    'label' => Carbon::parse($day)->format('d/m'),
-                    'hadir' => Presensi::query()->whereDate('tanggal', $day)->where('status', 'hadir')->count(),
-                    'telat' => Presensi::query()->whereDate('tanggal', $day)->whereIn('status', ['telat', 'terlambat'])->count(),
-                    'izin' => LeaveRequest::query()->where('status', 'approved')->whereDate('tanggal_mulai', '<=', $day)->whereDate('tanggal_selesai', '>=', $day)->count(),
-                ];
-            })
-            ->all();
+        $chartPeriod = $request->input('chart_period', '7_days');
+        $chartTitle = match ($chartPeriod) {
+            '1_month' => 'Grafik Kehadiran 1 Bulan',
+            '1_year' => 'Grafik Kehadiran 1 Tahun',
+            default => 'Grafik Kehadiran 7 Hari',
+        };
+
+        $chart = match ($chartPeriod) {
+            '1_month' => collect(range(29, 0))
+                ->map(function ($minusDay) {
+                    $day = today()->subDays($minusDay)->toDateString();
+
+                    return $this->chartPointForDay($day, Carbon::parse($day)->format('d/m'));
+                })
+                ->all(),
+            '1_year' => collect(range(11, 0))
+                ->map(function ($minusMonth) {
+                    $month = today()->startOfMonth()->subMonths($minusMonth);
+                    $start = $month->copy()->startOfMonth()->toDateString();
+                    $end = $month->copy()->endOfMonth()->toDateString();
+
+                    return [
+                        'label' => $month->translatedFormat('M Y'),
+                        'hadir' => Presensi::query()
+                            ->whereBetween('tanggal', [$start, $end])
+                            ->where('status', 'hadir')
+                            ->count(),
+                        'telat' => Presensi::query()
+                            ->whereBetween('tanggal', [$start, $end])
+                            ->whereIn('status', ['telat', 'terlambat'])
+                            ->count(),
+                        'izin' => LeaveRequest::query()
+                            ->where('status', 'approved')
+                            ->whereDate('tanggal_mulai', '<=', $end)
+                            ->whereDate('tanggal_selesai', '>=', $start)
+                            ->count(),
+                    ];
+                })
+                ->all(),
+            default => collect(range(6, 0))
+                ->map(function ($minusDay) {
+                    $day = today()->subDays($minusDay)->toDateString();
+
+                    return $this->chartPointForDay($day, Carbon::parse($day)->format('d/m'));
+                })
+                ->all(),
+        };
 
         return view('admin.dashboard', compact(
             'tanggal',
@@ -131,8 +168,30 @@ class DashboardController extends Controller
             'userMasukHariIni',
             'swapPending',
             'chart',
+            'chartPeriod',
+            'chartTitle',
             'presensis',
             'workSetting'
         ));
+    }
+
+    private function chartPointForDay(string $day, string $label): array
+    {
+        return [
+            'label' => $label,
+            'hadir' => Presensi::query()
+                ->whereDate('tanggal', $day)
+                ->where('status', 'hadir')
+                ->count(),
+            'telat' => Presensi::query()
+                ->whereDate('tanggal', $day)
+                ->whereIn('status', ['telat', 'terlambat'])
+                ->count(),
+            'izin' => LeaveRequest::query()
+                ->where('status', 'approved')
+                ->whereDate('tanggal_mulai', '<=', $day)
+                ->whereDate('tanggal_selesai', '>=', $day)
+                ->count(),
+        ];
     }
 }

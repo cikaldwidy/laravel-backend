@@ -35,13 +35,15 @@
     :root {
         --sidebar-expanded-width: 16rem;
         --sidebar-collapsed-width: 4.5rem;
-        --admin-bg: #bdc9ce;
-        --admin-surface: #f8fafb;
+        --admin-bg: #f8fafc;
+        --admin-surface: #ffffff;
         --admin-card: #ffffff;
-        --admin-ink: #071225;
-        --admin-muted: #6b7280;
-        --admin-border: rgba(7, 18, 37, .08);
-        --admin-navy: #071225;
+        --admin-ink: #0f172a;
+        --admin-muted: #64748b;
+        --admin-border: rgba(37, 99, 235, .12);
+        --admin-navy: #1d4ed8;
+        --admin-blue: #2563eb;
+        --admin-cyan: #38bdf8;
     }
 
     body {
@@ -54,8 +56,8 @@
         transition: width .3s ease, transform .3s ease;
         width: var(--sidebar-expanded-width);
         background: var(--admin-surface) !important;
-        border: 1px solid rgba(255,255,255,.72);
-        box-shadow: inset 0 0 0 1px rgba(7,18,37,.04), 0 18px 42px rgba(7,18,37,.10);
+        border: 1px solid rgba(219,234,254,.90);
+        box-shadow: 18px 0 44px rgba(37,99,235,.08);
     }
     #sidebar.sidebar-collapsed { width: var(--sidebar-collapsed-width); }
  
@@ -109,14 +111,22 @@
         transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
     }
     .sidebar-item:hover {
-        background: rgba(7, 18, 37, .06) !important;
-        color: var(--admin-ink) !important;
+        background: rgba(37, 99, 235, .08) !important;
+        color: var(--admin-blue) !important;
+    }
+    .sidebar-item:focus {
+        outline: none;
+    }
+    .sidebar-item:focus-visible {
+        background: rgba(37, 99, 235, .12) !important;
+        color: var(--admin-blue) !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
     }
     .sidebar-item.active,
     .menu-trigger[aria-expanded="true"] {
-        background: var(--admin-navy) !important;
+        background: linear-gradient(135deg, #1d4ed8, #0284c7) !important;
         color: #fff !important;
-        box-shadow: 0 12px 24px rgba(7,18,37,.18);
+        box-shadow: 0 14px 28px rgba(37,99,235,.24);
     }
     .sidebar-item i {
         color: currentColor !important;
@@ -279,10 +289,10 @@
         background: transparent !important;
     }
     #sidebar .brand-wrapper .w-10 {
-        background: var(--admin-navy) !important;
+        background: linear-gradient(135deg, #1d4ed8, #0284c7) !important;
         color: #fff !important;
         border-radius: .9rem !important;
-        box-shadow: 0 10px 22px rgba(7,18,37,.15);
+        box-shadow: 0 12px 24px rgba(37,99,235,.24);
     }
     #sidebar .brand-wrapper .w-10 span {
         color: #fff !important;
@@ -297,36 +307,36 @@
     }
 
     #collapse-btn {
-        background: var(--admin-navy) !important;
+        background: linear-gradient(135deg, #1d4ed8, #0284c7) !important;
         border: 4px solid var(--admin-bg);
-        box-shadow: 0 14px 28px rgba(7,18,37,.22);
+        box-shadow: 0 14px 28px rgba(37,99,235,.24);
     }
 
     #main-content > header {
         margin: .4rem .4rem 0;
-        border: 1px solid rgba(255,255,255,.72) !important;
-        border-radius: 1rem;
+        border: 1px solid rgba(219,234,254,.95) !important;
+        border-radius: 1.25rem;
         background: rgba(255,255,255,.92) !important;
-        box-shadow: 0 16px 36px rgba(7,18,37,.08);
+        box-shadow: 0 18px 42px rgba(37,99,235,.08);
     }
     #main-content > .flex-1 {
         background: var(--admin-bg) !important;
     }
     main .bg-white {
-        border: 1px solid rgba(255,255,255,.76);
+        border: 1px solid rgba(219,234,254,.90);
         border-radius: 1rem !important;
-        box-shadow: 0 16px 36px rgba(7,18,37,.08) !important;
+        box-shadow: 0 18px 42px rgba(37,99,235,.08) !important;
     }
     main .shadow,
     main .shadow-sm,
     main .shadow-md,
     main .shadow-xl,
     main .shadow-2xl {
-        box-shadow: 0 16px 36px rgba(7,18,37,.08) !important;
+        box-shadow: 0 18px 42px rgba(37,99,235,.08) !important;
     }
     main table thead,
     main .bg-gray-50 {
-        background: #f5f7f8 !important;
+        background: #f8fbff !important;
     }
     main input,
     main select,
@@ -338,17 +348,24 @@
     main input:focus,
     main select:focus,
     main textarea:focus {
-        border-color: var(--admin-navy) !important;
-        box-shadow: 0 0 0 3px rgba(7,18,37,.10) !important;
+        border-color: var(--admin-blue) !important;
+        box-shadow: 0 0 0 3px rgba(37,99,235,.12) !important;
+    }
+    .admin-top-search input,
+    .admin-top-search input:focus {
+        border: 0 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
     }
     main .bg-blue-600,
     main .bg-blue-700,
     main .hover\:bg-blue-700:hover {
-        background: var(--admin-navy) !important;
+        background: linear-gradient(135deg, #1d4ed8, #0284c7) !important;
     }
     main .text-blue-600,
     main .text-blue-700 {
-        color: var(--admin-navy) !important;
+        color: var(--admin-blue) !important;
     }
     main .rounded-xl,
     main .rounded-lg,
@@ -498,7 +515,7 @@
         @endphp
         <nav id="sidebar-nav" class="md:px-2 sidebar-scroll overflow-y-auto px-4 py-3 space-y-2" style="height: calc(100vh - 5rem);">
             <a href="{{ route('admin.dashboard') }}"
-               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ request()->routeIs('admin.dashboard') ? 'active text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+               class="sidebar-item relative flex items-center gap-3 p-3 rounded-md {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                 <i class="fas fa-chart-line w-5 flex-shrink-0 text-center"></i>
                 <span class="sidebar-text">Dashboard</span>
                 <span class="tooltip">Dashboard</span>
@@ -508,7 +525,7 @@
                 <button type="button"
                         data-menu-target="menu-organization"
                         aria-expanded="{{ $organizationOpen ? 'true' : 'false' }}"
-                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $organizationOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md {{ $organizationOpen ? 'active' : '' }}">
                     <i class="fas fa-sitemap w-5 flex-shrink-0 text-center"></i>
                     <span class="sidebar-text flex-1 text-left">Struktur Organisasi</span>
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
@@ -523,7 +540,7 @@
                 <button type="button"
                         data-menu-target="menu-employee"
                         aria-expanded="{{ $employeeOpen ? 'true' : 'false' }}"
-                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $employeeOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md {{ $employeeOpen ? 'active' : '' }}">
                     <i class="fas fa-users w-5 flex-shrink-0 text-center"></i>
                     <span class="sidebar-text flex-1 text-left">Pegawai</span>
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
@@ -540,7 +557,7 @@
                 <button type="button"
                         data-menu-target="menu-schedule"
                         aria-expanded="{{ $scheduleOpen ? 'true' : 'false' }}"
-                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $scheduleOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md {{ $scheduleOpen ? 'active' : '' }}">
                     <i class="fas fa-calendar-days w-5 flex-shrink-0 text-center"></i>
                     <span class="sidebar-text flex-1 text-left">Jadwal & Shift</span>
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
@@ -556,7 +573,7 @@
                 <button type="button"
                         data-menu-target="menu-attendance"
                         aria-expanded="{{ $attendanceOpen ? 'true' : 'false' }}"
-                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $attendanceOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md {{ $attendanceOpen ? 'active' : '' }}">
                     <i class="fas fa-clipboard-check w-5 flex-shrink-0 text-center"></i>
                     <span class="sidebar-text flex-1 text-left">Absensi & Izin</span>
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
@@ -577,7 +594,7 @@
                 <button type="button"
                         data-menu-target="menu-info"
                         aria-expanded="{{ $infoOpen ? 'true' : 'false' }}"
-                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $infoOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md {{ $infoOpen ? 'active' : '' }}">
                     <i class="fas fa-bullhorn w-5 flex-shrink-0 text-center"></i>
                     <span class="sidebar-text flex-1 text-left">Info & Laporan</span>
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
@@ -593,7 +610,7 @@
                 <button type="button"
                         data-menu-target="menu-settings"
                         aria-expanded="{{ $settingsOpen ? 'true' : 'false' }}"
-                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md text-gray-300 {{ $settingsOpen ? 'text-white bg-gray-700' : 'hover:bg-gray-700' }}">
+                        class="sidebar-item menu-trigger relative flex items-center gap-3 p-3 rounded-md {{ $settingsOpen ? 'active' : '' }}">
                     <i class="fas fa-gear w-5 flex-shrink-0 text-center"></i>
                     <span class="sidebar-text flex-1 text-left">Pengaturan</span>
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
@@ -624,6 +641,14 @@
                     <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
+                    <div class="admin-top-search hidden xl:flex h-10 w-full max-w-sm items-center gap-2 rounded-md border border-gray-200 bg-white px-3 text-gray-400">
+                        <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
+                        <input
+                            type="search"
+                            placeholder="Cari sesuatu"
+                            class="h-full w-full border-0 bg-transparent px-0 text-sm text-gray-600 placeholder:text-gray-400 focus:outline-none focus:ring-0"
+                        >
+                    </div>
                     <div
                         class="hidden md:flex shrink-0 text-sm text-gray-500 tracking-[.2px]"
                         data-admin-clock
@@ -635,7 +660,7 @@
 
                 <div class="flex items-center gap-3 md:gap-4">
                     <div class="relative group">
-                        <button class="relative w-10 h-10 rounded-2xl bg-white border border-slate-100 text-slate-700 hover:bg-slate-50 flex items-center justify-center shadow-sm transition">
+                        <button class="relative w-10 h-10 rounded-2xl bg-white border border-blue-100 text-blue-700 hover:bg-blue-50 flex items-center justify-center shadow-sm transition">
                             <i class="fa-solid fa-bell"></i>
                             @if($adminNotificationCount > 0)
                                 <span class="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
@@ -676,8 +701,8 @@
 
                     <!-- User Profile Dropdown -->
                     <div class="relative group">
-                        <button class="flex items-center gap-2 md:gap-3 hover:bg-gray-50 rounded-md p-2 transition">
-                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-800 flex items-center justify-center text-white font-bold shadow-lg text-xl">
+                        <button class="flex items-center gap-2 md:gap-3 hover:bg-blue-50 rounded-2xl p-2 transition">
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-blue-700 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-700/20 text-xl">
                                 {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                             </div>
                             <div class="hidden md:block text-left">
