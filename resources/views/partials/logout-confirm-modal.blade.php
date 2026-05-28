@@ -1,6 +1,6 @@
 <div id="appConfirmModal" class="fixed inset-0 z-[90] hidden items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="appConfirmTitle">
     <div class="absolute inset-0" data-confirm-cancel></div>
-    <div class="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl shadow-slate-950/20">
+    <div class="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-950/20">
         <div class="flex items-start gap-3">
             <div id="appConfirmIcon" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
@@ -23,6 +23,29 @@
         </div>
     </div>
 </div>
+
+<style>
+html[data-admin-theme="dark"] #appConfirmModal > .relative {
+    background: var(--admin-card) !important;
+    border-color: var(--admin-border) !important;
+    box-shadow: 0 24px 56px rgba(0,0,0,.42) !important;
+}
+html[data-admin-theme="dark"] #appConfirmTitle {
+    color: var(--admin-ink) !important;
+}
+html[data-admin-theme="dark"] #appConfirmMessage {
+    color: var(--admin-muted) !important;
+}
+html[data-admin-theme="dark"] #appConfirmModal [data-confirm-cancel-button] {
+    background: #0b1728 !important;
+    border-color: var(--admin-border) !important;
+    color: #cbd5e1 !important;
+}
+html[data-admin-theme="dark"] #appConfirmModal [data-confirm-cancel-button]:hover {
+    background: rgba(96, 165, 250, .12) !important;
+    color: var(--admin-ink) !important;
+}
+</style>
 
 <script>
 (() => {

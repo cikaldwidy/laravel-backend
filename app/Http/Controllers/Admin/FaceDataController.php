@@ -33,7 +33,8 @@ class FaceDataController extends Controller
                 });
             })
             ->latest()
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         $baseUserQuery = User::query()
             ->where('role', 'user')
@@ -141,6 +142,32 @@ class FaceDataController extends Controller
         $faceEmbedding->delete();
 
         return back()->with('success', 'Data wajah berhasil dihapus.');
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array'],
+            'ids.*' => ['integer', 'exists:face_embeddings,id'],
+        ]);
+
+        $faceEmbeddings = FaceEmbedding::query()
+            ->whereIn('id', $validated['ids'])
+            ->get();
+
+        foreach ($faceEmbeddings as $faceEmbedding) {
+            if ($faceEmbedding->photo_path) {
+                Storage::disk('public')->delete($faceEmbedding->photo_path);
+            }
+
+            $faceEmbedding->delete();
+        }
+
+        if ($faceEmbeddings->isEmpty()) {
+            return back()->with('error', 'Tidak ada data wajah yang bisa dihapus.');
+        }
+
+        return back()->with('success', $faceEmbeddings->count() . ' data wajah berhasil dihapus.');
     }
 
     private function storeFaceImage(string $imageData, int $userId): string

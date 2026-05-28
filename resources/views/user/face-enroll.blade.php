@@ -415,6 +415,7 @@ const safariEnrollUrl = "{{ route('face.enroll', ['handoff' => 'safari'], false)
 const REQUIRED_SAMPLES = 3;
 const descriptors = [];
 const sampleQualities = [];
+let enrollmentImage = null;
 const modelBaseUrl = '/face-api/models';
 const detectorOptions = new faceapi.TinyFaceDetectorOptions({
     inputSize: 160,
@@ -748,10 +749,24 @@ function averageDescriptors(samples) {
     return averaged.map((value) => value / samples.length);
 }
 
+function captureEnrollmentImage() {
+    if (!video.videoWidth || !video.videoHeight) return null;
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext('2d');
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    return canvas.toDataURL('image/jpeg', 0.85);
+}
+
 async function captureSample(descriptor, quality) {
     if (Date.now() - lastCaptureAt < 350 || descriptors.length >= REQUIRED_SAMPLES) return;
 
     lastCaptureAt = Date.now();
+    if (!enrollmentImage) {
+        enrollmentImage = captureEnrollmentImage();
+    }
     descriptors.push(Array.from(descriptor));
     sampleQualities.push(quality);
     updateSampleCount();
@@ -988,6 +1003,7 @@ async function openCameraStream() {
 function resetSamples() {
     descriptors.length = 0;
     sampleQualities.length = 0;
+    enrollmentImage = null;
     lastCaptureAt = 0;
     isSaving = false;
     processingDetection = false;
@@ -1214,6 +1230,7 @@ async function saveEmbedding() {
             body: JSON.stringify({
                 embedding: averageDescriptors(descriptors),
                 descriptor_samples: descriptors,
+                image: enrollmentImage,
                 blink_verified: true,
                 quality_metrics: {
                     sample_count: sampleQualities.length,

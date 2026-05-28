@@ -120,9 +120,22 @@
     .shift-m { background: #bfdbfe; color: #1e3a8a; }
     .shift-o .shift-select,
     .shift-o { background: #fecdd3; color: #991b1b; }
+
+    html[data-admin-theme="dark"] main .duty-export-disabled {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+        color: #64748b !important;
+    }
 </style>
 
 <div class="duty-page space-y-5 w-full min-w-0 max-w-full overflow-x-hidden">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Jadwal Bulanan</h1>
+            <p class="mt-1 text-sm text-gray-500">Kelola jadwal dinas bulanan pegawai berdasarkan unit kerja/bagian.</p>
+        </div>
+    </div>
+
     <div class="bg-white rounded-xl shadow border border-gray-200 p-4 flex flex-col xl:flex-row xl:items-end xl:justify-between gap-3">
         <form method="GET" action="{{ route('jadwal-dinas.index') }}" data-auto-filter class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[11rem_8rem_minmax(12rem,18rem)] gap-3 items-end w-full xl:w-auto">
             <div class="min-w-0">
@@ -149,9 +162,15 @@
         </form>
 
         @if($selectedUnitId)
-            <a href="{{ route('jadwal-dinas.export', ['bulan' => $bulan, 'tahun' => $tahun, 'unit_id' => $selectedUnitId]) }}" class="bg-emerald-600 text-white px-4 py-2 rounded-md text-sm font-semibold text-center w-full xl:w-auto">Export Excel</a>
+            <a href="{{ route('jadwal-dinas.export', ['bulan' => $bulan, 'tahun' => $tahun, 'unit_id' => $selectedUnitId]) }}" class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 xl:w-auto">
+                <i class="fas fa-file-excel text-xs"></i>
+                Export Excel
+            </a>
         @else
-            <span class="bg-slate-200 text-slate-500 px-4 py-2 rounded-md text-sm font-semibold text-center w-full xl:w-auto cursor-not-allowed">Export Excel</span>
+            <span class="duty-export-disabled inline-flex h-10 w-full cursor-not-allowed items-center justify-center gap-2 rounded-md border border-gray-200 bg-gray-100 px-4 text-sm font-semibold text-gray-400 xl:w-auto">
+                <i class="fas fa-file-excel text-xs"></i>
+                Export Excel
+            </span>
         @endif
     </div>
 

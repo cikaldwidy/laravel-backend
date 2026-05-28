@@ -176,7 +176,6 @@
                         <th class="px-5 py-3 text-left">Nama Unit Kerja/Bagian</th>
                         <th class="px-5 py-3 text-left">Jabatan</th>
                         <th class="px-5 py-3 text-left">Pegawai</th>
-                        <th class="px-5 py-3 text-left">Status</th>
                         <th class="px-5 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -204,17 +203,6 @@
                                 </span>
                             </td>
                             <td class="px-5 py-3.5">
-                                @if($department->positions_count > 0 || $department->employee_details_count > 0)
-                                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span> Aktif
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1 text-xs font-semibold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-gray-400 inline-block"></span> Kosong
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-5 py-3.5">
                                 <div class="flex items-center justify-end gap-1.5">
                                     {{-- Edit --}}
                                     <button
@@ -233,7 +221,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-14 text-center">
+                            <td colspan="5" class="py-14 text-center">
                                 <div class="flex flex-col items-center gap-2 text-gray-500">
                                     <i class="fas fa-folder-open text-3xl"></i>
                                     <p class="text-sm font-medium">Belum ada unit kerja/bagian</p>
@@ -248,17 +236,43 @@
 
         {{-- Pagination --}}
         @if(method_exists($departments, 'links'))
-        <div class="px-5 py-3.5 border-t border-gray-100 flex items-center justify-between">
-            <p class="text-xs text-gray-500">
+        <div class="flex flex-col gap-3 border-t border-gray-100 px-5 py-3.5 text-xs font-semibold text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+            @php
+                $departmentStart = $departments->total() > 0 ? $departments->firstItem() : 0;
+                $departmentEnd = $departments->total() > 0 ? $departments->lastItem() : 0;
+                $departmentPageStart = max(1, $departments->currentPage() - 2);
+                $departmentPageEnd = min($departments->lastPage(), $departmentPageStart + 4);
+                $departmentPageStart = max(1, $departmentPageEnd - 4);
+            @endphp
+            <span>Menampilkan {{ $departmentStart }}-{{ $departmentEnd }} dari {{ $departments->total() }} data</span>
+            <p class="hidden">
                 Menampilkan {{ $departments->firstItem() }}–{{ $departments->lastItem() }} dari {{ $departments->total() }} data
             </p>
-            {{ $departments->withQueryString()->links() }}
+            <div class="flex items-center gap-1">
+                <a href="{{ $departments->onFirstPage() ? '#' : $departments->previousPageUrl() }}"
+                   class="org-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $departments->onFirstPage() ? 'pointer-events-none text-gray-300' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
+                    &lt;&lt;
+                </a>
+                @for($page = $departmentPageStart; $page <= $departmentPageEnd; $page++)
+                    <a href="{{ $departments->url($page) }}"
+                       class="org-page-link inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-blue-100 px-2 text-xs font-semibold no-underline {{ $page === $departments->currentPage() ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
+                        {{ $page }}
+                    </a>
+                @endfor
+                <a href="{{ $departments->hasMorePages() ? $departments->nextPageUrl() : '#' }}"
+                   class="org-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $departments->hasMorePages() ? 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' : 'pointer-events-none text-gray-300' }}">
+                    &gt;&gt;
+                </a>
+            </div>
         </div>
         @endif
     </div>
 </div>
 
 <style>
+    main .org-page-link.rounded-md {
+        border-radius: .375rem !important;
+    }
     .animate-modal {
         animation: modalIn .2s ease;
     }

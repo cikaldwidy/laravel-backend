@@ -4,6 +4,13 @@
 
 @section('content')
 <div class="space-y-5">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Tukar Shift</h1>
+            <p class="mt-1 text-sm text-gray-500">Kelola persetujuan penukaran shift antar pegawai.</p>
+        </div>
+    </div>
+
     <div class="bg-white rounded-md shadow border border-gray-200 p-4">
         <form method="GET" data-auto-filter class="flex flex-wrap gap-2 items-end">
             <div>
@@ -15,7 +22,10 @@
                     <option value="rejected" @selected($status === 'rejected')>Rejected</option>
                 </select>
             </div>
-            <a href="{{ route('admin.shift_management.swaps') }}" class="bg-gray-200 text-gray-700 rounded-md px-4 py-2 text-sm font-semibold">Reset</a>
+            <a href="{{ route('admin.shift_management.swaps') }}" class="swap-reset-button inline-flex h-10 items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-600 shadow-sm transition hover:bg-gray-50 hover:text-gray-700">
+                <i class="fas fa-xmark text-xs"></i>
+                Reset
+            </a>
         </form>
     </div>
 
@@ -67,17 +77,17 @@
                             <span class="px-2 py-1 rounded-full text-xs font-semibold {{ $statusClass }}">{{ strtoupper($swap->status) }}</span>
                         </td>
                         <td class="px-4 py-3 text-xs text-gray-600 whitespace-pre-line">{{ $swap->note ?: '-' }}</td>
-                        <td class="px-4 py-3">
+                        <td class="px-4 py-3 whitespace-nowrap">
                             @if($swap->status === 'pending')
-                                <div class="flex flex-col gap-2">
+                                <div class="flex flex-wrap items-center justify-start gap-2">
                                     <form action="{{ route('admin.shift_management.swaps.approve', $swap) }}" method="POST" data-confirm-form data-confirm-title="Approve swap?" data-confirm-message="Jadwal shift akan ditukar sesuai request ini." data-confirm-button="Approve" data-confirm-tone="primary" data-confirm-icon="fa-solid fa-check">
                                         @csrf
-                                        <button class="bg-emerald-600 text-white rounded-md px-3 py-1.5 text-xs font-semibold w-full">Approve</button>
+                                        <button class="swap-action-approve inline-flex items-center justify-center rounded-md bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-50">Approve</button>
                                     </form>
-                                    <form action="{{ route('admin.shift_management.swaps.reject', $swap) }}" method="POST">
+                                    <form action="{{ route('admin.shift_management.swaps.reject', $swap) }}" method="POST" class="flex flex-wrap items-center gap-2">
                                         @csrf
-                                        <input type="text" name="note" placeholder="Alasan (opsional)" class="border rounded-md px-2 py-1 text-xs w-full mb-1">
-                                        <button class="bg-red-600 text-white rounded-md px-3 py-1.5 text-xs font-semibold w-full">Reject</button>
+                                        <input type="text" name="note" placeholder="Alasan (opsional)" class="swap-action-note w-40 rounded-md border border-gray-200 px-3 py-1.5 text-xs text-gray-700">
+                                        <button class="swap-action-reject inline-flex items-center justify-center rounded-md bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 shadow-sm transition hover:bg-red-100">Reject</button>
                                     </form>
                                 </div>
                             @else
@@ -98,4 +108,37 @@
         {{ $swaps->links() }}
     </div>
 </div>
+
+<style>
+    html[data-admin-theme="dark"] main .swap-reset-button {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+        color: #cbd5e1 !important;
+    }
+    html[data-admin-theme="dark"] main .swap-reset-button:hover {
+        background: rgba(96, 165, 250, .12) !important;
+        color: var(--admin-ink) !important;
+    }
+    html[data-admin-theme="dark"] main .swap-action-approve {
+        background: #fff7ed !important;
+        color: #b45309 !important;
+        border: 0 !important;
+    }
+    html[data-admin-theme="dark"] main .swap-action-approve:hover {
+        background: #ffedd5 !important;
+    }
+    html[data-admin-theme="dark"] main .swap-action-reject {
+        background: rgba(127, 29, 29, .38) !important;
+        color: #ef4444 !important;
+        border: 0 !important;
+    }
+    html[data-admin-theme="dark"] main .swap-action-reject:hover {
+        background: rgba(127, 29, 29, .55) !important;
+    }
+    html[data-admin-theme="dark"] main .swap-action-note {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+        color: var(--admin-ink) !important;
+    }
+</style>
 @endsection

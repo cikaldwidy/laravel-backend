@@ -38,15 +38,69 @@
         font-weight: 700;
         color: #6b7280;
     }
+
+    html[data-admin-theme="dark"] main .employee-biodata-edit-page .admin-edit-field {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+        color: var(--admin-ink) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+    }
+
+    html[data-admin-theme="dark"] main .employee-biodata-edit-page .admin-edit-field:focus {
+        background: #0b1728 !important;
+        border-color: var(--admin-blue) !important;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, .14) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-biodata-edit-page .admin-edit-field[readonly] {
+        background: #101c2e !important;
+        color: #cbd5e1 !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-biodata-edit-page .admin-edit-label {
+        color: #8fa3bf !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-biodata-edit-shell,
+    html[data-admin-theme="dark"] main .employee-biodata-edit-card {
+        background: #111f33 !important;
+        border-color: var(--admin-border) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-biodata-edit-sidebar {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-biodata-edit-content {
+        background: #111f33 !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-biodata-section-title,
+    html[data-admin-theme="dark"] main .employee-biodata-actions {
+        border-color: var(--admin-border) !important;
+        color: var(--admin-ink) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-biodata-cancel {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+        color: #cbd5e1 !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-biodata-cancel:hover {
+        background: rgba(96, 165, 250, .12) !important;
+        color: var(--admin-ink) !important;
+    }
 </style>
 
-<div class="space-y-4">
-    <a href="{{ route('admin.users.show', $user->id) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-blue-700">
+<div class="employee-biodata-edit-page space-y-4">
+    <a href="{{ route('admin.users.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-blue-700">
         <i class="fas fa-arrow-left text-xs"></i>
-        Kembali ke Detail Pegawai
+        Kembali ke Akun Pegawai
     </a>
 
-    <section class="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+    <section class="employee-biodata-edit-shell overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50 text-blue-700">
@@ -57,14 +111,12 @@
                     <p class="text-xs text-gray-500">Perbarui profil pribadi, pekerjaan, alamat, dan foto pegawai.</p>
                 </div>
             </div>
-            <a href="{{ route('admin.users.edit', $user->id) }}" class="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
-                <i class="fas fa-user-pen text-[10px]"></i> Edit Akun
-            </a>
+           
         </div>
 
         <div class="grid xl:grid-cols-[17rem_1fr]">
-            <aside class="border-b border-gray-100 bg-gray-50/60 p-5 xl:border-b-0 xl:border-r">
-                <div class="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+            <aside class="employee-biodata-edit-sidebar border-b border-gray-100 bg-gray-50/60 p-5 xl:border-b-0 xl:border-r">
+                <div class="employee-biodata-edit-card rounded-md border border-gray-200 bg-white p-4 shadow-sm">
                     <div class="aspect-square overflow-hidden rounded-md bg-blue-50">
                         @if($profile?->foto)
                             <img src="{{ asset('storage/' . $profile->foto) }}" alt="Foto {{ $user->name }}" class="h-full w-full object-cover">
@@ -80,18 +132,18 @@
                     </div>
                 </div>
 
-                <div class="mt-4 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+                <div class="employee-biodata-edit-card mt-4 rounded-md border border-gray-200 bg-white p-4 shadow-sm">
                     <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Foto Profil</p>
                     <p class="mt-2 text-xs leading-5 text-gray-500">Format JPG/PNG, maksimal 2 MB.</p>
                 </div>
             </aside>
 
-            <main class="p-5 lg:p-6">
+            <main class="employee-biodata-edit-content p-5 lg:p-6">
                 <form method="POST" action="{{ route('admin.biodata.update', $user) }}" enctype="multipart/form-data" class="space-y-8">
                     @csrf
 
                     <section>
-                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Data Akun</h3>
+                        <h3 class="employee-biodata-section-title border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Data Akun</h3>
                         <div class="mt-4 grid gap-4 md:grid-cols-2">
                             <div>
                                 <label class="admin-edit-label">Nama</label>
@@ -105,7 +157,7 @@
                     </section>
 
                     <section>
-                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Profil Pribadi</h3>
+                        <h3 class="employee-biodata-section-title border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Profil Pribadi</h3>
                         <div class="mt-4 grid gap-4 md:grid-cols-2">
                             <div>
                                 <label class="admin-edit-label">No. HP</label>
@@ -150,7 +202,7 @@
                     </section>
 
                     <section>
-                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Data Pekerjaan</h3>
+                        <h3 class="employee-biodata-section-title border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Data Pekerjaan</h3>
                         <div class="mt-4 grid gap-4 md:grid-cols-2">
                             <div>
                                 <label class="admin-edit-label">NIP</label>
@@ -188,7 +240,7 @@
                     </section>
 
                     <section>
-                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Foto Profil</h3>
+                        <h3 class="employee-biodata-section-title border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Foto Profil</h3>
                         <div class="mt-4">
                             <label class="admin-edit-label">Upload Foto Baru</label>
                             <input type="file" name="foto" accept="image/png,image/jpeg" class="admin-edit-field bg-white">
@@ -197,11 +249,11 @@
                         </div>
                     </section>
 
-                    <div class="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-5">
+                    <div class="employee-biodata-actions flex flex-wrap items-center gap-2 border-t border-gray-100 pt-5">
                         <button class="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
                             Simpan Biodata
                         </button>
-                        <a href="{{ route('admin.users.show', $user->id) }}" class="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                        <a href="{{ route('admin.users.show', $user->id) }}" class="employee-biodata-cancel rounded-md border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
                             Batal
                         </a>
                     </div>

@@ -7,6 +7,8 @@ use App\Models\FaceEmbedding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class FaceEnrollmentController extends Controller
 {
@@ -73,6 +75,7 @@ class FaceEnrollmentController extends Controller
             'quality_metrics.max_brightness' => ['required', 'numeric'],
             'quality_metrics.min_sharpness' => ['required', 'numeric'],
             'blink_verified' => ['required', 'accepted'],
+            'image' => ['nullable', 'string'],
         ]);
 
         if (
@@ -114,19 +117,65 @@ class FaceEnrollmentController extends Controller
             ], 422);
         }
 
+        $existingFaceEmbedding = FaceEmbedding::query()
+            ->where('user_id', Auth::id())
+            ->first();
+        $photoPath = !empty($validated['image'])
+            ? $this->storeFaceImage($validated['image'], Auth::id())
+            : $existingFaceEmbedding?->photo_path;
+
         FaceEmbedding::updateOrCreate(
             ['user_id' => Auth::id()],
             [
                 'embedding' => $embedding,
                 'descriptor_samples' => $descriptorSamples,
+                'photo_path' => $photoPath,
             ]
         );
+
+        if (
+            $existingFaceEmbedding?->photo_path &&
+            $photoPath &&
+            $existingFaceEmbedding->photo_path !== $photoPath
+        ) {
+            Storage::disk('public')->delete($existingFaceEmbedding->photo_path);
+        }
 
         return response()->json([
             'status' => 'success',
             'message' => 'Data wajah berhasil disimpan.',
             'redirect' => route('face.verify.progress'),
         ]);
+    }
+
+    private function storeFaceImage(string $imageData, int $userId): string
+    {
+        if (!preg_match('/^data:image\/(\w+);base64,/', $imageData, $matches)) {
+            throw ValidationException::withMessages([
+                'image' => 'Format foto wajah tidak valid.',
+            ]);
+        }
+
+        $extension = strtolower($matches[1]);
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            throw ValidationException::withMessages([
+                'image' => 'Format foto wajah harus JPG, PNG, atau WebP.',
+            ]);
+        }
+
+        $image = substr($imageData, strpos($imageData, ',') + 1);
+        $decoded = base64_decode(str_replace(' ', '+', $image), true);
+
+        if ($decoded === false) {
+            throw ValidationException::withMessages([
+                'image' => 'Foto wajah gagal diproses.',
+            ]);
+        }
+
+        $fileName = 'face-enrollment/user-' . $userId . '-' . now()->format('YmdHis') . '.jpg';
+        Storage::disk('public')->put($fileName, $decoded);
+
+        return $fileName;
     }
 
     private function hasConsistentEnrollmentSamples(array $embedding, array $descriptorSamples): bool

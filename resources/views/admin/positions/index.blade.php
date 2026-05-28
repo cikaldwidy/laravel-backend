@@ -50,50 +50,6 @@
         @error('nama_jabatan') <p class="text-xs text-red-600 mt-2">{{ $message }}</p> @enderror
     </div>
 
-    <div class="bg-white p-6 rounded-xl shadow">
-        <table class="w-full text-sm">
-            <thead class="bg-gray-50 text-gray-600">
-                <tr>
-                    <th class="p-3 text-left">Unit Kerja/Bagian</th>
-                    <th class="p-3 text-left">Jabatan</th>
-                    <th class="p-3 text-left">Edit Cepat</th>
-                    <th class="p-3 text-left">Aksi</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y">
-                @forelse($positions as $position)
-                    <tr>
-                        <td class="p-3 font-medium text-gray-700">{{ $position->department?->nama_departemen ?? '-' }}</td>
-                        <td class="p-3 font-medium text-gray-700">{{ $position->nama_jabatan }}</td>
-                        <td class="p-3">
-                            <form method="POST" action="{{ route('admin.positions.update', $position) }}" class="grid md:grid-cols-[0.85fr_1.15fr_auto] gap-2">
-                                @csrf
-                                @method('PUT')
-                                <select name="department_id" class="border rounded px-3 py-2">
-                                    @foreach($departments as $department)
-                                        <option value="{{ $department->id }}" @selected($position->department_id === $department->id)>{{ $department->nama_departemen }}</option>
-                                    @endforeach
-                                </select>
-                                <input name="nama_jabatan" value="{{ $position->nama_jabatan }}" class="border rounded px-3 py-2">
-                                <button class="bg-amber-500 text-white px-3 py-2 rounded">Update</button>
-                            </form>
-                        </td>
-                        <td class="p-3 w-28">
-                            <form method="POST" action="{{ route('admin.positions.destroy', $position) }}" data-confirm-form data-confirm-title="Hapus jabatan?" data-confirm-message="Jabatan ini akan dihapus dari master data." data-confirm-button="Hapus">
-                                @csrf
-                                @method('DELETE')
-                                <button class="text-red-600 font-semibold">Hapus</button>
-                            </form>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="4" class="p-6 text-center text-gray-500">Belum ada jabatan.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
 </div>
 
 <div id="modal-edit" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -221,7 +177,6 @@
                         <th class="px-5 py-3 text-left">Unit Kerja/Bagian</th>
                         <th class="px-5 py-3 text-left">Jabatan</th>
                         <th class="px-5 py-3 text-left">Pegawai</th>
-                        <th class="px-5 py-3 text-left">Status</th>
                         <th class="px-5 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -244,17 +199,6 @@
                                 </span>
                             </td>
                             <td class="px-5 py-3.5">
-                                @if($position->employee_details_count > 0)
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-600">
-                                        <span class="inline-block h-1.5 w-1.5 rounded-full bg-green-500"></span> Aktif
-                                    </span>
-                                @else
-                                    <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-400">
-                                        <span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-400"></span> Kosong
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-5 py-3.5">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <button
                                         type="button"
@@ -273,7 +217,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-14 text-center">
+                            <td colspan="5" class="py-14 text-center">
                                 <div class="flex flex-col items-center gap-2 text-gray-500">
                                     <i class="fas fa-briefcase text-3xl"></i>
                                     <p class="text-sm font-medium">Belum ada jabatan</p>
@@ -287,17 +231,40 @@
         </div>
 
         @if(method_exists($positions, 'links'))
-            <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3.5">
-                <p class="text-xs text-gray-500">
-                    Menampilkan {{ $positions->firstItem() }}-{{ $positions->lastItem() }} dari {{ $positions->total() }} data
-                </p>
-                {{ $positions->withQueryString()->links() }}
+            <div class="flex flex-col gap-3 border-t border-gray-100 px-5 py-3.5 text-xs font-semibold text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+                @php
+                    $positionStart = $positions->total() > 0 ? $positions->firstItem() : 0;
+                    $positionEnd = $positions->total() > 0 ? $positions->lastItem() : 0;
+                    $positionPageStart = max(1, $positions->currentPage() - 2);
+                    $positionPageEnd = min($positions->lastPage(), $positionPageStart + 4);
+                    $positionPageStart = max(1, $positionPageEnd - 4);
+                @endphp
+                <span>Menampilkan {{ $positionStart }}-{{ $positionEnd }} dari {{ $positions->total() }} data</span>
+                <div class="flex items-center gap-1">
+                    <a href="{{ $positions->onFirstPage() ? '#' : $positions->previousPageUrl() }}"
+                       class="org-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $positions->onFirstPage() ? 'pointer-events-none text-gray-300' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
+                        &lt;&lt;
+                    </a>
+                    @for($page = $positionPageStart; $page <= $positionPageEnd; $page++)
+                        <a href="{{ $positions->url($page) }}"
+                           class="org-page-link inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-blue-100 px-2 text-xs font-semibold no-underline {{ $page === $positions->currentPage() ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
+                            {{ $page }}
+                        </a>
+                    @endfor
+                    <a href="{{ $positions->hasMorePages() ? $positions->nextPageUrl() : '#' }}"
+                       class="org-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $positions->hasMorePages() ? 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' : 'pointer-events-none text-gray-300' }}">
+                        &gt;&gt;
+                    </a>
+                </div>
             </div>
         @endif
     </div>
 </div>
 
 <style>
+    main .org-page-link.rounded-md {
+        border-radius: .375rem !important;
+    }
     .animate-modal {
         animation: modalIn .2s ease;
     }
@@ -367,10 +334,16 @@
         }
     }
 
-    function bulkDelete() {
+    async function bulkDelete() {
         const ids = [...document.querySelectorAll('.row-check:checked')].map(cb => cb.value);
         if (!ids.length) return;
-        if (!confirm('Hapus ' + ids.length + ' jabatan yang dipilih?')) return;
+        const confirmed = await window.presensiConfirm({
+            title: 'Hapus jabatan?',
+            message: 'Sebanyak ' + ids.length + ' jabatan yang dipilih akan dihapus.',
+            confirmText: 'Hapus',
+            icon: 'fa-solid fa-trash',
+        });
+        if (!confirmed) return;
 
         const form = document.createElement('form');
         form.method = 'POST';

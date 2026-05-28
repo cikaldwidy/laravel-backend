@@ -13,26 +13,37 @@
             <h1 class="text-xl font-bold tracking-tight text-gray-700">Pengumuman</h1>
             <p class="mt-0.5 text-sm text-gray-500">Buat dan kelola informasi yang tampil untuk pegawai.</p>
         </div>
-        <span class="inline-flex w-fit items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
-            <i class="fa-solid fa-bullhorn text-xs"></i>
-            {{ method_exists($announcements, 'total') ? $announcements->total() : $announcements->count() }} pengumuman
-        </span>
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex w-fit items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">
+                <i class="fa-solid fa-bullhorn text-xs"></i>
+                {{ method_exists($announcements, 'total') ? $announcements->total() : $announcements->count() }} pengumuman
+            </span>
+            <button type="button" onclick="toggleAnnouncementForm(true)" class="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-gradient-to-r from-blue-600 to-sky-500 px-4 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:from-blue-700 hover:to-sky-600">
+                <i class="fa-solid fa-plus text-xs"></i>
+                Buat Pengumuman
+            </button>
+        </div>
     </div>
 
-    <div class="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
-            <div class="flex items-center gap-3">
-                <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                    <i class="fa-solid fa-paper-plane text-sm"></i>
-                </span>
-                <div>
-                    <h2 class="text-sm font-semibold text-gray-700">Buat Pengumuman</h2>
-                    <p class="text-xs text-gray-500">Atur target penerima dan periode tayang.</p>
+    <div id="announcement-create-panel" class="fixed inset-0 z-[80] hidden items-center justify-center bg-slate-950/45 px-4 py-6 backdrop-blur-sm">
+        <div class="absolute inset-0" onclick="toggleAnnouncementForm(false)"></div>
+        <div class="relative max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-md border border-gray-200 bg-white shadow-2xl">
+            <div class="flex items-center justify-between border-b border-gray-100 px-5 py-3.5">
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        <i class="fa-solid fa-paper-plane text-sm"></i>
+                    </span>
+                    <div>
+                        <h2 class="text-sm font-semibold text-gray-700">Buat Pengumuman</h2>
+                        <p class="text-xs text-gray-500">Atur target penerima dan periode tayang.</p>
+                    </div>
                 </div>
+                <button type="button" onclick="toggleAnnouncementForm(false)" class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 transition hover:bg-gray-50 hover:text-gray-700" aria-label="Tutup form pengumuman">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
             </div>
-        </div>
 
-        <form method="POST" action="{{ route('admin.announcements.store') }}" class="grid gap-4 p-5 md:grid-cols-2 announcement-form">
+        <form method="POST" action="{{ route('admin.announcements.store') }}" class="grid max-h-[calc(92vh-4.25rem)] gap-4 overflow-y-auto p-5 md:grid-cols-2 announcement-form">
             @csrf
             <label class="md:col-span-2">
                 <span class="block text-xs font-semibold text-gray-600 mb-1">Judul</span>
@@ -112,6 +123,7 @@
                 </button>
             </div>
         </form>
+        </div>
     </div>
 
     <div class="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
@@ -120,113 +132,74 @@
             <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">{{ method_exists($announcements, 'total') ? $announcements->total() : $announcements->count() }} data</span>
         </div>
 
-        <div class="divide-y divide-gray-50">
-            @forelse($announcements as $announcement)
-                @php
-                    $targetLabel = match ($announcement->target_type) {
-                        'unit' => $announcement->unit?->nama_departemen ?? 'Unit Kerja/Bagian',
-                        'users' => 'Khusus User',
-                        default => 'Semua User',
-                    };
-                @endphp
-                <div class="p-5">
-                    <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                        <div class="flex min-w-0 items-start gap-3">
-                            <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                                <i class="fa-solid fa-bullhorn text-sm"></i>
-                            </span>
-                            <div class="min-w-0">
-                                <h3 class="truncate text-sm font-semibold text-gray-800">{{ $announcement->judul }}</h3>
-                                <div class="mt-2 flex flex-wrap gap-2">
-                                    <span class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{{ $targetLabel }}</span>
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $announcement->is_published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500' }}">
-                                        {{ $announcement->is_published ? 'Published' : 'Draft' }}
-                                    </span>
-                                    <span class="inline-flex rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
-                                        {{ $announcement->tanggal_mulai?->format('d/m/Y') ?? '-' }} - {{ $announcement->tanggal_berakhir?->format('d/m/Y') ?? '-' }}
-                                    </span>
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[920px] text-sm">
+                <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                    <tr>
+                        <th class="px-5 py-3 text-left">Judul</th>
+                        <th class="px-5 py-3 text-left">Target</th>
+                        <th class="px-5 py-3 text-left">Status</th>
+                        <th class="px-5 py-3 text-left">Periode</th>
+                        <th class="px-5 py-3 text-left">URL</th>
+                        <th class="px-5 py-3 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @forelse($announcements as $announcement)
+                        @php
+                            $targetLabel = match ($announcement->target_type) {
+                                'unit' => $announcement->unit?->nama_departemen ?? 'Unit Kerja/Bagian',
+                                'users' => 'Khusus User',
+                                default => 'Semua User',
+                            };
+                        @endphp
+                        <tr class="transition hover:bg-gray-50/70">
+                            <td class="px-5 py-4">
+                                <div class="max-w-xs">
+                                    <p class="truncate font-semibold text-gray-800">{{ $announcement->judul }}</p>
+                                    <p class="mt-1 line-clamp-2 text-xs leading-5 text-gray-500">{{ $announcement->isi }}</p>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <form method="POST" action="{{ route('admin.announcements.update', $announcement) }}" class="grid gap-4 md:grid-cols-2 announcement-form">
-                        @csrf
-                        @method('PUT')
-                        <label class="md:col-span-2">
-                            <span class="mb-1 block text-xs font-semibold text-gray-600">Judul</span>
-                            <input name="judul" value="{{ $announcement->judul }}" class="w-full rounded-md border border-gray-200 px-3.5 py-2.5 text-sm text-gray-700 transition focus:border-gray-500 focus:outline-none">
-                        </label>
-                        <label class="md:col-span-2">
-                            <span class="mb-1 block text-xs font-semibold text-gray-600">Isi Pengumuman</span>
-                            <textarea name="isi" rows="3" class="w-full rounded-md border border-gray-200 px-3.5 py-2.5 text-sm text-gray-700 transition focus:border-gray-500 focus:outline-none">{{ $announcement->isi }}</textarea>
-                        </label>
-                        <label>
-                            <span class="mb-1 block text-xs font-semibold text-gray-600">Tanggal Mulai</span>
-                            <input type="date" name="tanggal_mulai" value="{{ $announcement->tanggal_mulai?->toDateString() }}" class="w-full rounded-md border border-gray-200 px-3.5 py-2.5 text-sm text-gray-700 transition focus:border-gray-500 focus:outline-none">
-                        </label>
-                        <label>
-                            <span class="mb-1 block text-xs font-semibold text-gray-600">Tanggal Berakhir</span>
-                            <input type="date" name="tanggal_berakhir" value="{{ $announcement->tanggal_berakhir?->toDateString() }}" class="w-full rounded-md border border-gray-200 px-3.5 py-2.5 text-sm text-gray-700 transition focus:border-gray-500 focus:outline-none">
-                        </label>
-                        <label>
-                            <span class="mb-1 block text-xs font-semibold text-gray-600">Target</span>
-                            <select name="target_type" class="w-full rounded-md border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-700 transition focus:border-gray-500 focus:outline-none js-target-type">
-                                <option value="all" @selected($announcement->target_type === 'all')>Semua User</option>
-                                <option value="unit" @selected($announcement->target_type === 'unit')>Per Unit Kerja/Bagian</option>
-                                <option value="users" @selected($announcement->target_type === 'users')>Khusus User</option>
-                            </select>
-                        </label>
-                        <label class="js-unit-field">
-                            <span class="mb-1 block text-xs font-semibold text-gray-600">Unit Kerja/Bagian</span>
-                            <select name="unit_id" class="w-full rounded-md border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-700 transition focus:border-gray-500 focus:outline-none">
-                                <option value="">Pilih Unit Kerja/Bagian</option>
-                                @foreach($units as $unit)
-                                    <option value="{{ $unit->id }}" @selected((string) $announcement->unit_id === (string) $unit->id)>{{ $unit->nama_departemen }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <label class="md:col-span-2 js-users-field">
-                            <span class="mb-1 block text-xs font-semibold text-gray-600">User Khusus</span>
-                            <select name="user_ids[]" multiple class="min-h-32 w-full rounded-md border border-gray-200 bg-white px-3.5 py-2.5 text-sm text-gray-700 transition focus:border-gray-500 focus:outline-none">
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}" @selected($announcement->users->contains('id', $user->id))>{{ $user->name }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <label class="md:col-span-2">
-                            <span class="mb-1 block text-xs font-semibold text-gray-600">URL Saat Notifikasi Diklik</span>
-                            <input name="action_url" value="{{ old('action_url', $announcement->action_url ?? '/pengumuman') }}" placeholder="/pengumuman" class="w-full rounded-md border border-gray-200 px-3.5 py-2.5 text-sm text-gray-700 transition focus:border-gray-500 focus:outline-none">
-                        </label>
-                        <label class="inline-flex items-center gap-2 md:col-span-2">
-                            <input type="checkbox" name="is_published" value="1" @checked($announcement->is_published) class="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            <span class="text-sm font-semibold text-gray-600">Published</span>
-                        </label>
-                        <div class="flex flex-wrap gap-2 border-t border-gray-100 pt-4 md:col-span-2">
-                            <button class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
-                                <i class="fa-solid fa-pen text-xs"></i>
-                                Update
-                            </button>
-                        </div>
-                    </form>
-                    <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" class="mt-2" data-confirm-form data-confirm-title="Hapus pengumuman?" data-confirm-message="Pengumuman ini akan dihapus dari daftar aktif." data-confirm-button="Hapus">
-                        @csrf
-                        @method('DELETE')
-                        <button class="inline-flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100">
-                            <i class="fa-solid fa-trash-can text-xs"></i>
-                            Hapus
-                        </button>
-                    </form>
-                </div>
-            @empty
-                <div class="py-14 text-center">
-                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-                        <i class="fa-solid fa-bullhorn text-sm"></i>
-                    </div>
-                    <p class="mt-3 text-sm font-semibold text-gray-700">Belum ada pengumuman.</p>
-                    <p class="text-xs text-gray-500">Pengumuman yang dibuat akan muncul di sini.</p>
-                </div>
-            @endforelse
+                            </td>
+                            <td class="px-5 py-4">
+                                <span class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{{ $targetLabel }}</span>
+                            </td>
+                            <td class="px-5 py-4">
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $announcement->is_published ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                                    {{ $announcement->is_published ? 'Published' : 'Draft' }}
+                                </span>
+                            </td>
+                            <td class="whitespace-nowrap px-5 py-4 text-gray-600">
+                                {{ $announcement->tanggal_mulai?->format('d/m/Y') ?? '-' }} - {{ $announcement->tanggal_berakhir?->format('d/m/Y') ?? '-' }}
+                            </td>
+                            <td class="px-5 py-4">
+                                <span class="font-mono text-xs text-gray-500">{{ $announcement->action_url ?: '-' }}</span>
+                            </td>
+                            <td class="px-5 py-4">
+                                <div class="flex justify-end">
+                                    <form method="POST" action="{{ route('admin.announcements.destroy', $announcement) }}" data-confirm-form data-confirm-title="Hapus pengumuman?" data-confirm-message="Pengumuman ini akan dihapus dari daftar aktif." data-confirm-button="Hapus">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100">
+                                            <i class="fa-solid fa-trash-can text-[10px]"></i>
+                                            Hapus
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-14 text-center">
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                                    <i class="fa-solid fa-bullhorn text-sm"></i>
+                                </div>
+                                <p class="mt-3 text-sm font-semibold text-gray-700">Belum ada pengumuman.</p>
+                                <p class="text-xs text-gray-500">Pengumuman yang dibuat akan muncul di sini.</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
 
         @if(method_exists($announcements, 'links'))
@@ -244,6 +217,12 @@
     @keyframes modalIn {
         from { opacity: 0; transform: scale(.96) translateY(8px); }
         to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    html[data-admin-theme="dark"] #announcement-create-panel > .relative {
+        background: var(--admin-card) !important;
+        border-color: var(--admin-border) !important;
+        box-shadow: 0 24px 56px rgba(0,0,0,.42) !important;
     }
 </style>
 
@@ -269,6 +248,29 @@ function openHapus(nama, actionUrl) {
     document.getElementById('form-hapus').action = actionUrl;
     openModal('modal-hapus');
 }
+
+function toggleAnnouncementForm(show = true) {
+    const panel = document.getElementById('announcement-create-panel');
+    if (!panel) return;
+
+    panel.classList.toggle('hidden', !show);
+    panel.classList.toggle('flex', show);
+    document.body.classList.toggle('overflow-hidden', show);
+
+    if (show) {
+        setTimeout(() => panel.querySelector('input[name="judul"]')?.focus(), 250);
+    }
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        toggleAnnouncementForm(false);
+    }
+});
+
+@if($errors->any())
+    toggleAnnouncementForm(true);
+@endif
 
 document.querySelectorAll('.announcement-form').forEach((form) => {
     const targetEl = form.querySelector('.js-target-type');

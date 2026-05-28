@@ -99,6 +99,7 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/presensi-terbaru/export', [DashboardController::class, 'exportLatestPresensi'])->name('dashboard.latest-presensi.export');
         Route::get('/presensi', [DashboardController::class, 'index'])->name('presensi.index');
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 
@@ -167,6 +168,7 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/face-data', [FaceDataController::class, 'index'])->name('face_data.index');
         Route::post('/face-data', [FaceDataController::class, 'store'])->name('face_data.store');
+        Route::delete('/face-data/bulk-delete', [FaceDataController::class, 'bulkDelete'])->name('face_data.bulk-delete');
         Route::put('/face-data/{faceEmbedding}', [FaceDataController::class, 'update'])->name('face_data.update');
         Route::delete('/face-data/{faceEmbedding}', [FaceDataController::class, 'destroy'])->name('face_data.destroy');
 

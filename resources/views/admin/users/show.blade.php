@@ -13,6 +13,10 @@
 @endphp
 
 <style>
+    #collapse-btn {
+        display: none !important;
+    }
+
     .profile-field {
         min-height: 2.75rem;
         width: 100%;
@@ -32,15 +36,66 @@
         font-weight: 700;
         color: #6b7280;
     }
+
+    html[data-admin-theme="dark"] main .employee-detail-page .profile-field {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+        color: var(--admin-ink) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-page .profile-label {
+        color: #8fa3bf !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-shell,
+    html[data-admin-theme="dark"] main .employee-detail-card {
+        background: #111f33 !important;
+        border-color: var(--admin-border) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-sidebar {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-content {
+        background: #111f33 !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-section-title {
+        border-color: var(--admin-border) !important;
+        color: var(--admin-ink) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-page .bg-green-50 {
+        background: rgba(34, 197, 94, .14) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-page .text-green-700 {
+        color: #4ade80 !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-page .bg-yellow-50 {
+        background: rgba(234, 179, 8, .16) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-page .text-yellow-700 {
+        color: #facc15 !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-detail-page .bg-gray-100 {
+        background: #17243a !important;
+    }
 </style>
 
-<div class="space-y-4">
+<div class="employee-detail-page space-y-4">
     <a href="{{ route('admin.users.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-blue-700">
         <i class="fas fa-arrow-left text-xs"></i>
         Kembali ke Akun Pegawai
     </a>
 
-    <section class="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+    <section class="employee-detail-shell overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50 text-blue-700">
@@ -51,19 +106,12 @@
                     <p class="text-xs text-gray-500">Akun dan biodata dalam satu halaman.</p>
                 </div>
             </div>
-            <div class="flex flex-wrap gap-2">
-                <a href="{{ route('admin.users.edit', $user->id) }}" class="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100">
-                    <i class="fas fa-pen text-[10px]"></i> Edit Akun
-                </a>
-                <a href="{{ route('admin.biodata.edit', $user) }}" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700">
-                    <i class="fas fa-id-card text-[10px]"></i> Edit Biodata
-                </a>
-            </div>
+          
         </div>
 
         <div class="grid xl:grid-cols-[17rem_1fr]">
-            <aside class="border-b border-gray-100 bg-gray-50/60 p-5 xl:border-b-0 xl:border-r">
-                <div class="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+            <aside class="employee-detail-sidebar border-b border-gray-100 bg-gray-50/60 p-5 xl:border-b-0 xl:border-r">
+                <div class="employee-detail-card rounded-md border border-gray-200 bg-white p-4 shadow-sm">
                     <div class="aspect-square overflow-hidden rounded-md bg-blue-50">
                         @if($profile?->foto)
                             <img src="{{ asset('storage/' . $profile->foto) }}" alt="{{ $user->name }}" class="h-full w-full object-cover">
@@ -80,7 +128,7 @@
                 </div>
 
                 <div class="mt-4 space-y-3">
-                    <div class="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+                    <div class="employee-detail-card rounded-md border border-gray-200 bg-white p-4 shadow-sm">
                         <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Status</p>
                         <div class="mt-3 flex flex-wrap gap-2">
                             <span class="inline-flex rounded-full px-3 py-1 text-xs font-semibold {{ $biodataComplete ? 'bg-green-50 text-green-700' : (($hasProfile || $hasDetail) ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-500') }}">
@@ -92,7 +140,7 @@
                         </div>
                     </div>
 
-                    <div class="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+                    <div class="employee-detail-card rounded-md border border-gray-200 bg-white p-4 shadow-sm">
                         <p class="text-xs font-semibold uppercase tracking-wider text-gray-500">Pekerjaan</p>
                         <p class="mt-3 text-sm font-bold text-gray-800">{{ $detail?->position?->nama_jabatan ?? $detail?->jabatan ?? '-' }}</p>
                         <p class="mt-1 text-xs text-gray-500">{{ $detail?->department?->nama_departemen ?? $detail?->departemen ?? '-' }}</p>
@@ -100,10 +148,10 @@
                 </div>
             </aside>
 
-            <main class="p-5 lg:p-6">
+            <main class="employee-detail-content p-5 lg:p-6">
                 <div class="grid gap-8 2xl:grid-cols-2">
                     <section>
-                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Informasi Akun</h3>
+                        <h3 class="employee-detail-section-title border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Informasi Akun</h3>
                         <div class="mt-4 grid gap-4 md:grid-cols-2">
                             <div>
                                 <label class="profile-label">Nama</label>
@@ -125,7 +173,7 @@
                     </section>
 
                     <section>
-                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Kontak & Biodata</h3>
+                        <h3 class="employee-detail-section-title border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Kontak & Biodata</h3>
                         <div class="mt-4 grid gap-4 md:grid-cols-2">
                             <div>
                                 <label class="profile-label">No. HP</label>
@@ -153,7 +201,7 @@
 
                 <div class="mt-8 grid gap-8 2xl:grid-cols-2">
                     <section>
-                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Detail Pekerjaan</h3>
+                        <h3 class="employee-detail-section-title border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Detail Pekerjaan</h3>
                         <div class="mt-4 grid gap-4 md:grid-cols-2">
                             <div>
                                 <label class="profile-label">NIP</label>
@@ -175,7 +223,7 @@
                     </section>
 
                     <section>
-                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Alamat</h3>
+                        <h3 class="employee-detail-section-title border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Alamat</h3>
                         <div class="profile-field mt-4 min-h-[8.25rem] leading-6">
                             {{ $profile?->alamat ?? '-' }}
                         </div>

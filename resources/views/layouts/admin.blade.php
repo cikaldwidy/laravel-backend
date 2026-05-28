@@ -16,6 +16,12 @@
     <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-precomposed.png">
     <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('adminTheme') || 'light';
+            document.documentElement.dataset.adminTheme = savedTheme;
+        })();
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -44,11 +50,34 @@
         --admin-navy: #1d4ed8;
         --admin-blue: #2563eb;
         --admin-cyan: #38bdf8;
+        --admin-input: #f8fafb;
+        --admin-soft: #eff6ff;
+        --admin-table-head: #f8fbff;
+        --admin-hover: rgba(37, 99, 235, .08);
+        --admin-shadow: rgba(37,99,235,.08);
+    }
+    html[data-admin-theme="dark"] {
+        color-scheme: dark;
+        --admin-bg: #07111f;
+        --admin-surface: #0f1b2d;
+        --admin-card: #111f33;
+        --admin-ink: #f8fafc;
+        --admin-muted: #94a3b8;
+        --admin-border: rgba(125, 170, 255, .18);
+        --admin-navy: #60a5fa;
+        --admin-blue: #60a5fa;
+        --admin-cyan: #67e8f9;
+        --admin-input: #0b1728;
+        --admin-soft: rgba(37, 99, 235, .14);
+        --admin-table-head: rgba(96, 165, 250, .10);
+        --admin-hover: rgba(96, 165, 250, .12);
+        --admin-shadow: rgba(0,0,0,.28);
     }
 
     body {
         background: var(--admin-bg);
         color: var(--admin-ink);
+        transition: background-color .25s ease, color .25s ease;
     }
  
     /* ===== SIDEBAR ===== */
@@ -56,8 +85,8 @@
         transition: width .3s ease, transform .3s ease;
         width: var(--sidebar-expanded-width);
         background: var(--admin-surface) !important;
-        border: 1px solid rgba(219,234,254,.90);
-        box-shadow: 18px 0 44px rgba(37,99,235,.08);
+        border: 1px solid var(--admin-border);
+        box-shadow: 18px 0 44px var(--admin-shadow);
     }
     #sidebar.sidebar-collapsed { width: var(--sidebar-collapsed-width); }
  
@@ -106,19 +135,19 @@
     .sidebar-item {
         width: 100%;
         box-sizing: border-box;
-        border-radius: 9999px !important;
-        color: #4b5563 !important;
+        border-radius: .375rem !important;
+        color: var(--admin-muted) !important;
         transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
     }
     .sidebar-item:hover {
-        background: rgba(37, 99, 235, .08) !important;
+        background: var(--admin-hover) !important;
         color: var(--admin-blue) !important;
     }
     .sidebar-item:focus {
         outline: none;
     }
     .sidebar-item:focus-visible {
-        background: rgba(37, 99, 235, .12) !important;
+        background: var(--admin-hover) !important;
         color: var(--admin-blue) !important;
         box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
     }
@@ -184,7 +213,7 @@
         left: calc(var(--sidebar-collapsed-width) + .6rem);
         top: 0;                   /* di-set via JS */
         min-width: 200px;
-        background: #fff;
+        background: var(--admin-card);
         border: 1px solid var(--admin-border);
         border-radius: 1rem;
         box-shadow: 0 18px 36px rgba(7,18,37,.18);
@@ -225,7 +254,7 @@
         align-items: center;
         gap: .6rem;
         padding: .55rem 1rem;
-        color: #4b5563;
+        color: var(--admin-muted);
         font-size: .85rem;
         font-weight: 500;
         text-decoration: none;
@@ -233,11 +262,11 @@
     }
     .flyout-item:hover {
         color: var(--admin-ink);
-        background: rgba(7,18,37,.05);
+        background: var(--admin-hover);
     }
     .flyout-item.active {
         color: var(--admin-ink);
-        background: rgba(7,18,37,.08);
+        background: var(--admin-hover);
     }
  
     /* ===== SUBMENU (expanded state) ===== */
@@ -246,7 +275,7 @@
         margin-top: .35rem;
         margin-left: .9rem;
         padding-left: .9rem;
-        border-left: 1px solid rgba(7,18,37,.10);
+        border-left: 1px solid var(--admin-border);
     }
     .submenu.is-open { display: block; }
     .submenu-item + .submenu-item {
@@ -257,7 +286,7 @@
         align-items: center;
         padding: .55rem .65rem;
         border-radius: .5rem;
-        color: #6b7280;
+        color: var(--admin-muted);
         font-size: 14px;
         font-weight: 500;
         text-decoration: none;
@@ -265,12 +294,12 @@
     }
     .submenu-item:hover {
         color: var(--admin-ink);
-        background: rgba(7,18,37,.05);
+        background: var(--admin-hover);
         text-decoration: none;
     }
     .submenu-item.active {
         color: var(--admin-ink);
-        background: rgba(7,18,37,.08);
+        background: var(--admin-hover);
         text-decoration: none;
     }
  
@@ -280,7 +309,17 @@
     .menu-trigger { width: 100%; border: 0; background: transparent; }
  
     /* ===== MAIN CONTENT ===== */
-    #main-content { transition: margin-left .3s ease; }
+    #main-content {
+        flex: 0 0 auto;
+        min-width: 0;
+        width: 100%;
+        transition: margin-left .3s ease, width .3s ease;
+    }
+    @media (min-width:768px) {
+        #main-content {
+            width: calc(100% - var(--sidebar-expanded-width));
+        }
+    }
  
     /* ===== COLLAPSE BUTTON ===== */
     #collapse-btn { transition: left .3s ease, background-color .2s ease; }
@@ -303,7 +342,7 @@
         font-weight: 800;
     }
     #sidebar > .h-20 {
-        border-color: rgba(7,18,37,.10) !important;
+        border-color: var(--admin-border) !important;
     }
 
     #collapse-btn {
@@ -314,36 +353,38 @@
 
     #main-content > header {
         margin: .4rem .4rem 0;
-        border: 1px solid rgba(219,234,254,.95) !important;
+        border: 1px solid var(--admin-border) !important;
         border-radius: 1.25rem;
-        background: rgba(255,255,255,.92) !important;
-        box-shadow: 0 18px 42px rgba(37,99,235,.08);
+        background: color-mix(in srgb, var(--admin-surface) 92%, transparent) !important;
+        box-shadow: 0 18px 42px var(--admin-shadow);
     }
     #main-content > .flex-1 {
         background: var(--admin-bg) !important;
     }
     main .bg-white {
-        border: 1px solid rgba(219,234,254,.90);
+        background: var(--admin-card) !important;
+        border: 1px solid var(--admin-border);
         border-radius: 1rem !important;
-        box-shadow: 0 18px 42px rgba(37,99,235,.08) !important;
+        box-shadow: 0 18px 42px var(--admin-shadow) !important;
     }
     main .shadow,
     main .shadow-sm,
     main .shadow-md,
     main .shadow-xl,
     main .shadow-2xl {
-        box-shadow: 0 18px 42px rgba(37,99,235,.08) !important;
+        box-shadow: 0 18px 42px var(--admin-shadow) !important;
     }
     main table thead,
     main .bg-gray-50 {
-        background: #f8fbff !important;
+        background: var(--admin-table-head) !important;
     }
     main input,
     main select,
     main textarea {
         border-color: rgba(7,18,37,.10) !important;
         border-radius: .9rem !important;
-        background-color: #f8fafb;
+        background-color: var(--admin-input);
+        color: var(--admin-ink);
     }
     main input:focus,
     main select:focus,
@@ -357,6 +398,118 @@
         border-radius: 0 !important;
         background: transparent !important;
         box-shadow: none !important;
+    }
+    html[data-admin-theme="dark"] .admin-top-search,
+    html[data-admin-theme="dark"] #main-content header .bg-white,
+    html[data-admin-theme="dark"] #main-content header .hover\:bg-blue-50:hover,
+    html[data-admin-theme="dark"] #main-content header .hover\:bg-gray-50:hover,
+    html[data-admin-theme="dark"] #main-content header .hover\:bg-slate-50:hover {
+        background: var(--admin-card) !important;
+        border-color: var(--admin-border) !important;
+    }
+    html[data-admin-theme="dark"] #main-content header .bg-blue-50,
+    html[data-admin-theme="dark"] main .bg-blue-50,
+    html[data-admin-theme="dark"] main .bg-blue-50\/40,
+    html[data-admin-theme="dark"] main .bg-blue-50\/60,
+    html[data-admin-theme="dark"] main .bg-blue-50\/70 {
+        background: var(--admin-soft) !important;
+    }
+    html[data-admin-theme="dark"] main .hover\:bg-blue-50\/40:hover,
+    html[data-admin-theme="dark"] main .hover\:bg-blue-50:hover,
+    html[data-admin-theme="dark"] main .hover\:bg-blue-100:hover,
+    html[data-admin-theme="dark"] main .hover\:bg-gray-50:hover,
+    html[data-admin-theme="dark"] main .hover\:bg-gray-50\/70:hover,
+    html[data-admin-theme="dark"] main .hover\:bg-gray-100:hover,
+    html[data-admin-theme="dark"] main .hover\:bg-gray-200:hover,
+    html[data-admin-theme="dark"] main .hover\:bg-slate-50:hover,
+    html[data-admin-theme="dark"] main .hover\:bg-slate-50\/70:hover {
+        background: var(--admin-hover) !important;
+    }
+    html[data-admin-theme="dark"] main table tbody tr:hover,
+    html[data-admin-theme="dark"] main table tbody tr.group:hover {
+        background: var(--admin-hover) !important;
+        color: var(--admin-ink) !important;
+    }
+    html[data-admin-theme="dark"] main table tbody tr:hover > th,
+    html[data-admin-theme="dark"] main table tbody tr:hover > td {
+        background: transparent !important;
+    }
+    html[data-admin-theme="dark"] main table tbody tr:hover .text-gray-950,
+    html[data-admin-theme="dark"] main table tbody tr:hover .text-gray-900,
+    html[data-admin-theme="dark"] main table tbody tr:hover .text-gray-800,
+    html[data-admin-theme="dark"] main table tbody tr:hover .text-gray-700 {
+        color: var(--admin-ink) !important;
+    }
+    html[data-admin-theme="dark"] main table tbody tr:hover .text-gray-600,
+    html[data-admin-theme="dark"] main table tbody tr:hover .text-gray-500,
+    html[data-admin-theme="dark"] main table tbody tr:hover .text-gray-400 {
+        color: #cbd5e1 !important;
+    }
+    html[data-admin-theme="dark"] main table a.bg-white,
+    html[data-admin-theme="dark"] main table button.bg-white,
+    html[data-admin-theme="dark"] main table .bg-gray-100 {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+    }
+    html[data-admin-theme="dark"] main table a.hover\:bg-gray-50:hover,
+    html[data-admin-theme="dark"] main table button.hover\:bg-gray-50:hover,
+    html[data-admin-theme="dark"] main table a.hover\:bg-blue-50:hover,
+    html[data-admin-theme="dark"] main table button.hover\:bg-blue-50:hover,
+    html[data-admin-theme="dark"] main table a.hover\:bg-blue-100:hover,
+    html[data-admin-theme="dark"] main table button.hover\:bg-blue-100:hover {
+        background: rgba(96, 165, 250, .14) !important;
+    }
+    html[data-admin-theme="dark"] main .bg-red-50,
+    html[data-admin-theme="dark"] main .bg-red-100 {
+        background: rgba(239, 68, 68, .12) !important;
+    }
+    html[data-admin-theme="dark"] main .border-red-200 {
+        border-color: rgba(248, 113, 113, .30) !important;
+    }
+    html[data-admin-theme="dark"] main .text-red-500,
+    html[data-admin-theme="dark"] main .text-red-600 {
+        color: #f87171 !important;
+    }
+    html[data-admin-theme="dark"] main .hover\:bg-red-50:hover,
+    html[data-admin-theme="dark"] main .hover\:bg-red-100:hover,
+    html[data-admin-theme="dark"] main button.hover\:bg-red-100:hover,
+    html[data-admin-theme="dark"] main a.hover\:bg-red-100:hover {
+        background: rgba(239, 68, 68, .20) !important;
+    }
+    html[data-admin-theme="dark"] main .border-blue-50,
+    html[data-admin-theme="dark"] main .border-blue-100,
+    html[data-admin-theme="dark"] #main-content header .border-gray-100,
+    html[data-admin-theme="dark"] #main-content header .border-gray-200,
+    html[data-admin-theme="dark"] #main-content header .border-slate-100 {
+        border-color: var(--admin-border) !important;
+    }
+    html[data-admin-theme="dark"] main .text-gray-950,
+    html[data-admin-theme="dark"] main .text-gray-900,
+    html[data-admin-theme="dark"] main .text-gray-800,
+    html[data-admin-theme="dark"] main .text-gray-700,
+    html[data-admin-theme="dark"] #main-content header .text-gray-900,
+    html[data-admin-theme="dark"] #main-content header .text-gray-800,
+    html[data-admin-theme="dark"] #main-content header .text-slate-900,
+    html[data-admin-theme="dark"] #main-content header .text-slate-950,
+    html[data-admin-theme="dark"] #main-content header .text-slate-800 {
+        color: var(--admin-ink) !important;
+    }
+    html[data-admin-theme="dark"] main .text-gray-600,
+    html[data-admin-theme="dark"] main .text-gray-500,
+    html[data-admin-theme="dark"] main .text-gray-400,
+    html[data-admin-theme="dark"] #main-content header .text-gray-600,
+    html[data-admin-theme="dark"] #main-content header .text-gray-500,
+    html[data-admin-theme="dark"] #main-content header .text-gray-400,
+    html[data-admin-theme="dark"] #main-content header .text-slate-500 {
+        color: var(--admin-muted) !important;
+    }
+    html[data-admin-theme="dark"] .theme-toggle {
+        background: var(--admin-card) !important;
+        border-color: var(--admin-border) !important;
+        color: #fde68a !important;
+    }
+    html[data-admin-theme="dark"] .theme-toggle:hover {
+        background: rgba(250, 204, 21, .12) !important;
     }
     main .bg-blue-600,
     main .bg-blue-700,
@@ -413,7 +566,10 @@
     /* ===== RESPONSIVE ===== */
     @media (max-width:767px) {
         #sidebar, #sidebar.sidebar-collapsed { width: min(18rem, calc(100vw - 2rem)); }
-        #main-content, #sidebar.sidebar-collapsed ~ #main-content { margin-left:0 !important; }
+        #main-content, #sidebar.sidebar-collapsed ~ #main-content {
+            margin-left:0 !important;
+            width: 100% !important;
+        }
         #main-content > header {
             margin: 0;
             border-radius: 0 0 1rem 1rem;
@@ -616,7 +772,6 @@
                     <i class="fas fa-chevron-down menu-caret text-xs"></i>
                 </button>
                 <div id="menu-settings" class="submenu {{ $settingsOpen ? 'is-open' : '' }}">
-                    <a href="{{ route('admin.settings.admin_accounts.index') }}" class="submenu-item {{ request()->routeIs('admin.settings.admin_accounts.*') ? 'active' : '' }}">Akun Admin</a>
                     <a href="{{ route('admin.settings.work.edit') }}" class="submenu-item {{ request()->routeIs('admin.settings.work.*') ? 'active' : '' }}">Lokasi Presensi</a>
                     <a href="{{ route('admin.settings.features.index') }}" class="submenu-item {{ request()->routeIs('admin.settings.features.*') ? 'active' : '' }}">Pengaturan Fitur</a>
                 </div>
@@ -649,16 +804,19 @@
                             class="h-full w-full border-0 bg-transparent px-0 text-sm text-gray-600 placeholder:text-gray-400 focus:outline-none focus:ring-0"
                         >
                     </div>
-                    <div
-                        class="hidden md:flex shrink-0 text-sm text-gray-500 tracking-[.2px]"
-                        data-admin-clock
-                        data-locale="id-ID"
-                    >
-                        {{ now()->locale('id')->translatedFormat('l, d F H:i:s') }}
-                    </div>
                 </div>
 
                 <div class="flex items-center gap-3 md:gap-4">
+                    <button
+                        type="button"
+                        id="admin-theme-toggle"
+                        class="theme-toggle relative w-10 h-10 rounded-2xl bg-white border border-blue-100 text-blue-700 hover:bg-blue-50 flex items-center justify-center shadow-sm transition"
+                        aria-label="Ganti tema"
+                        title="Ganti tema"
+                    >
+                        <i class="fa-solid fa-moon"></i>
+                    </button>
+
                     <div class="relative group">
                         <button class="relative w-10 h-10 rounded-2xl bg-white border border-blue-100 text-blue-700 hover:bg-blue-50 flex items-center justify-center shadow-sm transition">
                             <i class="fa-solid fa-bell"></i>
@@ -737,10 +895,6 @@
                                 <i class="fas fa-user-circle w-4"></i>
                                 Profile
                             </a>
-                            <a href="{{ route('admin.settings.admin_accounts.index') }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
-                                <i class="fas fa-cog w-4"></i>
-                                Settings
-                            </a>
                             <div class="border-t border-gray-100">
                                 <form method="POST" action="/logout" data-logout-form>
                                     @csrf
@@ -775,6 +929,31 @@ const sidebar         = document.getElementById('sidebar');
 const sidebarOverlay  = document.getElementById('sidebar-overlay');
 const mainContent     = document.getElementById('main-content');
 const collapseBtn     = document.getElementById('collapse-btn');
+const collapseIcon    = document.getElementById('collapse-icon');
+const themeToggle     = document.getElementById('admin-theme-toggle');
+
+function applyAdminTheme(theme) {
+    const nextTheme = theme === 'dark' ? 'dark' : 'light';
+    document.documentElement.dataset.adminTheme = nextTheme;
+    localStorage.setItem('adminTheme', nextTheme);
+
+    if (themeToggle) {
+        const icon = themeToggle.querySelector('i');
+        themeToggle.setAttribute('aria-label', nextTheme === 'dark' ? 'Gunakan tema terang' : 'Gunakan tema gelap');
+        themeToggle.setAttribute('title', nextTheme === 'dark' ? 'Tema terang' : 'Tema gelap');
+
+        if (icon) {
+            icon.className = nextTheme === 'dark' ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
+        }
+    }
+
+    window.dispatchEvent(new CustomEvent('admin-theme-change', { detail: { theme: nextTheme } }));
+}
+
+applyAdminTheme(document.documentElement.dataset.adminTheme || localStorage.getItem('adminTheme') || 'light');
+themeToggle?.addEventListener('click', () => {
+    applyAdminTheme(document.documentElement.dataset.adminTheme === 'dark' ? 'light' : 'dark');
+});
  
 function toggleMobileMenu() {
     sidebar.classList.toggle('-translate-x-full');
@@ -815,6 +994,7 @@ menuTriggers.forEach(trigger => {
 function syncDesktopSidebarState() {
     if (window.innerWidth < 768) {
         mainContent.style.marginLeft = '0';
+        mainContent.style.width = '100%';
         sidebar.classList.remove('sidebar-collapsed');
         destroyAllFlyouts();
         return;
@@ -822,7 +1002,13 @@ function syncDesktopSidebarState() {
     const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
     sidebar.classList.toggle('sidebar-collapsed', isCollapsed);
     collapseBtn?.classList.toggle('is-collapsed', isCollapsed);
+    if (collapseIcon) {
+        collapseIcon.className = isCollapsed
+            ? 'fas fa-chevron-right text-sm transition-transform duration-300'
+            : 'fas fa-chevron-left text-sm transition-transform duration-300';
+    }
     mainContent.style.marginLeft = isCollapsed ? '4.5rem' : '16rem';
+    mainContent.style.width = isCollapsed ? 'calc(100% - 4.5rem)' : 'calc(100% - 16rem)';
     if (collapseBtn) {
         collapseBtn.style.left = isCollapsed ? '3.5rem' : '15rem';
     }
@@ -844,6 +1030,7 @@ window.addEventListener('resize', () => {
         syncDesktopSidebarState();
     } else {
         mainContent.style.marginLeft = '0';
+        mainContent.style.width = '100%';
         destroyAllFlyouts();
     }
 });
@@ -979,26 +1166,6 @@ document.querySelectorAll('[data-toast]').forEach((toast, index) => {
     setTimeout(() => toast.classList.add('is-visible'), 80 + index * 90);
     setTimeout(() => hide(), 4200 + index * 300);
     closeBtn?.addEventListener('click', hide);
-});
-
-document.querySelectorAll('[data-admin-clock]').forEach((clock) => {
-    const locale = clock.dataset.locale || 'id-ID';
-    const formatter = new Intl.DateTimeFormat(locale, {
-        weekday: 'long',
-        day: '2-digit',
-        month: 'long',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-    });
-
-    const updateClock = () => {
-        clock.textContent = formatter.format(new Date()).replace(' pukul ', ' ');
-    };
-
-    updateClock();
-    setInterval(updateClock, 1000);
 });
 
 document.querySelectorAll('[data-auto-filter]').forEach((form) => {

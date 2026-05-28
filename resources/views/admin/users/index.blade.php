@@ -111,8 +111,8 @@
                         <th class="px-5 py-3 text-left">Pegawai</th>
                         <th class="px-5 py-3 text-left">Unit Kerja/Bagian</th>
                         <th class="px-5 py-3 text-left">Jabatan</th>
-                        <th class="px-5 py-3 text-left">Biodata</th>
-                        <th class="px-5 py-3 text-left">Wajah</th>
+                        <th class="px-5 py-3 text-left whitespace-nowrap">Biodata</th>
+                        <th class="px-5 py-3 text-left whitespace-nowrap">Wajah</th>
                         <th class="px-5 py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -142,17 +142,17 @@
                             </td>
                             <td class="px-5 py-3.5 font-medium text-gray-600">{{ $detail?->department?->nama_departemen ?? $detail?->departemen ?? '-' }}</td>
                             <td class="px-5 py-3.5 font-medium text-gray-600">{{ $detail?->position?->nama_jabatan ?? $detail?->jabatan ?? '-' }}</td>
-                            <td class="px-5 py-3.5">
-                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $biodataComplete ? 'bg-green-50 text-green-700' : (($hasProfile || $hasDetail) ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-500') }}">
-                                    {{ $biodataComplete ? 'Lengkap' : (($hasProfile || $hasDetail) ? 'Sebagian' : 'Belum ada') }}
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap {{ $biodataComplete ? 'bg-green-50 text-green-700' : (($hasProfile || $hasDetail) ? 'bg-yellow-50 text-yellow-700' : 'bg-gray-100 text-gray-500') }}">
+                                    {{ $biodataComplete ? 'Lengkap' : (($hasProfile || $hasDetail) ? 'Sebagian' : 'Belum') }}
                                 </span>
                             </td>
-                            <td class="px-5 py-3.5">
-                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $u->faceEmbedding ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500' }}">
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap {{ $u->faceEmbedding ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500' }}">
                                     {{ $u->faceEmbedding ? 'Terdaftar' : 'Belum' }}
                                 </span>
                             </td>
-                            <td class="px-5 py-3.5">
+                            <td class="px-5 py-3.5 whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <a href="{{ route('admin.users.show', $u->id) }}" class="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50">
                                         <i class="fas fa-eye text-[10px]"></i> Detail
@@ -161,7 +161,7 @@
                                         <i class="fas fa-pen text-[10px]"></i> Akun
                                     </a>
                                     <a href="{{ route('admin.biodata.edit', $u) }}" class="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-100">
-                                        <i class="fas fa-id-card text-[10px]"></i> Biodata
+                                        <i class="fas fa-id-card text-[10px]"></i> Edit Biodata
                                     </a>
                                     <button
                                         type="button"
@@ -190,17 +190,40 @@
         </div>
 
         @if(method_exists($users, 'links'))
-            <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3.5">
-                <p class="text-xs text-gray-500">
-                    Menampilkan {{ $users->firstItem() }}-{{ $users->lastItem() }} dari {{ $users->total() }} data
-                </p>
-                {{ $users->withQueryString()->links() }}
+            <div class="flex flex-col gap-3 border-t border-gray-100 px-5 py-3.5 text-xs font-semibold text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+                @php
+                    $userStart = $users->total() > 0 ? $users->firstItem() : 0;
+                    $userEnd = $users->total() > 0 ? $users->lastItem() : 0;
+                    $userPageStart = max(1, $users->currentPage() - 2);
+                    $userPageEnd = min($users->lastPage(), $userPageStart + 4);
+                    $userPageStart = max(1, $userPageEnd - 4);
+                @endphp
+                <span>Menampilkan {{ $userStart }}-{{ $userEnd }} dari {{ $users->total() }} data</span>
+                <div class="flex items-center gap-1">
+                    <a href="{{ $users->onFirstPage() ? '#' : $users->previousPageUrl() }}"
+                       class="employee-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $users->onFirstPage() ? 'pointer-events-none text-gray-300' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
+                        &lt;&lt;
+                    </a>
+                    @for($page = $userPageStart; $page <= $userPageEnd; $page++)
+                        <a href="{{ $users->url($page) }}"
+                           class="employee-page-link inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-blue-100 px-2 text-xs font-semibold no-underline {{ $page === $users->currentPage() ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
+                            {{ $page }}
+                        </a>
+                    @endfor
+                    <a href="{{ $users->hasMorePages() ? $users->nextPageUrl() : '#' }}"
+                       class="employee-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $users->hasMorePages() ? 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' : 'pointer-events-none text-gray-300' }}">
+                        &gt;&gt;
+                    </a>
+                </div>
             </div>
         @endif
     </div>
 </div>
 
 <style>
+    main .employee-page-link.rounded-md {
+        border-radius: .375rem !important;
+    }
     .animate-modal {
         animation: modalIn .2s ease;
     }
@@ -260,10 +283,16 @@
         }
     }
 
-    function bulkDelete() {
+    async function bulkDelete() {
         const ids = [...document.querySelectorAll('.row-check:checked')].map(cb => cb.value);
         if (!ids.length) return;
-        if (!confirm('Hapus ' + ids.length + ' akun pegawai yang dipilih?')) return;
+        const confirmed = await window.presensiConfirm({
+            title: 'Hapus akun pegawai?',
+            message: 'Sebanyak ' + ids.length + ' akun pegawai yang dipilih akan dihapus.',
+            confirmText: 'Hapus',
+            icon: 'fa-solid fa-trash',
+        });
+        if (!confirmed) return;
 
         const form = document.createElement('form');
         form.method = 'POST';

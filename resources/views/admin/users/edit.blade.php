@@ -28,15 +28,62 @@
         font-weight: 700;
         color: #6b7280;
     }
+
+    html[data-admin-theme="dark"] main .employee-account-edit-page .admin-edit-field {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+        color: var(--admin-ink) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+    }
+
+    html[data-admin-theme="dark"] main .employee-account-edit-page .admin-edit-field:focus {
+        background: #0b1728 !important;
+        border-color: var(--admin-blue) !important;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, .14) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-account-edit-page .admin-edit-field::placeholder {
+        color: #64748b !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-account-edit-page .admin-edit-label {
+        color: #8fa3bf !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-account-edit-shell {
+        background: #111f33 !important;
+        border-color: var(--admin-border) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-account-edit-content {
+        background: #111f33 !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-account-section-title,
+    html[data-admin-theme="dark"] main .employee-account-actions {
+        border-color: var(--admin-border) !important;
+        color: var(--admin-ink) !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-account-cancel {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+        color: #cbd5e1 !important;
+    }
+
+    html[data-admin-theme="dark"] main .employee-account-cancel:hover {
+        background: rgba(96, 165, 250, .12) !important;
+        color: var(--admin-ink) !important;
+    }
 </style>
 
-<div class="space-y-4">
-    <a href="{{ route('admin.users.show', $user->id) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-blue-700">
+<div class="employee-account-edit-page space-y-4">
+    <a href="{{ route('admin.users.index') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-blue-700">
         <i class="fas fa-arrow-left text-xs"></i>
-        Kembali ke Detail Pegawai
+        Kembali ke Akun Pegawai
     </a>
 
-    <section class="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+    <section class="employee-account-edit-shell overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
         <div class="flex flex-col gap-3 border-b border-gray-100 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-md bg-blue-50 text-blue-700">
@@ -47,29 +94,15 @@
                     <p class="text-xs text-gray-500">Perbarui nama, username, email, dan password akun.</p>
                 </div>
             </div>
-            <a href="{{ route('admin.biodata.edit', $user) }}" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700">
-                <i class="fas fa-id-card text-[10px]"></i> Edit Biodata
-            </a>
+        
         </div>
 
-        <div class="grid xl:grid-cols-[17rem_1fr]">
-            <aside class="border-b border-gray-100 bg-gray-50/60 p-5 xl:border-b-0 xl:border-r">
-                <div class="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
-                    <div class="flex aspect-square items-center justify-center rounded-md bg-blue-50 text-5xl font-bold text-blue-700">
-                        {{ strtoupper(substr($user->name, 0, 1)) }}
-                    </div>
-                    <div class="mt-4 text-center">
-                        <h2 class="text-base font-bold text-gray-800">{{ $user->name }}</h2>
-                        <p class="mt-1 text-sm text-gray-500">{{ $user->email }}</p>
-                    </div>
-                </div>
-            </aside>
-
-            <main class="p-5 lg:p-6">
+        <div>
+            <main class="employee-account-edit-content p-5 lg:p-6">
                 <form method="POST" action="{{ route('admin.users.update', $user->id) }}" class="space-y-6">
                     @csrf
                     <section>
-                        <h3 class="border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Informasi Akun</h3>
+                        <h3 class="employee-account-section-title border-b border-gray-100 pb-3 text-sm font-bold text-gray-700">Informasi Akun</h3>
                         <div class="mt-4 grid gap-4 md:grid-cols-2">
                             <div>
                                 <label class="admin-edit-label">Nama</label>
@@ -94,11 +127,11 @@
                         </div>
                     </section>
 
-                    <div class="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-5">
+                    <div class="employee-account-actions flex flex-wrap items-center gap-2 border-t border-gray-100 pt-5">
                         <button class="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
                             Simpan Akun
                         </button>
-                        <a href="{{ route('admin.users.show', $user->id) }}" class="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                        <a href="{{ route('admin.users.show', $user->id) }}" class="employee-account-cancel rounded-md border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
                             Batal
                         </a>
                     </div>

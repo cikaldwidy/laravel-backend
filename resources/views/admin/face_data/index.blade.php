@@ -16,14 +16,9 @@
 
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <div class="flex items-center gap-3">
-                <span class="flex h-12 w-12 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-sky-500 text-white shadow-lg shadow-blue-500/20">
-                    <i class="fa-solid fa-face-smile text-lg"></i>
-                </span>
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Data Wajah</h1>
-                    <p class="mt-1 text-sm text-gray-500">Kelola template wajah pegawai untuk presensi biometrik.</p>
-                </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Data Wajah</h1>
+                <p class="mt-1 text-sm text-gray-500">Kelola template wajah pegawai untuk presensi biometrik.</p>
             </div>
         </div>
 
@@ -61,7 +56,7 @@
         </div>
         <div class="rounded-md border border-blue-100 bg-white p-5 shadow-sm">
             <p class="text-sm font-semibold text-gray-500">Template Wajah</p>
-            <p class="mt-2 text-3xl font-bold text-gray-900">{{ $faceEmbeddings->count() }}</p>
+            <p class="mt-2 text-3xl font-bold text-gray-900">{{ method_exists($faceEmbeddings, 'total') ? $faceEmbeddings->total() : $faceEmbeddings->count() }}</p>
         </div>
     </div>
 
@@ -95,14 +90,14 @@
                 </div>
 
                 <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-md border border-blue-100 bg-blue-50/50 px-4 py-3">
+                    <div class="face-status-card rounded-md border border-blue-100 bg-blue-50/50 px-4 py-3">
                         <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                             <i class="fa-solid fa-user-check text-blue-500"></i>
                             Wajah
                         </div>
                         <p id="faceStatus" class="mt-1 text-sm font-semibold text-gray-900">Menunggu kamera</p>
                     </div>
-                    <div class="rounded-md border border-blue-100 bg-blue-50/50 px-4 py-3">
+                    <div class="face-status-card rounded-md border border-blue-100 bg-blue-50/50 px-4 py-3">
                         <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
                             <i class="fa-solid fa-eye text-blue-500"></i>
                             Kedipan
@@ -127,7 +122,7 @@
                 </div>
             </div>
 
-            <aside class="border-t border-blue-50 bg-blue-50/30 p-6 xl:border-l xl:border-t-0">
+            <aside class="face-capture-sidebar border-t border-blue-50 bg-blue-50/30 p-6 xl:border-l xl:border-t-0">
                 <input type="hidden" id="mode" value="store">
                 <input type="hidden" id="updateUrl" value="">
 
@@ -207,21 +202,32 @@
     <section class="overflow-hidden rounded-md border border-blue-100 bg-white shadow-sm">
         <div class="flex flex-col gap-2 border-b border-blue-50 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h2 class="text-lg font-bold text-gray-900">Daftar Data Wajah</h2>
+                <div class="flex flex-wrap items-center gap-3">
+                    <h2 class="text-lg font-bold text-gray-900">Daftar Data Wajah</h2>
+                    <span id="selected-badge" class="hidden rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700"></span>
+                </div>
                 <p class="text-sm text-gray-500">
-                    {{ $faceEmbeddings->count() }} template wajah tersimpan{{ $selectedUnit ? ' di ' . $selectedUnit->nama_departemen : '' }}
+                    {{ method_exists($faceEmbeddings, 'total') ? $faceEmbeddings->total() : $faceEmbeddings->count() }} template wajah tersimpan{{ $selectedUnit ? ' di ' . $selectedUnit->nama_departemen : '' }}
                 </p>
             </div>
-            <span class="inline-flex w-fit items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600">
-                <i class="fa-solid fa-database"></i>
-                {{ $faceEmbeddings->count() }} data
-            </span>
+            <div class="flex flex-wrap items-center gap-2">
+                <button id="btn-bulk-delete" type="button" onclick="bulkDelete()" class="hidden items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100">
+                    <i class="fa-solid fa-trash text-xs"></i> Hapus Terpilih
+                </button>
+                <span class="inline-flex w-fit items-center gap-2 rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600">
+                    <i class="fa-solid fa-database"></i>
+                    {{ method_exists($faceEmbeddings, 'total') ? $faceEmbeddings->total() : $faceEmbeddings->count() }} data
+                </span>
+            </div>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full min-w-[760px] text-sm">
                 <thead class="bg-blue-50/70 text-xs font-semibold uppercase tracking-wide text-gray-500">
                     <tr>
+                        <th class="w-10 px-6 py-3 text-left">
+                            <input type="checkbox" id="check-all" onchange="toggleAll(this)" class="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        </th>
                         <th class="px-6 py-3 text-left">Foto</th>
                         <th class="px-6 py-3 text-left">Pegawai</th>
                         <th class="px-6 py-3 text-left">Unit Kerja/Bagian</th>
@@ -232,6 +238,9 @@
                 <tbody class="divide-y divide-blue-50">
                     @forelse($faceEmbeddings as $faceEmbedding)
                         <tr class="hover:bg-blue-50/40">
+                            <td class="px-6 py-4">
+                                <input type="checkbox" name="selected[]" value="{{ $faceEmbedding->id }}" onchange="updateBulkBar()" class="row-check h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            </td>
                             <td class="px-6 py-4">
                                 <div class="h-14 w-14 overflow-hidden rounded-md border border-blue-100 bg-blue-50">
                                     @if($faceEmbedding->photo_path)
@@ -280,7 +289,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="6" class="px-6 py-12 text-center">
                                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-blue-50 text-blue-400">
                                     <i class="fa-regular fa-face-smile text-xl"></i>
                                 </div>
@@ -292,8 +301,49 @@
                 </tbody>
             </table>
         </div>
+        @if(method_exists($faceEmbeddings, 'links'))
+            <div class="flex flex-col gap-3 border-t border-blue-50 px-5 py-3.5 text-xs font-semibold text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+                @php
+                    $faceStart = $faceEmbeddings->total() > 0 ? $faceEmbeddings->firstItem() : 0;
+                    $faceEnd = $faceEmbeddings->total() > 0 ? $faceEmbeddings->lastItem() : 0;
+                    $facePageStart = max(1, $faceEmbeddings->currentPage() - 2);
+                    $facePageEnd = min($faceEmbeddings->lastPage(), $facePageStart + 4);
+                    $facePageStart = max(1, $facePageEnd - 4);
+                @endphp
+                <span>Menampilkan {{ $faceStart }}-{{ $faceEnd }} dari {{ $faceEmbeddings->total() }} data</span>
+                <div class="flex items-center gap-1">
+                    <a href="{{ $faceEmbeddings->onFirstPage() ? '#' : $faceEmbeddings->previousPageUrl() }}"
+                       class="employee-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $faceEmbeddings->onFirstPage() ? 'pointer-events-none text-gray-300' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
+                        &lt;&lt;
+                    </a>
+                    @for($page = $facePageStart; $page <= $facePageEnd; $page++)
+                        <a href="{{ $faceEmbeddings->url($page) }}"
+                           class="employee-page-link inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-blue-100 px-2 text-xs font-semibold no-underline {{ $page === $faceEmbeddings->currentPage() ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
+                            {{ $page }}
+                        </a>
+                    @endfor
+                    <a href="{{ $faceEmbeddings->hasMorePages() ? $faceEmbeddings->nextPageUrl() : '#' }}"
+                       class="employee-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $faceEmbeddings->hasMorePages() ? 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' : 'pointer-events-none text-gray-300' }}">
+                        &gt;&gt;
+                    </a>
+                </div>
+            </div>
+        @endif
     </section>
 </div>
+
+<style>
+    main .employee-page-link.rounded-md {
+        border-radius: .375rem !important;
+    }
+    html[data-admin-theme="dark"] main .face-capture-sidebar {
+        background: #0b1728 !important;
+    }
+    html[data-admin-theme="dark"] main .face-status-card {
+        background: #0b1728 !important;
+        border-color: var(--admin-border) !important;
+    }
+</style>
 
 <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script>
@@ -727,6 +777,61 @@ function resetMode() {
     formSubtitle.textContent = 'Pilih pegawai, aktifkan kamera, verifikasi kedipan, lalu simpan.';
     clearCapture();
     resetBlinkVerification();
+}
+
+function toggleAll(master) {
+    document.querySelectorAll('.row-check').forEach(cb => cb.checked = master.checked);
+    updateBulkBar();
+}
+
+function updateBulkBar() {
+    const checked = document.querySelectorAll('.row-check:checked');
+    const badge = document.getElementById('selected-badge');
+    const btn = document.getElementById('btn-bulk-delete');
+    const master = document.getElementById('check-all');
+    const all = document.querySelectorAll('.row-check');
+
+    master.indeterminate = checked.length > 0 && checked.length < all.length;
+    master.checked = checked.length === all.length && all.length > 0;
+
+    if (checked.length > 0) {
+        badge.textContent = checked.length + ' dipilih';
+        badge.classList.remove('hidden');
+        btn.classList.remove('hidden');
+        btn.classList.add('inline-flex');
+    } else {
+        badge.classList.add('hidden');
+        btn.classList.add('hidden');
+        btn.classList.remove('inline-flex');
+    }
+}
+
+async function bulkDelete() {
+    const ids = [...document.querySelectorAll('.row-check:checked')].map(cb => cb.value);
+    if (!ids.length) return;
+    const confirmed = await window.presensiConfirm({
+        title: 'Hapus data wajah?',
+        message: 'Sebanyak ' + ids.length + ' data wajah yang dipilih akan dihapus dan perlu didaftarkan ulang.',
+        confirmText: 'Hapus',
+        icon: 'fa-solid fa-trash',
+    });
+    if (!confirmed) return;
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{{ route("admin.face_data.bulk-delete") }}';
+    form.innerHTML = `@csrf @method('DELETE')`;
+
+    ids.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'ids[]';
+        input.value = id;
+        form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
 }
 
 startCameraButton.addEventListener('click', startCamera);

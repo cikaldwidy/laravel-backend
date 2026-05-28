@@ -30,9 +30,7 @@
 <div class="space-y-6">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div class="flex items-center gap-3">
-            <span class="flex h-12 w-12 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-sky-500 text-white shadow-lg shadow-blue-500/20">
-                <i class="fa-solid fa-clock text-lg"></i>
-            </span>
+          
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Master Shift</h1>
                 <p class="mt-1 text-sm text-gray-500">Kelola template shift, jam masuk, dan jam pulang pegawai.</p>
@@ -45,7 +43,8 @@
         </a>
     </div>
 
-    <div class="bg-white rounded-lg shadow overflow-x-auto">
+    <div class="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
+        <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 text-gray-600">
                 <tr>
@@ -61,23 +60,26 @@
                         <td class="p-3 font-medium text-gray-800">{{ $shift->nama_shift }}</td>
                         <td class="p-3 text-gray-600">{{ \Illuminate\Support\Str::of($shift->jam_masuk)->substr(0,5) }}</td>
                         <td class="p-3 text-gray-600">{{ \Illuminate\Support\Str::of($shift->jam_pulang)->substr(0,5) }}</td>
-                        <td class="p-3">
+                        <td class="p-3 whitespace-nowrap">
                             <div class="flex items-center gap-2">
-                                <a href="{{ route('admin.shifts.edit', $shift) }}" class="px-3 py-1 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 text-xs font-semibold">
+                                <a href="{{ route('admin.shifts.edit', $shift) }}" class="shift-action-edit inline-flex items-center justify-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">
+                                    <i class="fas fa-pen text-[10px]"></i>
                                     Edit
                                 </a>
                                 <form method="POST" action="{{ route('admin.shifts.destroy', $shift) }}" data-confirm-form data-confirm-title="Hapus shift?" data-confirm-message="Shift ini akan dihapus dari master shift." data-confirm-button="Hapus">
                                     @csrf
                                     @method('DELETE')
-                                    <button class="px-3 py-1 rounded bg-red-50 text-red-700 hover:bg-red-100 text-xs font-semibold">
+                                    <button class="shift-action-delete inline-flex items-center justify-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100">
+                                        <i class="fas fa-trash-can text-[10px]"></i>
                                         Hapus
                                     </button>
-                                </div>
-                            </td>
+                                </form>
+                            </div>
+                        </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-6 py-12 text-center">
+                            <td colspan="4" class="px-6 py-12 text-center">
                                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-blue-50 text-blue-400">
                                     <i class="fa-regular fa-clock text-xl"></i>
                                 </div>
@@ -89,13 +91,13 @@
                 </tbody>
             </table>
         </div>
+    </div>
 
         @if($shifts->hasPages())
             <div class="border-t border-blue-50 px-6 py-4">
                 {{ $shifts->links() }}
             </div>
         @endif
-    </section>
 </div>
 
 <style>
@@ -105,6 +107,22 @@
     @keyframes modalIn {
         from { opacity: 0; transform: scale(.96) translateY(8px); }
         to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    html[data-admin-theme="dark"] main .shift-action-edit {
+        background: rgba(59, 130, 246, .14) !important;
+        border-color: rgba(147, 197, 253, .65) !important;
+        color: #93c5fd !important;
+    }
+    html[data-admin-theme="dark"] main .shift-action-edit:hover {
+        background: rgba(59, 130, 246, .22) !important;
+    }
+    html[data-admin-theme="dark"] main .shift-action-delete {
+        background: rgba(239, 68, 68, .14) !important;
+        border-color: rgba(248, 113, 113, .45) !important;
+        color: #f87171 !important;
+    }
+    html[data-admin-theme="dark"] main .shift-action-delete:hover {
+        background: rgba(127, 29, 29, .55) !important;
     }
 </style>
 

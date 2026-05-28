@@ -4,120 +4,200 @@
 
 @section('content')
 @php
+    $selectedDate = \Carbon\Carbon::parse($tanggal);
+    $totalStatus = max($hadir + $telat + $pulangCepat + $izin + $alpha, 1);
+    $attendanceRate = $totalUser > 0 ? round(($userMasukHariIni / $totalUser) * 100) : 0;
+    $lateRate = $totalPresensi > 0 ? round(($telat / $totalPresensi) * 100) : 0;
+    $earlyLeaveRate = $totalPresensi > 0 ? round(($pulangCepat / $totalPresensi) * 100) : 0;
+    $alphaRate = ($totalShiftHariIni + $izin) > 0 ? round(($alpha / max($totalShiftHariIni + $izin, 1)) * 100) : 0;
+    $yearTarget = max((int) ($yearlyKpis['target'] ?? 0), 1);
+    $yearPercent = fn ($value) => round(((int) $value / $yearTarget) * 100);
+
     $badgeClass = [
         'hadir'        => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100',
         'telat'        => 'bg-amber-50 text-amber-700 ring-1 ring-amber-100',
         'terlambat'    => 'bg-amber-50 text-amber-700 ring-1 ring-amber-100',
         'izin'         => 'bg-sky-50 text-sky-700 ring-1 ring-sky-100',
-        'normal'       => 'bg-blue-50 text-blue-700 ring-1 ring-blue-100',
+        'normal'       => 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100',
         'pulang_cepat' => 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-100',
     ];
 
-    $cards = [
-        ['label' => 'Total Pegawai', 'value' => $totalUser, 'icon' => 'fa-solid fa-users'],
-        ['label' => 'Presensi', 'value' => $totalPresensi, 'icon' => 'fa-solid fa-clipboard-list'],
-        ['label' => 'Hadir', 'value' => $hadir, 'icon' => 'fa-solid fa-circle-check'],
-        ['label' => 'Telat', 'value' => $telat, 'icon' => 'fa-solid fa-clock'],
-        ['label' => 'Pulang Cepat', 'value' => $pulangCepat, 'icon' => 'fa-solid fa-person-running'],
-        ['label' => 'Izin', 'value' => $izin, 'icon' => 'fa-solid fa-file-circle-check'],
-        ['label' => 'Alpha', 'value' => $alpha, 'icon' => 'fa-solid fa-user-xmark'],
-        ['label' => 'Shift Hari Ini', 'value' => $totalShiftHariIni, 'icon' => 'fa-solid fa-calendar-day'],
-        ['label' => 'User Masuk', 'value' => $userMasukHariIni, 'icon' => 'fa-solid fa-user-check'],
-        ['label' => 'Swap Pending', 'value' => $swapPending, 'icon' => 'fa-solid fa-right-left'],
+    $primaryCards = [
+        ['label' => 'Total Pegawai', 'value' => $totalUser, 'icon' => 'fa-solid fa-users', 'note' => $attendanceRate . '% sudah masuk', 'tone' => 'blue'],
+        ['label' => 'Presensi', 'value' => $yearlyKpis['presensi'], 'denominator' => $yearTarget, 'year' => $yearlyKpis['year'], 'icon' => 'fa-solid fa-clipboard-list', 'note' => 'Total presensi ' . $yearPercent($yearlyKpis['presensi']) . '%', 'tone' => 'blue'],
+        ['label' => 'Hadir', 'value' => $yearlyKpis['hadir'], 'denominator' => $yearTarget, 'year' => $yearlyKpis['year'], 'icon' => 'fa-solid fa-circle-check', 'note' => 'Tepat waktu ' . $yearPercent($yearlyKpis['hadir']) . '%', 'tone' => 'emerald'],
+        ['label' => 'Telat', 'value' => $yearlyKpis['telat'], 'denominator' => $yearTarget, 'year' => $yearlyKpis['year'], 'icon' => 'fa-solid fa-clock', 'note' => 'Terlambat masuk ' . $yearPercent($yearlyKpis['telat']) . '%', 'tone' => 'amber'],
+        ['label' => 'Pulang Cepat', 'value' => $yearlyKpis['pulangCepat'], 'denominator' => $yearTarget, 'year' => $yearlyKpis['year'], 'icon' => 'fa-solid fa-person-running', 'note' => 'Pulang awal ' . $yearPercent($yearlyKpis['pulangCepat']) . '%', 'tone' => 'indigo'],
+        ['label' => 'Izin', 'value' => $yearlyKpis['izin'], 'denominator' => $yearTarget, 'year' => $yearlyKpis['year'], 'icon' => 'fa-solid fa-file-circle-check', 'note' => 'Izin approved ' . $yearPercent($yearlyKpis['izin']) . '%', 'tone' => 'sky'],
+        ['label' => 'Alpha', 'value' => $yearlyKpis['alpha'], 'denominator' => $yearTarget, 'year' => $yearlyKpis['year'], 'icon' => 'fa-solid fa-user-xmark', 'note' => 'Tidak absen ' . $yearPercent($yearlyKpis['alpha']) . '%', 'tone' => 'rose'],
+        ['label' => 'Shift Hari Ini', 'value' => $totalShiftHariIni, 'icon' => 'fa-solid fa-calendar-day', 'note' => 'Jadwal aktif', 'tone' => 'blue'],
+        ['label' => 'User Masuk', 'value' => $userMasukHariIni, 'icon' => 'fa-solid fa-user-check', 'note' => 'Pegawai unik', 'tone' => 'cyan'],
+        ['label' => 'Swap Pending', 'value' => $swapPending, 'icon' => 'fa-solid fa-right-left', 'note' => 'Menunggu approval', 'tone' => 'violet'],
     ];
+
+    $toneClass = [
+        'blue' => 'from-blue-700 to-blue-500 shadow-blue-700/20',
+        'emerald' => 'from-emerald-600 to-teal-500 shadow-emerald-700/20',
+        'amber' => 'from-amber-500 to-orange-500 shadow-amber-700/20',
+        'indigo' => 'from-indigo-600 to-blue-500 shadow-indigo-700/20',
+        'sky' => 'from-sky-600 to-cyan-500 shadow-sky-700/20',
+        'rose' => 'from-rose-600 to-red-500 shadow-rose-700/20',
+        'cyan' => 'from-cyan-600 to-blue-500 shadow-cyan-700/20',
+        'violet' => 'from-violet-600 to-indigo-500 shadow-violet-700/20',
+    ];
+    $operationalStats = [
+        ['label' => 'Unit', 'value' => $units],
+        ['label' => 'Pengumuman', 'value' => $announcements],
+        ['label' => 'Shift', 'value' => $totalShiftHariIni],
+        ['label' => 'Masuk', 'value' => $userMasukHariIni],
+        ['label' => 'Swap', 'value' => $swapPending],
+    ];
+
+    $statusValues = [$hadir, $telat, $pulangCepat, $izin, $alpha];
 @endphp
 
 @once
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+    .admin-dashboard .dashboard-select {
+        border-radius: .375rem !important;
+    }
+    .admin-dashboard .dashboard-select:hover,
+    .admin-dashboard .dashboard-select:focus {
+        color: #374151 !important;
+    }
+    html[data-admin-theme="dark"] .admin-dashboard .dashboard-select:hover,
+    html[data-admin-theme="dark"] .admin-dashboard .dashboard-select:focus {
+        color: #f8fafc !important;
+    }
+    .admin-dashboard .dashboard-page-link {
+        border-radius: .375rem !important;
+    }
+    html[data-admin-theme="dark"] .admin-dashboard .dashboard-page-link:not(.bg-blue-600) {
+        background: #0b1728 !important;
+        border-color: rgba(125, 170, 255, .18) !important;
+        color: #94a3b8 !important;
+    }
+    html[data-admin-theme="dark"] .admin-dashboard .dashboard-page-link:not(.bg-blue-600):hover {
+        background: rgba(96, 165, 250, .12) !important;
+        color: #f8fafc !important;
+    }
+    .admin-dashboard [data-dashboard-reveal] {
+        opacity: 0;
+        transform: translateY(14px);
+        animation: dashboardReveal .85s ease forwards;
+    }
+    .admin-dashboard .dashboard-kpi-card {
+        animation-delay: calc(var(--reveal-index, 0) * 120ms);
+    }
+    .admin-dashboard .dashboard-chart-card {
+        animation-delay: 360ms;
+    }
+    .admin-dashboard .dashboard-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 22px 46px rgba(37,99,235,.12) !important;
+    }
+    html[data-admin-theme="dark"] .admin-dashboard .dashboard-kpi-card:hover {
+        box-shadow: 0 22px 46px rgba(0,0,0,.35) !important;
+    }
+    html[data-admin-theme="dark"] .admin-dashboard .ring-emerald-100,
+    html[data-admin-theme="dark"] .admin-dashboard .ring-amber-100,
+    html[data-admin-theme="dark"] .admin-dashboard .ring-sky-100,
+    html[data-admin-theme="dark"] .admin-dashboard .ring-indigo-100,
+    html[data-admin-theme="dark"] .admin-dashboard .ring-gray-200 {
+        --tw-ring-color: rgba(148, 163, 184, .20) !important;
+    }
+    .admin-dashboard .dashboard-kpi-card .kpi-icon {
+        animation: kpiIconPop 1s cubic-bezier(.2,.8,.2,1) both;
+        animation-delay: calc(260ms + (var(--reveal-index, 0) * 120ms));
+    }
+    @keyframes dashboardReveal {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    @keyframes kpiIconPop {
+        0% {
+            transform: scale(.78);
+        }
+        70% {
+            transform: scale(1.08);
+        }
+        100% {
+            transform: scale(1);
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .admin-dashboard [data-dashboard-reveal],
+        .admin-dashboard .dashboard-kpi-card .kpi-icon {
+            animation: none;
+            opacity: 1;
+            transform: none;
+        }
+    }
+</style>
 @endonce
 
-<div class="admin-dashboard space-y-6 pb-5">
-    <section class="rounded-[1.35rem] border border-blue-100 bg-white/90 p-5 shadow-sm">
+<div class="admin-dashboard space-y-5 pb-5">
+    <section class="rounded-md border border-blue-100 bg-white p-5 shadow-sm">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <p class="text-sm font-semibold text-blue-600">Dashboard Admin</p>
-                <h1 class="mt-1 text-2xl font-extrabold text-gray-950">Ringkasan Presensi</h1>
-                <p class="mt-1 text-sm text-gray-500">{{ \Carbon\Carbon::parse($tanggal)->translatedFormat('l, d F Y') }}</p>
+                <p class="text-sm font-bold text-blue-600">Dashboard Admin</p>
+                <h1 class="mt-2 text-2xl font-black tracking-tight text-gray-950">Ringkasan Presensi</h1>
+                <p class="mt-1 text-sm font-medium text-gray-500">{{ $selectedDate->translatedFormat('l, d F Y') }}</p>
             </div>
-            <form method="GET" action="{{ route('admin.dashboard') }}" data-auto-filter class="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <form method="GET" action="{{ route('admin.dashboard') }}" data-auto-filter>
                 <input type="hidden" name="chart_period" value="{{ $chartPeriod }}">
                 <label class="relative block">
-                    <i class="fa-solid fa-calendar-days absolute left-4 top-1/2 -translate-y-1/2 text-blue-500"></i>
+                    <i class="fa-solid fa-calendar-days absolute left-4 top-1/2 -translate-y-1/2 text-blue-600"></i>
                     <input
                         type="date"
                         name="tanggal"
                         value="{{ $tanggal }}"
-                        class="h-12 rounded-2xl border border-blue-100 bg-blue-50/60 pl-11 pr-4 text-sm font-semibold text-gray-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                        class="h-11 w-full rounded-md border border-blue-100 bg-blue-50/60 pl-11 pr-4 text-sm font-bold text-gray-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 sm:w-52"
                     >
                 </label>
             </form>
         </div>
     </section>
 
-    <section class="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_22rem]">
+    <section>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
-            @foreach($cards as $card)
-                <article class="group relative overflow-hidden rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-700/10">
-                    <div class="relative flex items-center gap-4">
-                        <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-700 to-blue-500 text-lg text-white shadow-lg shadow-blue-700/20">
+            @foreach($primaryCards as $card)
+                <article class="dashboard-kpi-card min-h-32 rounded-md border border-blue-100 bg-white p-5 shadow-sm transition duration-200" data-dashboard-reveal style="--reveal-index: {{ $loop->index }}">
+                    <div class="flex items-start gap-4">
+                        <div class="kpi-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-md bg-gradient-to-br {{ $toneClass[$card['tone']] }} text-white shadow-lg">
                             <i class="{{ $card['icon'] }}"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="truncate text-sm font-bold text-gray-500">{{ $card['label'] }}</p>
-                            <p class="mt-2 text-3xl font-black leading-none text-gray-950">{{ $card['value'] }}</p>
+                            <p class="truncate text-sm font-extrabold text-gray-500">{{ $card['label'] }}</p>
+                            <div class="mt-2 flex items-end gap-1 text-3xl font-black leading-none text-gray-950">
+                                <span data-count-to="{{ $card['value'] }}">0</span>
+                                @if(isset($card['denominator']))
+                                    <span class="text-xl leading-none text-gray-500">/{{ number_format($card['denominator'], 0, ',', '.') }}</span>
+                                @endif
+                            </div>
+                            <div class="mt-2 flex items-center justify-between gap-3">
+                                <p class="truncate text-xs font-semibold text-gray-400">{{ $card['note'] }}</p>
+                                @if(isset($card['year']))
+                                    <span class="shrink-0 text-xs font-black text-blue-600">{{ $card['year'] }}</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 </article>
             @endforeach
         </div>
 
-        <div class="grid gap-4">
-            <article class="rounded-[1.35rem] bg-gradient-to-br from-blue-800 via-blue-700 to-cyan-600 p-6 text-white shadow-lg shadow-blue-800/20">
-                <div class="flex items-start gap-4">
-                    <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white text-blue-700">
-                        <i class="fa-solid fa-bell text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="text-base font-extrabold">Notifikasi Admin</p>
-                        <p class="mt-2 text-sm leading-6 text-blue-50">
-                            <strong>{{ $telat }}</strong> pegawai telat, <strong>{{ $alpha }}</strong> pegawai belum hadir, dan <strong>{{ $izin }}</strong> pegawai izin hari ini.
-                        </p>
-                    </div>
-                </div>
-            </article>
-
-            <article class="rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-sm">
-                <div class="flex items-center gap-4">
-                    <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                        <i class="fa-solid fa-building text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold text-gray-500">Total Unit Kerja/Bagian</p>
-                        <p class="mt-1 text-3xl font-black text-gray-950">{{ $units }}</p>
-                    </div>
-                </div>
-            </article>
-
-            <article class="rounded-[1.35rem] border border-blue-100 bg-white p-5 shadow-sm">
-                <div class="flex items-center gap-4">
-                    <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-700">
-                        <i class="fa-solid fa-bullhorn text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="text-sm font-bold text-gray-500">Pengumuman</p>
-                        <p class="mt-1 text-3xl font-black text-gray-950">{{ $announcements }}</p>
-                    </div>
-                </div>
-            </article>
-        </div>
     </section>
 
-    <section class="grid grid-cols-1 gap-5 xl:grid-cols-[1fr_22rem]">
-        <article class="rounded-[1.35rem] border border-blue-100 bg-white p-6 shadow-sm">
-            <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <section>
+        <article class="dashboard-chart-card rounded-md border border-blue-100 bg-white p-5 shadow-sm" data-dashboard-reveal>
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                    <p class="text-sm font-semibold text-blue-600">Analitik</p>
-                    <h2 class="text-xl font-extrabold text-gray-950">{{ $chartTitle }}</h2>
+                    <p class="text-sm font-bold text-blue-600">Analitik</p>
+                    <h2 class="mt-1 text-xl font-black text-gray-950">{{ $chartTitle }}</h2>
                 </div>
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
                     <form method="GET" action="{{ route('admin.dashboard') }}" data-auto-filter>
@@ -125,7 +205,7 @@
                         <label class="relative block">
                             <select
                                 name="chart_period"
-                                class="h-10 appearance-none rounded-md border border-blue-100 bg-blue-50/70 pl-3 pr-9 text-sm font-semibold text-blue-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                                class="dashboard-select h-10 appearance-none rounded-md border border-blue-100 bg-blue-50/70 pl-3 pr-9 text-sm font-bold text-blue-700 outline-none transition hover:text-gray-700 focus:border-blue-500 focus:text-gray-700 focus:ring-4 focus:ring-blue-500/10"
                             >
                                 <option value="7_days" @selected($chartPeriod === '7_days')>7 Hari</option>
                                 <option value="1_month" @selected($chartPeriod === '1_month')>1 Bulan</option>
@@ -135,224 +215,433 @@
                         </label>
                     </form>
                     <div class="flex flex-wrap items-center gap-3">
-                        <span class="inline-flex items-center gap-2 text-xs font-semibold text-gray-500"><span class="h-3 w-3 rounded bg-sky-400"></span>Hadir</span>
-                        <span class="inline-flex items-center gap-2 text-xs font-semibold text-gray-500"><span class="h-3 w-3 rounded bg-orange-500"></span>Telat</span>
-                        <span class="inline-flex items-center gap-2 text-xs font-semibold text-gray-500"><span class="h-3 w-3 rounded bg-yellow-400"></span>Izin</span>
+                        <span class="inline-flex items-center gap-2 text-xs font-bold text-gray-500"><span class="h-3 w-3 bg-emerald-500"></span>Hadir</span>
+                        <span class="inline-flex items-center gap-2 text-xs font-bold text-gray-500"><span class="h-3 w-3 bg-orange-500"></span>Telat</span>
+                        <span class="inline-flex items-center gap-2 text-xs font-bold text-gray-500"><span class="h-3 w-3 bg-sky-400"></span>Izin</span>
+                        <span class="inline-flex items-center gap-2 text-xs font-bold text-gray-500"><span class="h-3 w-3 bg-red-500"></span>Alpha</span>
                     </div>
                 </div>
             </div>
-            <div class="relative mt-6 h-[260px]">
-                <canvas id="hadirChart"></canvas>
+            <div class="relative mt-6 h-[320px]">
+                <canvas id="attendanceTrendChart"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <article class="dashboard-chart-card rounded-md border border-blue-100 bg-white p-5 shadow-sm" data-dashboard-reveal>
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-bold text-blue-600">Komposisi</p>
+                    <h2 class="mt-1 text-lg font-black text-gray-950">Status Presensi Harian</h2>
+                </div>
+                <p class="text-xs font-bold text-gray-400">{{ $selectedDate->format('d/m/Y') }}</p>
+            </div>
+            <div class="relative mx-auto mt-5 h-[280px] max-w-md">
+                <canvas id="statusDoughnutChart"></canvas>
             </div>
         </article>
 
-        <article class="rounded-[1.35rem] bg-blue-950 p-6 text-white shadow-lg shadow-blue-950/20">
-            <div class="space-y-5">
-                <p class="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-blue-100">
-                    <i class="fa-solid fa-location-dot text-cyan-300"></i> Lokasi Presensi
+        <article class="dashboard-chart-card rounded-md border border-blue-100 bg-white p-5 shadow-sm" data-dashboard-reveal>
+            <div class="flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-bold text-blue-600">Operasional</p>
+                    <h2 class="mt-1 text-lg font-black text-gray-950">Ringkasan Fitur Aktif</h2>
+                </div>
+                <p class="text-xs font-bold text-gray-400">Hari ini</p>
+            </div>
+            <div class="relative mt-5 h-[280px]">
+                <canvas id="operationalBarChart"></canvas>
+            </div>
+        </article>
+    </section>
+
+    <section class="grid grid-cols-1 gap-4 xl:grid-cols-[0.85fr_1.35fr]">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
+            <article class="overflow-hidden rounded-md border border-blue-100 bg-white shadow-sm">
+                <div class="border-b border-blue-50 px-5 py-4">
+                    <h2 class="text-sm font-bold text-gray-700">Presensi Tepat Waktu</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-blue-50/40 text-[11px] font-black uppercase tracking-wide text-blue-800">
+                            <tr>
+                                <th class="px-4 py-3 text-left">No</th>
+                                <th class="px-4 py-3 text-left">Nama</th>
+                                <th class="px-4 py-3 text-right">Tepat Waktu</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-blue-50">
+                            @forelse($topOnTimeUsers as $item)
+                                <tr class="hover:bg-blue-50/40">
+                                    <td class="px-4 py-3 font-semibold text-gray-500">{{ $loop->iteration }}</td>
+                                    <td class="px-4 py-3 font-bold text-gray-700">{{ $item->user?->name ?? 'User dihapus' }}</td>
+                                    <td class="px-4 py-3 text-right font-black text-gray-800">{{ $item->total }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="px-4 py-8 text-center text-sm font-semibold text-gray-400">Belum ada data tepat waktu.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                <p class="border-t border-blue-50 px-5 py-3 text-xs italic text-gray-500">
+                    Tepat waktu adalah jumlah presensi masuk tepat waktu tahun {{ $selectedYear }}.
                 </p>
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-blue-300">Koordinat GPS</p>
-                    <p class="mt-1 text-lg font-extrabold">
-                        {{ $workSetting?->office_latitude ?? config('attendance.office_latitude') }},
-                        {{ $workSetting?->office_longitude ?? config('attendance.office_longitude') }}
-                    </p>
+            </article>
+
+            <article class="overflow-hidden rounded-md border border-blue-100 bg-white shadow-sm">
+                <div class="border-b border-blue-50 px-5 py-4">
+                    <h2 class="text-sm font-bold text-gray-700">Presensi Telat</h2>
                 </div>
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-blue-300">Radius</p>
-                    <p class="mt-1 text-lg font-extrabold">
-                        {{ $workSetting?->radius_meters ?? config('attendance.radius_meters', 100) }}<span class="text-sm font-semibold text-blue-200"> Meter</span>
-                    </p>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-blue-50/40 text-[11px] font-black uppercase tracking-wide text-blue-800">
+                            <tr>
+                                <th class="px-4 py-3 text-left">No</th>
+                                <th class="px-4 py-3 text-left">Nama</th>
+                                <th class="px-4 py-3 text-right">Telat</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-blue-50">
+                            @forelse($topLateUsers as $item)
+                                <tr class="hover:bg-blue-50/40">
+                                    <td class="px-4 py-3 font-semibold text-gray-500">{{ $loop->iteration }}</td>
+                                    <td class="px-4 py-3 font-bold text-gray-700">{{ $item->user?->name ?? 'User dihapus' }}</td>
+                                    <td class="px-4 py-3 text-right font-black text-amber-600">{{ $item->total }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="3" class="px-4 py-8 text-center text-sm font-semibold text-gray-400">Belum ada data telat.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-blue-300">Toleransi Shift</p>
-                    <p class="mt-1 text-lg font-extrabold">
-                        {{ $workSetting?->checkin_early_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKIN_EARLY_MINUTES }} /
-                        {{ $workSetting?->checkout_late_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKOUT_LATE_MINUTES }}<span class="text-sm font-semibold text-blue-200"> Menit</span>
-                    </p>
+                <p class="border-t border-blue-50 px-5 py-3 text-xs italic text-gray-500">
+                    Telat adalah jumlah presensi masuk terlambat tahun {{ $selectedYear }}.
+                </p>
+            </article>
+        </div>
+
+        <article class="overflow-hidden rounded-md border border-blue-100 bg-white shadow-sm">
+            <div class="flex flex-col gap-3 border-b border-blue-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-sm font-bold text-gray-700">Presensi Terbaru</h2>
+                <form method="GET" action="{{ route('admin.dashboard') }}" data-auto-filter>
+                    <input type="hidden" name="tanggal" value="{{ $tanggal }}">
+                    <input type="hidden" name="chart_period" value="{{ $chartPeriod }}">
+                    <input type="hidden" name="latest_page" value="1">
+                    <label class="relative block">
+                        <select
+                            name="latest_year"
+                            class="dashboard-select h-9 appearance-none rounded-md border border-blue-100 bg-blue-50 pl-3 pr-8 text-xs font-black text-blue-700 outline-none transition hover:text-gray-700 focus:border-blue-500 focus:text-gray-700 focus:ring-4 focus:ring-blue-500/10"
+                        >
+                            @foreach($availableYears as $year)
+                                <option value="{{ $year }}" @selected((int) $latestYear === (int) $year)>{{ $year }}</option>
+                            @endforeach
+                        </select>
+                        <i class="fa-solid fa-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-blue-500"></i>
+                    </label>
+                </form>
+            </div>
+            <div class="flex flex-col gap-3 border-b border-blue-50 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <a href="{{ route('admin.dashboard.latest-presensi.export', ['year' => $latestYear]) }}"
+                   class="inline-flex h-8 w-fit items-center gap-1.5 rounded-md border border-blue-100 bg-white px-3 text-xs font-black text-gray-700 no-underline transition hover:bg-blue-50 hover:text-blue-700">
+                    <i class="fa-solid fa-file-excel text-[11px] text-emerald-600"></i>
+                    XLSX
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-blue-50/40 text-[11px] font-black uppercase tracking-wide text-blue-800">
+                        <tr>
+                            <th class="px-4 py-3 text-left">No</th>
+                            <th class="px-4 py-3 text-left">Nama Pegawai</th>
+                            <th class="px-4 py-3 text-left">Tanggal</th>
+                            <th class="px-4 py-3 text-left">Waktu</th>
+                            <th class="px-4 py-3 text-left">Jenis</th>
+                            <th class="px-4 py-3 text-left">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-blue-50">
+                        @forelse($latestPresensiRows as $row)
+                            @php
+                                $latestStatus = $row['status'];
+                                $latestLabel = $row['label'];
+                                $latestBadge = $badgeClass[$latestStatus] ?? 'bg-gray-100 text-gray-600 ring-1 ring-gray-200';
+                            @endphp
+                            <tr class="hover:bg-blue-50/40">
+                                <td class="px-4 py-3 font-semibold text-gray-500">{{ $loop->iteration }}</td>
+                                <td class="px-4 py-3 font-bold text-gray-700">{{ $row['user']?->name ?? 'User dihapus' }}</td>
+                                <td class="px-4 py-3 font-semibold text-gray-600">{{ $row['tanggal']->format('Y-m-d') }}</td>
+                                <td class="px-4 py-3 font-semibold text-gray-600">{{ $row['waktu']->format('H:i:s') }}</td>
+                                <td class="px-4 py-3 font-semibold text-gray-600">{{ $row['jenis'] }}</td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-black {{ $latestBadge }}">
+                                        {{ $latestLabel }}
+                                    </span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-4 py-12 text-center text-sm font-semibold text-gray-400">Belum ada presensi terbaru.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex flex-col gap-3 border-t border-blue-50 px-5 py-3 text-xs font-semibold text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+                @php
+                    $latestStart = $latestPresensiTotal > 0 ? (($latestPage - 1) * $latestPerPage) + 1 : 0;
+                    $latestEnd = $latestPresensiTotal > 0 ? min($latestStart + $latestPresensiRows->count() - 1, $latestPresensiTotal) : 0;
+                    $latestQueryBase = [
+                        'tanggal' => $tanggal,
+                        'chart_period' => $chartPeriod,
+                        'latest_year' => $latestYear,
+                    ];
+                    $pageStart = max(1, $latestPage - 2);
+                    $pageEnd = min($latestTotalPages, $pageStart + 4);
+                    $pageStart = max(1, $pageEnd - 4);
+                @endphp
+                <span>Menampilkan {{ $latestStart }}-{{ $latestEnd }} dari {{ $latestPresensiTotal }} data</span>
+                <div class="flex items-center gap-1">
+                    <a href="{{ $latestPage > 1 ? route('admin.dashboard', $latestQueryBase + ['latest_page' => $latestPage - 1]) : '#' }}"
+                       class="dashboard-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $latestPage > 1 ? 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' : 'pointer-events-none text-gray-300' }}">
+                        &lt;&lt;
+                    </a>
+                    @for($page = $pageStart; $page <= $pageEnd; $page++)
+                        <a href="{{ route('admin.dashboard', $latestQueryBase + ['latest_page' => $page]) }}"
+                           class="dashboard-page-link inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-blue-100 px-2 text-xs font-semibold no-underline {{ $page === $latestPage ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
+                            {{ $page }}
+                        </a>
+                    @endfor
+                    <a href="{{ $latestPage < $latestTotalPages ? route('admin.dashboard', $latestQueryBase + ['latest_page' => $latestPage + 1]) : '#' }}"
+                       class="dashboard-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $latestPage < $latestTotalPages ? 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' : 'pointer-events-none text-gray-300' }}">
+                        &gt;&gt;
+                    </a>
                 </div>
             </div>
-            <a href="{{ route('admin.settings.work.edit') }}"
-               class="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-extrabold text-blue-800 no-underline transition hover:bg-blue-50">
-                <i class="fa-solid fa-gear"></i> Atur Lokasi
-            </a>
         </article>
     </section>
 
-    <section class="overflow-hidden rounded-[1.35rem] border border-blue-100 bg-white shadow-sm">
-        <div class="flex flex-col gap-4 border-b border-blue-50 p-5 md:flex-row md:items-center md:justify-between">
-            <div>
-                <p class="text-sm font-semibold text-blue-600">Riwayat Hari Ini</p>
-                <h2 class="text-xl font-extrabold text-gray-950">Data Presensi</h2>
-            </div>
-            <p class="text-sm font-semibold text-gray-500">{{ \Carbon\Carbon::parse($tanggal)->translatedFormat('l, d F Y') }}</p>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead class="bg-blue-50/60">
-                    <tr class="border-y border-blue-100 text-left text-[11px] font-black uppercase tracking-[0.14em] text-blue-800">
-                        <th class="px-5 py-4">Nama</th>
-                        <th class="px-5 py-4">Tanggal</th>
-                        <th class="px-5 py-4">Masuk</th>
-                        <th class="px-5 py-4">Pulang</th>
-                        <th class="px-5 py-4">Status Masuk</th>
-                        <th class="px-5 py-4">Status Pulang</th>
-                        <th class="px-5 py-4">Foto</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-blue-50 bg-white">
-                    @forelse($presensis as $presensi)
-                        <tr class="transition hover:bg-blue-50/40">
-                            <td class="px-5 py-4">
-                                <div class="font-bold text-gray-700">{{ $presensi->user->name ?? 'User dihapus' }}</div>
-                            </td>
-                            <td class="px-5 py-4 font-semibold text-gray-600">{{ optional($presensi->tanggal)->format('d/m/Y') }}</td>
-                            <td class="px-5 py-4 font-semibold text-gray-600">{{ $presensi->jam_masuk ? $presensi->jam_masuk->format('H:i') : '-' }}</td>
-                            <td class="px-5 py-4 font-semibold text-gray-600">{{ $presensi->jam_keluar ? $presensi->jam_keluar->format('H:i') : '-' }}</td>
-                            <td class="px-5 py-4">
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold {{ $badgeClass[$presensi->status] ?? 'bg-gray-100 text-gray-600 ring-1 ring-gray-200' }}">
-                                    {{ $presensi->status ? str_replace('_', ' ', ucfirst($presensi->status)) : '-' }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-4">
-                                <span class="inline-flex rounded-full px-3 py-1 text-xs font-extrabold {{ $badgeClass[$presensi->status_pulang] ?? 'bg-gray-100 text-gray-600 ring-1 ring-gray-200' }}">
-                                    {{ $presensi->status_pulang ? str_replace('_', ' ', ucfirst($presensi->status_pulang)) : '-' }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-4">
-                                <div class="flex flex-wrap gap-2">
-                                    @if($presensi->foto_masuk)
-                                        <a href="{{ asset('storage/' . $presensi->foto_masuk) }}" target="_blank"
-                                           class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 transition hover:bg-blue-100">
-                                            <i class="fa-solid fa-image text-[10px]"></i> Masuk
-                                        </a>
-                                    @endif
-                                    @if($presensi->foto_keluar)
-                                        <a href="{{ asset('storage/' . $presensi->foto_keluar) }}" target="_blank"
-                                           class="inline-flex items-center gap-1.5 rounded-full bg-cyan-50 px-3 py-1.5 text-xs font-bold text-cyan-700 transition hover:bg-cyan-100">
-                                            <i class="fa-solid fa-image text-[10px]"></i> Pulang
-                                        </a>
-                                    @endif
-                                    @if(!$presensi->foto_masuk && !$presensi->foto_keluar)
-                                        <span class="text-xs font-bold text-gray-300">-</span>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="py-14 text-center text-sm font-semibold text-gray-400">
-                                <i class="fa-solid fa-inbox mb-3 block text-3xl text-blue-100"></i>
-                                Belum ada data presensi pada tanggal ini.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </section>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 (function () {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const labels = @json(collect($chart)->pluck('label'));
-    const hadir  = @json(collect($chart)->pluck('hadir'));
-    const telat  = @json(collect($chart)->pluck('telat'));
-    const izin   = @json(collect($chart)->pluck('izin'));
+    const hadir = @json(collect($chart)->pluck('hadir'));
+    const telat = @json(collect($chart)->pluck('telat'));
+    const izin = @json(collect($chart)->pluck('izin'));
+    const alpha = @json(collect($chart)->pluck('alpha'));
+    const operational = @json($operationalStats);
+    const statusLabels = ['Hadir', 'Telat', 'Pulang Cepat', 'Izin', 'Alpha'];
+    const statusValues = @json($statusValues);
+    const dashboardCharts = [];
 
-    const chart = document.getElementById('hadirChart');
-    if (!chart) return;
+    function chartTheme() {
+        const isDark = document.documentElement.dataset.adminTheme === 'dark';
 
-    const ctx = chart.getContext('2d');
-
-    function makeGradient(colorTop, colorBottom) {
-        const g = ctx.createLinearGradient(0, 0, 0, 260);
-        g.addColorStop(0, colorTop);
-        g.addColorStop(1, colorBottom);
-        return g;
+        return {
+            tick: isDark ? '#94a3b8' : '#64748b',
+            grid: isDark ? 'rgba(148,163,184,.16)' : '#eaf3ff',
+            legend: isDark ? '#cbd5e1' : '#475569',
+            tooltipBg: isDark ? '#020617' : '#0f172a',
+            tooltipTitle: isDark ? '#93c5fd' : '#bfdbfe',
+            tooltipBody: isDark ? '#f8fafc' : '#f8fafc',
+            doughnutBorder: isDark ? '#111f33' : '#ffffff',
+        };
     }
 
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [
-                {
-                    label: 'Hadir',
-                    data: hadir,
-                    borderColor: '#38bdf8',
-                    backgroundColor: makeGradient('rgba(56,189,248,.24)', 'rgba(56,189,248,.02)'),
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.42,
-                    pointBackgroundColor: '#38bdf8',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                },
-                {
-                    label: 'Telat',
-                    data: telat,
-                    borderColor: '#f97316',
-                    backgroundColor: makeGradient('rgba(249,115,22,.24)', 'rgba(249,115,22,.02)'),
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.42,
-                    pointBackgroundColor: '#f97316',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                },
-                {
-                    label: 'Izin',
-                    data: izin,
-                    borderColor: '#facc15',
-                    backgroundColor: makeGradient('rgba(250,204,21,.24)', 'rgba(250,204,21,.02)'),
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.42,
-                    pointBackgroundColor: '#facc15',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                },
-            ]
+    const chartColors = chartTheme();
+
+    const baseOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: reduceMotion ? false : {
+            duration: 1600,
+            easing: 'easeOutQuart',
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: '#0f172a',
-                    titleColor: '#bfdbfe',
-                    bodyColor: '#f8fafc',
-                    padding: 12,
-                    cornerRadius: 14,
-                    boxPadding: 5,
+        animations: reduceMotion ? {} : {
+            tension: {
+                duration: 1300,
+                easing: 'easeOutQuart',
+                from: .12,
+                to: .42,
+            }
+        },
+        plugins: {
+            legend: { labels: { boxWidth: 10, boxHeight: 10, color: chartColors.legend, font: { size: 11, weight: '700' } } },
+            tooltip: { backgroundColor: chartColors.tooltipBg, titleColor: chartColors.tooltipTitle, bodyColor: chartColors.tooltipBody, padding: 12, cornerRadius: 8, boxPadding: 5 }
+        }
+    };
+
+    function themedScales() {
+        const colors = chartTheme();
+
+        return {
+            x: { grid: { display: false }, ticks: { color: colors.tick, font: { size: 11, weight: '700' } }, border: { display: false } },
+            y: { beginAtZero: true, grid: { color: colors.grid }, ticks: { color: colors.tick, precision: 0, font: { size: 11, weight: '600' } }, border: { display: false } }
+        };
+    }
+
+    function syncChartTheme() {
+        const colors = chartTheme();
+
+        dashboardCharts.forEach((chart) => {
+            if (chart.options.plugins?.legend?.labels) {
+                chart.options.plugins.legend.labels.color = colors.legend;
+            }
+
+            if (chart.options.plugins?.tooltip) {
+                chart.options.plugins.tooltip.backgroundColor = colors.tooltipBg;
+                chart.options.plugins.tooltip.titleColor = colors.tooltipTitle;
+                chart.options.plugins.tooltip.bodyColor = colors.tooltipBody;
+            }
+
+            if (chart.options.scales?.x?.ticks) {
+                chart.options.scales.x.ticks.color = colors.tick;
+            }
+
+            if (chart.options.scales?.y) {
+                chart.options.scales.y.grid.color = colors.grid;
+                chart.options.scales.y.ticks.color = colors.tick;
+            }
+
+            chart.data.datasets.forEach((dataset) => {
+                if (dataset.borderColor === '#ffffff' || dataset.borderColor === '#111f33') {
+                    dataset.borderColor = colors.doughnutBorder;
                 }
-            },
-            scales: {
-                x: {
-                    grid: { display: false },
-                    ticks: { color: '#64748b', font: { size: 11, weight: '700' } },
-                    border: { display: false },
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: { color: '#eaf3ff' },
-                    ticks: { color: '#64748b', font: { size: 11, weight: '600' }, stepSize: 1 },
-                    border: { display: false },
+            });
+
+            chart.update('none');
+        });
+    }
+
+    function animateCounters() {
+        document.querySelectorAll('[data-count-to]').forEach((counter) => {
+            const target = Number(counter.dataset.countTo || 0);
+            const duration = reduceMotion ? 0 : 1400;
+
+            if (!duration || target === 0) {
+                counter.textContent = new Intl.NumberFormat('id-ID').format(target);
+                return;
+            }
+
+            const startTime = performance.now();
+            const formatter = new Intl.NumberFormat('id-ID');
+
+            function tick(now) {
+                const progress = Math.min((now - startTime) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 4);
+                counter.textContent = formatter.format(Math.round(target * eased));
+
+                if (progress < 1) {
+                    requestAnimationFrame(tick);
                 }
             }
-        }
-    });
+
+            requestAnimationFrame(tick);
+        });
+    }
+
+    animateCounters();
+
+    const trendCanvas = document.getElementById('attendanceTrendChart');
+    if (trendCanvas) {
+        const ctx = trendCanvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 320);
+        gradient.addColorStop(0, 'rgba(34,197,94,.22)');
+        gradient.addColorStop(1, 'rgba(34,197,94,.02)');
+
+        const trendChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [
+                    { label: 'Hadir', data: hadir, borderColor: '#22c55e', backgroundColor: gradient, borderWidth: 3, fill: true, tension: .42, pointRadius: 3, pointHoverRadius: 6 },
+                    { label: 'Telat', data: telat, borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,.08)', borderWidth: 2, fill: false, tension: .42, pointRadius: 3, pointHoverRadius: 6 },
+                    { label: 'Izin', data: izin, borderColor: '#38bdf8', backgroundColor: 'rgba(56,189,248,.08)', borderWidth: 2, fill: false, tension: .42, pointRadius: 3, pointHoverRadius: 6 },
+                    { label: 'Alpha', data: alpha, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.08)', borderWidth: 2, fill: false, tension: .42, pointRadius: 3, pointHoverRadius: 6 },
+                ]
+            },
+            options: {
+                ...baseOptions,
+                interaction: { mode: 'index', intersect: false },
+                plugins: { ...baseOptions.plugins, legend: { display: false } },
+                transitions: reduceMotion ? {} : {
+                    show: {
+                        animations: {
+                            x: { from: 0 },
+                            y: { from: 0 },
+                        }
+                    }
+                },
+                scales: themedScales()
+            }
+        });
+        dashboardCharts.push(trendChart);
+    }
+
+    const doughnutCanvas = document.getElementById('statusDoughnutChart');
+    if (doughnutCanvas) {
+        const doughnutChart = new Chart(doughnutCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusValues,
+                    backgroundColor: ['#22c55e', '#f97316', '#6366f1', '#38bdf8', '#f43f5e'],
+                    borderColor: chartTheme().doughnutBorder,
+                    borderWidth: 3,
+                    hoverOffset: 8,
+                }]
+            },
+            options: {
+                ...baseOptions,
+                cutout: '62%',
+                animation: reduceMotion ? false : {
+                    animateRotate: true,
+                    animateScale: true,
+                    duration: 1500,
+                    easing: 'easeOutQuart',
+                }
+            }
+        });
+        dashboardCharts.push(doughnutChart);
+    }
+
+    const operationalCanvas = document.getElementById('operationalBarChart');
+    if (operationalCanvas) {
+        const operationalChart = new Chart(operationalCanvas, {
+            type: 'bar',
+            data: {
+                labels: operational.map(item => item.label),
+                datasets: [{
+                    label: 'Jumlah',
+                    data: operational.map(item => item.value),
+                    backgroundColor: ['#2563eb', '#06b6d4', '#4f46e5', '#22c55e', '#8b5cf6'],
+                    borderRadius: 6,
+                    maxBarThickness: 44,
+                }]
+            },
+            options: {
+                ...baseOptions,
+                plugins: { ...baseOptions.plugins, legend: { display: false } },
+                animation: reduceMotion ? false : {
+                    duration: 1300,
+                    easing: 'easeOutQuart',
+                    delay: (context) => context.type === 'data' ? context.dataIndex * 140 : 0,
+                },
+                scales: themedScales()
+            }
+        });
+        dashboardCharts.push(operationalChart);
+    }
+
+    window.addEventListener('admin-theme-change', syncChartTheme);
 })();
 </script>
 @endsection
