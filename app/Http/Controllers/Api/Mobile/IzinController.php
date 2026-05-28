@@ -8,9 +8,12 @@ use App\Models\LeaveRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class IzinController extends Controller
 {
+    private const TYPES = ['izin', 'sakit', 'cuti', 'dinas'];
+
     public function index(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -62,10 +65,10 @@ class IzinController extends Controller
         }
 
         $validated = $request->validate([
-            'jenis_izin' => ['required', 'string', 'max:50'],
+            'jenis_izin' => ['required', 'string', 'max:50', Rule::in(self::TYPES)],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
-            'keterangan' => ['required', 'string'],
+            'keterangan' => ['nullable', 'string'],
         ]);
 
         if (in_array($validated['jenis_izin'], ['sakit', 'cuti'], true)) {
@@ -82,7 +85,7 @@ class IzinController extends Controller
             'jenis_izin' => $validated['jenis_izin'],
             'tanggal_mulai' => $validated['tanggal_mulai'],
             'tanggal_selesai' => $validated['tanggal_selesai'] ?? $validated['tanggal_mulai'],
-            'keterangan' => $validated['keterangan'],
+            'keterangan' => $validated['keterangan'] ?? '',
             'status' => 'pending',
         ]);
 

@@ -49,10 +49,12 @@ Route::post('/admin/login', [AuthController::class, 'adminLogin']);
 Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/face/enroll', [FaceEnrollmentController::class, 'show'])->name('face.enroll');
     Route::post('/face/enroll', [FaceEnrollmentController::class, 'store'])->name('face.enroll.store');
+    Route::get('/face/status', [FaceEnrollmentController::class, 'status'])->name('face.status');
     Route::get('/face/verification-progress', [FaceEnrollmentController::class, 'showVerificationProgress'])->name('face.verify.progress');
     Route::get('/face/success', [FaceEnrollmentController::class, 'showSuccess'])->name('face.success');
     Route::get('/absen', [PresensiController::class, 'show'])->name('absen.page');
     Route::post('/absen', [PresensiController::class, 'absen'])->name('absen.store');
+    Route::get('/absen/status', [PresensiController::class, 'status'])->name('absen.status');
 
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');

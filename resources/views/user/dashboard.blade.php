@@ -216,7 +216,7 @@
                 @php
                     $menu = [
                         ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir, 'url' => route('history.index')],
-                        ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => $izin, 'url' => route('leave_requests.create', ['back' => 'dashboard'])],
+                        ['label' => 'Izin', 'icon' => 'fa-clipboard-check', 'badge' => $izin, 'url' => route('leave_requests.index')],
                         ['label' => 'ID Card', 'icon' => 'fa-id-card', 'badge' => 0, 'url' => route('profile.index')],
                         ['label' => 'Lembur', 'icon' => 'fa-clock', 'badge' => 0, 'url' => route('features.show', 'lembur'), 'feature' => 'lembur'],
                         ['label' => 'Jadwal', 'icon' => 'fa-calendar-days', 'badge' => 0, 'url' => route('user.shifts.index')],
@@ -372,8 +372,14 @@ let vapidPublicKey = pushEnableButton?.dataset.vapidPublicKey || '';
 const pushPublicKeyUrl = pushEnableButton?.dataset.publicKeyUrl || '';
 const pushStoreUrl = pushEnableButton?.dataset.storeUrl || '';
 const pushTestUrl = pushEnableButton?.dataset.testUrl || '';
+const browserNotificationStorageKey = 'presensi_browser_notifications_enabled';
+const browserNotificationAutoStorageKey = 'presensi_browser_notifications_auto_enabled';
 let notificationSignature = '';
 let notificationFetchInFlight = false;
+let browserNotificationsPrimed = false;
+let knownBrowserNotificationIds = new Set();
+let browserNotificationActivationShown = false;
+let browserInitialNotificationShown = false;
 
 if (notificationWrap && notificationButton && notificationPanel) {
     notificationButton.addEventListener('click', (event) => {
@@ -451,12 +457,136 @@ function syncNotificationHeader(count) {
     setNotificationBadge(count);
 }
 
+function browserNotificationsEnabled() {
+    return localStorage.getItem(browserNotificationStorageKey) === 'true';
+}
+
+function autoEnableBrowserNotifications() {
+    localStorage.setItem(browserNotificationStorageKey, 'true');
+    localStorage.setItem(browserNotificationAutoStorageKey, 'true');
+
+    if (pushEnableButton && pushEnableButton.textContent.trim() === 'Aktifkan') {
+        pushEnableButton.textContent = 'Browser';
+    }
+}
+
+function systemBrowserNotificationsEnabled() {
+    return browserNotificationsEnabled()
+        && 'Notification' in window
+        && Notification.permission === 'granted';
+}
+
+function rememberBrowserNotificationIds(announcements) {
+    knownBrowserNotificationIds = new Set(announcements.map((item) => String(item.id)));
+}
+
+function showBrowserNotification(announcement) {
+    if (!browserNotificationsEnabled() || !announcement?.id) return;
+
+    if (systemBrowserNotificationsEnabled()) {
+        const notification = new Notification(announcement.title || 'Notifikasi Presensi', {
+            body: announcement.body || 'Ada pemberitahuan baru.',
+            icon: '/icons/icon-192.png',
+            tag: `announcement-${announcement.id}`,
+        });
+
+        notification.onclick = () => {
+            window.focus();
+            if (announcement.action_url) {
+                window.location.href = announcement.action_url;
+            }
+            notification.close();
+        };
+    }
+
+    showInAppNotification(announcement);
+}
+
+function showInAppNotification(announcement) {
+    document.querySelectorAll('[data-browser-notification-toast]').forEach((item) => item.remove());
+
+    const toast = document.createElement('button');
+    toast.type = 'button';
+    toast.dataset.browserNotificationToast = 'true';
+    toast.className = 'fixed left-4 right-4 top-4 z-[9999] rounded-2xl bg-slate-950 px-4 py-3 text-left text-white shadow-2xl transition duration-200 sm:left-auto sm:right-5 sm:w-80';
+    toast.innerHTML = `
+        <span class="block text-xs font-bold text-blue-200">Notifikasi</span>
+        <span class="mt-1 block text-sm font-bold">${escapeHtml(announcement.title || 'Notifikasi Presensi')}</span>
+        <span class="mt-1 block text-xs text-slate-200 line-clamp-2">${escapeHtml(announcement.body || 'Ada pemberitahuan baru.')}</span>
+    `;
+
+    toast.addEventListener('click', () => {
+        if (announcement.action_url) {
+            window.location.href = announcement.action_url;
+        }
+        toast.remove();
+    });
+
+    document.body.appendChild(toast);
+    window.setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-8px)';
+        window.setTimeout(() => toast.remove(), 220);
+    }, 5500);
+}
+
+function showBrowserNotificationActivated(message = 'Mode browser aktif. Notifikasi akan muncul saat ada pemberitahuan baru.') {
+    if (browserNotificationActivationShown) return;
+
+    browserNotificationActivationShown = true;
+    showBrowserNotification({
+        id: `browser-active-${Date.now()}`,
+        title: 'Notifikasi aktif',
+        body: message,
+        action_url: '',
+    });
+}
+
+function notifyNewBrowserAnnouncements(announcements) {
+    if (!browserNotificationsEnabled()) {
+        rememberBrowserNotificationIds(announcements);
+        browserNotificationsPrimed = true;
+        return;
+    }
+
+    if (!browserNotificationsPrimed) {
+        rememberBrowserNotificationIds(announcements);
+        browserNotificationsPrimed = true;
+
+        if (announcements.length > 0 && !browserInitialNotificationShown) {
+            browserInitialNotificationShown = true;
+            const latestAnnouncement = announcements[0];
+            showBrowserNotification({
+                id: `initial-${latestAnnouncement.id}`,
+                title: announcements.length > 1
+                    ? `${announcements.length} pemberitahuan aktif`
+                    : latestAnnouncement.title,
+                body: announcements.length > 1
+                    ? latestAnnouncement.title + ' - ' + (latestAnnouncement.body || 'Buka panel notifikasi untuk detail.')
+                    : latestAnnouncement.body,
+                action_url: latestAnnouncement.action_url || '',
+            });
+        }
+
+        return;
+    }
+
+    announcements.forEach((announcement) => {
+        const id = String(announcement.id);
+        if (knownBrowserNotificationIds.has(id)) return;
+
+        knownBrowserNotificationIds.add(id);
+        showBrowserNotification(announcement);
+    });
+}
+
 function renderNotificationFeed(data, force = false) {
     const announcements = Array.isArray(data.announcements) ? data.announcements : [];
     const count = Number(data.count || 0);
     const nextSignature = `${count}:${announcements.map((item) => `${item.id}:${item.updated_at || ''}`).join('|')}`;
 
     syncNotificationHeader(count);
+    notifyNewBrowserAnnouncements(announcements);
 
     if (!force && nextSignature === notificationSignature) {
         return;
@@ -476,7 +606,7 @@ function renderNotificationFeed(data, force = false) {
 }
 
 async function fetchNotifications({ force = false } = {}) {
-    if (!notificationFeedUrl || notificationFetchInFlight || document.hidden) return;
+    if (!notificationFeedUrl || notificationFetchInFlight) return;
 
     notificationFetchInFlight = true;
 
@@ -580,6 +710,7 @@ function bindNotificationItems() {
     document.querySelectorAll('.notification-item').forEach(bindNotificationItem);
 }
 
+autoEnableBrowserNotifications();
 bindNotificationItems();
 fetchNotifications({ force: true });
 
@@ -629,11 +760,6 @@ function isIosDevice() {
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-function isStandalonePwa() {
-    return window.matchMedia('(display-mode: standalone)').matches
-        || window.navigator.standalone === true;
-}
-
 async function resolveVapidPublicKey() {
     if (vapidPublicKey) return vapidPublicKey;
     if (!pushPublicKeyUrl) return '';
@@ -657,13 +783,8 @@ async function resolveVapidPublicKey() {
 async function enablePushNotifications() {
     if (!pushEnableButton) return;
 
-    if (isIosDevice() && !isStandalonePwa()) {
-        setPushStatus('Di iPhone, buka aplikasi dari ikon Home Screen dulu, bukan dari Safari.', 'danger');
-        return;
-    }
-
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
-        setPushStatus('Browser ini belum mendukung push notification.', 'danger');
+        enableBrowserNotifications('Mode browser aktif. Notifikasi muncul di dashboard saat halaman masih terbuka.');
         return;
     }
 
@@ -750,12 +871,54 @@ async function enablePushNotifications() {
     }
 }
 
+async function enableBrowserNotifications(successMessage = 'Notifikasi browser aktif saat dashboard masih terbuka.') {
+    pushEnableButton.disabled = true;
+    pushEnableButton.textContent = 'Memproses...';
+
+    try {
+        let permission = 'unsupported';
+
+        if ('Notification' in window) {
+            permission = await Notification.requestPermission();
+        }
+
+        localStorage.setItem(browserNotificationStorageKey, 'true');
+        pushEnableButton.textContent = 'Browser';
+        setPushStatus(
+            permission === 'granted'
+                ? successMessage
+                : 'Mode browser aktif. Notifikasi muncul di panel/dashboard saat halaman masih terbuka.',
+            'success'
+        );
+        showBrowserNotificationActivated(
+            permission === 'granted'
+                ? 'Notifikasi browser aktif. Kamu akan mendapat pemberitahuan saat ada info baru.'
+                : 'Mode browser aktif. Pemberitahuan akan muncul di dashboard saat halaman terbuka.'
+        );
+        fetchNotifications({ force: true });
+    } catch (error) {
+        localStorage.setItem(browserNotificationStorageKey, 'true');
+        pushEnableButton.textContent = 'Browser';
+        setPushStatus('Mode browser aktif. Notifikasi muncul di panel/dashboard saat halaman masih terbuka.', 'success');
+        showBrowserNotificationActivated('Mode browser aktif. Pemberitahuan akan muncul di dashboard saat halaman terbuka.');
+        fetchNotifications({ force: true });
+    } finally {
+        pushEnableButton.disabled = false;
+    }
+}
+
 if (pushEnableButton) {
-    if (isIosDevice() && !isStandalonePwa()) {
-        setPushStatus('iPhone perlu membuka PWA dari ikon Home Screen untuk mengaktifkan notifikasi.', 'info');
+    autoEnableBrowserNotifications();
+
+    if (isIosDevice()) {
+        setPushStatus('Mode browser aktif otomatis. Notifikasi muncul selama dashboard terbuka.', 'info');
+    } else if (browserNotificationsEnabled() && !systemBrowserNotificationsEnabled()) {
+        setPushStatus('Mode browser aktif otomatis. Klik Browser untuk izin notifikasi sistem.', 'info');
     }
 
-    if ('Notification' in window && Notification.permission === 'granted') {
+    if (browserNotificationsEnabled()) {
+        pushEnableButton.textContent = 'Browser';
+    } else if ('Notification' in window && Notification.permission === 'granted') {
         pushEnableButton.textContent = 'Aktif';
     }
 

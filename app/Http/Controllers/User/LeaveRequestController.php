@@ -9,9 +9,12 @@ use App\Services\AdminPushService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class LeaveRequestController extends Controller
 {
+    private const TYPES = ['izin', 'sakit', 'cuti', 'dinas'];
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -45,6 +48,8 @@ class LeaveRequestController extends Controller
             ? route('dashboard')
             : route('leave_requests.index');
 
+        abort_unless(in_array($selectedJenisIzin, self::TYPES, true), 404);
+
         if (in_array($selectedJenisIzin, ['sakit', 'cuti'], true)) {
             abort_unless(FeatureSetting::enabled($selectedJenisIzin, 'user'), 403, 'Anda tidak memiliki akses ke fitur ini.');
         }
@@ -55,10 +60,10 @@ class LeaveRequestController extends Controller
     public function store(Request $request, AdminPushService $adminPush)
     {
         $validated = $request->validate([
-            'jenis_izin' => ['required', 'string', 'max:50'],
+            'jenis_izin' => ['required', 'string', 'max:50', Rule::in(self::TYPES)],
             'tanggal_mulai' => ['required', 'date'],
             'tanggal_selesai' => ['required', 'date', 'after_or_equal:tanggal_mulai'],
-            'keterangan' => ['required', 'string'],
+            'keterangan' => ['nullable', 'string'],
             'lampiran' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
         ]);
 
@@ -75,7 +80,7 @@ class LeaveRequestController extends Controller
             'jenis_izin' => $validated['jenis_izin'],
             'tanggal_mulai' => $validated['tanggal_mulai'],
             'tanggal_selesai' => $validated['tanggal_selesai'],
-            'keterangan' => $validated['keterangan'],
+            'keterangan' => $validated['keterangan'] ?? '',
             'lampiran' => $lampiranPath,
             'status' => 'pending',
         ]);

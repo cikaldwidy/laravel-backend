@@ -2,7 +2,13 @@
 
 @php
     $jenisIzin = request('jenis_izin');
-    $pageTitle = $jenisIzin ? ucfirst($jenisIzin) : 'Perizinan';
+    $jenisLabels = [
+        'izin' => 'Izin Absen',
+        'sakit' => 'Izin Sakit',
+        'cuti' => 'Izin Cuti',
+        'dinas' => 'Izin Dinas',
+    ];
+    $pageTitle = $jenisIzin ? ($jenisLabels[$jenisIzin] ?? ucfirst($jenisIzin)) : 'Perizinan';
 @endphp
 
 @section('title', $pageTitle)
@@ -50,7 +56,7 @@
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
             <h1 class="text-xl font-bold tracking-tight text-gray-700">{{ $pageTitle }}</h1>
-            <p class="mt-0.5 text-sm text-gray-500">Kelola pengajuan izin, sakit, dan cuti pegawai.</p>
+            <p class="mt-0.5 text-sm text-gray-500">Kelola pengajuan izin absen, sakit, cuti, dan dinas pegawai.</p>
         </div>
     </div>
 
@@ -70,8 +76,8 @@
                     <label class="mb-2 block text-xs font-semibold text-gray-500">Jenis</label>
                     <select name="jenis_izin" class="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 transition focus:border-gray-500 focus:outline-none">
                         <option value="">Semua Jenis</option>
-                        @foreach(['izin', 'sakit', 'cuti'] as $jenis)
-                            <option value="{{ $jenis }}" @selected(request('jenis_izin') === $jenis)>{{ ucfirst($jenis) }}</option>
+                        @foreach($jenisLabels as $jenis => $label)
+                            <option value="{{ $jenis }}" @selected(request('jenis_izin') === $jenis)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -153,8 +159,10 @@
                             $jenisClass = match ($item->jenis_izin) {
                                 'sakit' => 'bg-red-50 text-red-700',
                                 'cuti' => 'bg-sky-50 text-sky-700',
+                                'dinas' => 'bg-cyan-50 text-cyan-700',
                                 default => 'bg-blue-50 text-blue-700',
                             };
+                            $jenisLabel = $jenisLabels[$item->jenis_izin] ?? ucfirst($item->jenis_izin);
                             $periode = $item->tanggal_mulai->format('d/m/Y') . ' - ' . $item->tanggal_selesai->format('d/m/Y');
                         @endphp
                         <tr class="transition hover:bg-gray-50/70">
@@ -167,7 +175,7 @@
                             </td>
                             <td class="px-5 py-3.5 font-medium text-gray-500">{{ $item->user?->employeeDetail?->department?->nama_departemen ?? $item->user?->employeeDetail?->departemen ?? '-' }}</td>
                             <td class="px-5 py-3.5">
-                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $jenisClass }}">{{ ucfirst($item->jenis_izin) }}</span>
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $jenisClass }}">{{ $jenisLabel }}</span>
                             </td>
                             <td class="px-5 py-3.5 text-gray-600">{{ $periode }}</td>
                             <td class="px-5 py-3.5">

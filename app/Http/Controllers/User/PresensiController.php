@@ -12,6 +12,7 @@ use App\Models\WorkSetting;
 use App\Support\ShiftTime;
 use Carbon\Carbon;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -52,6 +53,37 @@ class PresensiController extends Controller
             'officeRadius' => $setting->radius_meters ?? config('attendance.radius_meters', 100),
             'officeLatitude' => $setting->office_latitude ?? config('attendance.office_latitude'),
             'officeLongitude' => $setting->office_longitude ?? config('attendance.office_longitude'),
+        ]);
+    }
+
+    public function status(): JsonResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (!$user->hasFaceEnrollment()) {
+            return response()->json([
+                'has_face_enrollment' => false,
+                'has_attendance' => false,
+                'redirect' => route('face.enroll', [], false),
+            ]);
+        }
+
+        $now = now();
+        $setting = WorkSetting::first();
+        $activeShiftContext = $this->resolveActiveShift($user, $now, $setting);
+        $tanggalPresensi = $activeShiftContext['shift_date'] ?? $now->copy()->startOfDay();
+
+        $presensi = Presensi::query()
+            ->where('user_id', $user->id)
+            ->whereDate('tanggal', $tanggalPresensi)
+            ->first();
+
+        return response()->json([
+            'has_face_enrollment' => true,
+            'has_attendance' => (bool) $presensi?->jam_masuk,
+            'has_checkout' => (bool) $presensi?->jam_keluar,
+            'redirect' => route('dashboard', [], false),
         ]);
     }
 
@@ -511,8 +543,9 @@ class PresensiController extends Controller
 
     private function passesQualityGate(array $qualityMetrics): bool
     {
-        return $qualityMetrics['brightness'] >= 55 &&
-               $qualityMetrics['sharpness'] >= 18;
+        return $qualityMetrics['brightness'] >= (float) config('attendance.min_brightness', 30) &&
+               $qualityMetrics['brightness'] <= (float) config('attendance.max_brightness', 220) &&
+               $qualityMetrics['sharpness'] >= (float) config('attendance.min_sharpness', 8);
     }
 
     private function compareEmbeddings(array $storedEmbedding, array $incomingEmbedding): float

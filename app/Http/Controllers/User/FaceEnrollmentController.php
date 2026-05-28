@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\FaceEmbedding;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -43,6 +44,19 @@ class FaceEnrollmentController extends Controller
         }
 
         return view('user.face-enroll-success');
+    }
+
+    public function status(): JsonResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        return response()->json([
+            'has_enrollment' => $user->hasFaceEnrollment(),
+            'redirect' => $user->hasFaceEnrollment()
+                ? route('face.verify.progress', [], false)
+                : route('face.enroll', [], false),
+        ]);
     }
 
     public function store(Request $request)

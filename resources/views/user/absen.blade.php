@@ -492,6 +492,17 @@
                     </div>
                 </section>
 
+                <section id="iosSafariAttendanceHandoff" class="hidden bg-blue-50 border border-blue-200 text-blue-900 rounded-2xl p-4 text-sm shadow-sm">
+                    <p class="font-bold">Kamera live iPhone PWA kurang stabil</p>
+                    <p class="mt-1 text-xs leading-relaxed">Lanjutkan verifikasi di Safari. Setelah absen berhasil, buka kembali aplikasi Presensi; dashboard akan diperbarui otomatis.</p>
+                    <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <a id="openSafariAttendance" href="{{ route('absen.page', ['handoff' => 'safari'], false) }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white">
+                            <i class="fa-brands fa-safari mr-2"></i>BUKA DI SAFARI
+                        </a>
+                        <button type="button" id="copySafariAttendance" class="rounded-xl border border-blue-200 bg-white px-4 py-2 text-xs font-bold text-blue-700">SALIN LINK</button>
+                    </div>
+                </section>
+
                 @if(!isset($scheduledShift) || !$scheduledShift)
                     <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
                         Shift kamu belum diatur oleh admin. Hubungi admin untuk assign jadwal shift terlebih dulu.
@@ -545,6 +556,8 @@
 const modelBaseUrl = '/face-api/models';
 const submitUrl = "{{ route('absen.store', [], false) }}";
 const dashboardUrl = "{{ route('dashboard', [], false) }}";
+const attendanceStatusUrl = "{{ route('absen.status', [], false) }}";
+const safariAttendanceUrl = "{{ route('absen.page', ['handoff' => 'safari'], false) }}";
 const attendanceForm = document.getElementById('attendanceForm');
 const csrfToken = attendanceForm?.querySelector('input[name="_token"]')?.value || '{{ csrf_token() }}';
 const blinkVerifiedInput = document.getElementById('blinkVerified');
@@ -564,9 +577,72 @@ const attendanceHeadFrame = document.getElementById('attendanceHeadFrame');
 const attendanceScanTrack = document.getElementById('attendanceScanTrack');
 const cameraOverlay = document.getElementById('cameraOverlay');
 const attendanceMapElement = document.getElementById('attendanceMap');
+const iosSafariAttendanceHandoff = document.getElementById('iosSafariAttendanceHandoff');
+const openSafariAttendanceLink = document.getElementById('openSafariAttendance');
+const copySafariAttendanceButton = document.getElementById('copySafariAttendance');
 const officeLatitude = Number(attendanceMapElement?.dataset.officeLat ?? 0);
 const officeLongitude = Number(attendanceMapElement?.dataset.officeLng ?? 0);
 const officeRadius = Number(attendanceMapElement?.dataset.officeRadius ?? 0);
+let attendanceHandoffStatusChecking = false;
+
+function isIosDevice() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isStandalonePwa() {
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+}
+
+function setupAttendanceSafariHandoff() {
+    if (!iosSafariAttendanceHandoff || !isIosDevice() || !isStandalonePwa()) return;
+
+    iosSafariAttendanceHandoff.classList.remove('hidden');
+
+    if (openSafariAttendanceLink) {
+        openSafariAttendanceLink.href = safariAttendanceUrl;
+    }
+
+    copySafariAttendanceButton?.addEventListener('click', async () => {
+        const absoluteUrl = new URL(safariAttendanceUrl, window.location.origin).href;
+
+        try {
+            await navigator.clipboard.writeText(absoluteUrl);
+            updateStatus('Link Safari disalin. Tempel di Safari jika tombol buka tidak berpindah.', false);
+        } catch (error) {
+            updateStatus('Buka link ini di Safari: ' + absoluteUrl, false);
+        }
+    });
+}
+
+async function checkAttendanceHandoffStatus() {
+    if (!isIosDevice() || !isStandalonePwa() || attendanceHandoffStatusChecking) return;
+
+    attendanceHandoffStatusChecking = true;
+
+    try {
+        const response = await fetch(attendanceStatusUrl, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            cache: 'no-store',
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (data.has_attendance && data.redirect) {
+            window.location.href = data.redirect;
+        }
+    } catch (error) {
+        // Dicek lagi saat PWA aktif kembali.
+    } finally {
+        attendanceHandoffStatusChecking = false;
+    }
+}
 
 function updateClock() {
     const now = new Date();
@@ -766,9 +842,9 @@ const MAX_LOCATION_SAMPLE_BUFFER = 5;
 const FAST_LOCATION_ACCURACY = 25;
 const REQUIRED_LIVENESS_STEPS = 2;
 
-const MIN_BRIGHTNESS = 38;
-const MAX_BRIGHTNESS = 210;
-const MIN_SHARPNESS = 10;
+const MIN_BRIGHTNESS = {{ (float) config('attendance.min_brightness', 30) }};
+const MAX_BRIGHTNESS = {{ (float) config('attendance.max_brightness', 220) }};
+const MIN_SHARPNESS = {{ (float) config('attendance.min_sharpness', 8) }};
 const BLINK_OPEN_EAR = 0.27;
 const BLINK_CLOSED_EAR = 0.26;
 const BLINK_DROP_RATIO = 0.9;
@@ -967,7 +1043,7 @@ function getFrameQuality(faceBox = null) {
 function isFrameQualityGood(quality) {
     return quality.brightness >= MIN_BRIGHTNESS
         && quality.brightness <= MAX_BRIGHTNESS
-        && quality.sharpness >= 8;
+        && quality.sharpness >= MIN_SHARPNESS;
 }
 
 function averageDescriptors(samples) {
@@ -1325,7 +1401,15 @@ async function submitAttendance() {
 
 startVerificationButton.addEventListener('click', startVerification);
 submitAttendanceButton.addEventListener('click', submitAttendance);
+setupAttendanceSafariHandoff();
+checkAttendanceHandoffStatus();
+window.addEventListener('focus', checkAttendanceHandoffStatus);
 window.addEventListener('beforeunload', stopStream);
 window.addEventListener('beforeunload', stopGeolocationWatch);
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+        checkAttendanceHandoffStatus();
+    }
+});
 </script>
 @endsection

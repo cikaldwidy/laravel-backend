@@ -298,6 +298,21 @@
             </div>
 
             <div class="camera-panel rounded-md p-4 md:p-5">
+                <div id="iosSafariHandoff" class="hidden mb-4 rounded-md border border-blue-200 bg-blue-50 p-4">
+                    <p class="text-sm font-bold text-blue-800">Kamera iPhone PWA kurang stabil</p>
+                    <p class="mt-1 text-xs leading-relaxed text-blue-700">
+                        Lanjutkan pendaftaran wajah di Safari. Setelah berhasil, buka kembali aplikasi Presensi; status akan dicek otomatis.
+                    </p>
+                    <div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <a id="openSafariEnroll" href="{{ route('face.enroll', ['handoff' => 'safari'], false) }}" target="_blank" rel="noopener" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold text-white">
+                            <i class="fa-brands fa-safari mr-2"></i>BUKA DI SAFARI
+                        </a>
+                        <button type="button" id="copySafariEnroll" class="rounded-md border border-blue-200 bg-white px-4 py-2 text-xs font-semibold text-blue-700">
+                            SALIN LINK
+                        </button>
+                    </div>
+                </div>
+
                 <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
                         <p class="text-sm font-semibold uppercase tracking-[1.4px] text-blue-600">Area Kamera</p>
@@ -379,6 +394,9 @@
 const video = document.getElementById('video');
 const startCameraButton = document.getElementById('startCamera');
 const resetSamplesButton = document.getElementById('resetSamples');
+const iosSafariHandoff = document.getElementById('iosSafariHandoff');
+const openSafariEnrollLink = document.getElementById('openSafariEnroll');
+const copySafariEnrollButton = document.getElementById('copySafariEnroll');
 const cameraStatusBadge = document.getElementById('cameraStatusBadge');
 const cameraStatusIcon = document.getElementById('cameraStatusIcon');
 const cameraStatusText = document.getElementById('cameraStatusText');
@@ -392,6 +410,8 @@ const headFrame = document.getElementById('headFrame');
 const guideInstruction = document.getElementById('guideInstruction');
 const scanTrack = document.querySelector('.face-scan-track');
 
+const faceStatusUrl = "{{ route('face.status', [], false) }}";
+const safariEnrollUrl = "{{ route('face.enroll', ['handoff' => 'safari'], false) }}";
 const REQUIRED_SAMPLES = 3;
 const descriptors = [];
 const sampleQualities = [];
@@ -410,8 +430,8 @@ const TURN_THRESHOLD = 0.035;
 const BLINK_CAPTURE_WINDOW_MS = 2200;
 const BLINK_COOLDOWN_MS = 900;
 const CAMERA_RESPONSE_TIMEOUT_MS = 7000;
-const CAMERA_PLAY_TIMEOUT_MS = 5000;
-const CAMERA_TIMEOUT_MESSAGE = 'Kamera tidak merespons di PWA. Tutup aplikasi dari app switcher, buka lagi dari Home Screen, lalu tekan Aktifkan Kamera.';
+const CAMERA_VIDEO_READY_TIMEOUT_MS = 7000;
+const CAMERA_TIMEOUT_MESSAGE = 'Kamera tidak merespons di PWA. Gunakan Buka di Safari untuk pendaftaran wajah.';
 const ENROLLMENT_STEPS = [
     'Langkah 1: Kedipkan mata.',
     'Langkah 2: Hadapkan wajah ke kanan.',
@@ -438,6 +458,17 @@ let lastNoFaceFeedbackAt = 0;
 let lastVideoWaitingFeedbackAt = 0;
 let detectionErrorCount = 0;
 let cameraStartToken = 0;
+let handoffStatusChecking = false;
+
+function isIosDevice() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent)
+        || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function isStandalonePwa() {
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+}
 
 function setScanAnimationActive(isActive) {
     if (!scanTrack) return;
@@ -466,6 +497,55 @@ function updateStatus(message, isError = false) {
     statusText.className = isError
         ? 'mt-4 text-sm text-red-500 text-center md:text-left'
         : 'mt-4 text-sm text-gray-500 text-center md:text-left';
+}
+
+function setupSafariHandoff() {
+    if (!iosSafariHandoff || !isIosDevice() || !isStandalonePwa()) return;
+
+    iosSafariHandoff.classList.remove('hidden');
+
+    if (openSafariEnrollLink) {
+        openSafariEnrollLink.href = safariEnrollUrl;
+    }
+
+    copySafariEnrollButton?.addEventListener('click', async () => {
+        const absoluteUrl = new URL(safariEnrollUrl, window.location.origin).href;
+
+        try {
+            await navigator.clipboard.writeText(absoluteUrl);
+            updateStatus('Link Safari disalin. Tempel di Safari jika tombol buka tidak berpindah.', false);
+        } catch (error) {
+            updateStatus('Buka link ini di Safari: ' + absoluteUrl, false);
+        }
+    });
+}
+
+async function checkEnrollmentHandoffStatus() {
+    if (!isIosDevice() || !isStandalonePwa() || handoffStatusChecking) return;
+
+    handoffStatusChecking = true;
+
+    try {
+        const response = await fetch(faceStatusUrl, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            cache: 'no-store',
+        });
+
+        if (!response.ok) return;
+
+        const data = await response.json();
+
+        if (data.has_enrollment && data.redirect) {
+            window.location.href = data.redirect;
+        }
+    } catch (error) {
+        // Dicek lagi saat app kembali aktif.
+    } finally {
+        handoffStatusChecking = false;
+    }
 }
 
 function setBlinkVerified(value) {
@@ -742,7 +822,7 @@ function cameraErrorMessage(error) {
     return error?.message || 'Kamera atau model wajah gagal diinisialisasi.';
 }
 
-function waitForVideoReady(timeoutMs = 5000) {
+function waitForVideoReady(timeoutMs = CAMERA_VIDEO_READY_TIMEOUT_MS) {
     if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
         return Promise.resolve();
     }
@@ -763,15 +843,64 @@ function waitForVideoReady(timeoutMs = 5000) {
         const cleanup = () => {
             window.clearTimeout(timeout);
             video.removeEventListener('loadedmetadata', check);
+            video.removeEventListener('loadeddata', check);
             video.removeEventListener('canplay', check);
             video.removeEventListener('playing', check);
         };
 
         video.addEventListener('loadedmetadata', check);
+        video.addEventListener('loadeddata', check);
         video.addEventListener('canplay', check);
         video.addEventListener('playing', check);
         check();
     });
+}
+
+function delay(ms) {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+    });
+}
+
+function prepareCameraVideo() {
+    video.muted = true;
+    video.defaultMuted = true;
+    video.autoplay = true;
+    video.playsInline = true;
+    video.setAttribute('muted', '');
+    video.setAttribute('autoplay', '');
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+}
+
+async function startVideoPreview() {
+    prepareCameraVideo();
+
+    let playError = null;
+    const playPromise = video.play();
+
+    if (playPromise?.catch) {
+        playPromise.catch((error) => {
+            playError = error;
+        });
+    }
+
+    try {
+        await waitForVideoReady();
+    } catch (error) {
+        if (playError) {
+            throw playError;
+        }
+
+        throw error;
+    }
+
+    if (playPromise?.then) {
+        await Promise.race([
+            playPromise.catch(() => null),
+            delay(1200),
+        ]);
+    }
 }
 
 function withTimeout(promise, timeoutMs, message) {
@@ -1034,7 +1163,7 @@ async function startCamera() {
         updateStatus('Menyalakan kamera...');
         slowStartTimer = window.setTimeout(() => {
             if (token === cameraStartToken && !stream) {
-                updateStatus('Kamera masih belum merespons. Jika tetap seperti ini, tutup PWA dari app switcher lalu buka lagi.', true);
+                updateStatus('Kamera masih belum merespons. Jika tetap seperti ini, gunakan Buka di Safari.', true);
             }
         }, 3500);
 
@@ -1048,12 +1177,7 @@ async function startCamera() {
         stream = nextStream;
 
         video.srcObject = stream;
-        await withTimeout(
-            video.play(),
-            CAMERA_PLAY_TIMEOUT_MS,
-            'Video kamera belum bisa diputar. Tutup PWA lalu buka ulang dari Home Screen.'
-        );
-        await waitForVideoReady();
+        await startVideoPreview();
         setScanAnimationActive(true);
         updateStatus('Kamera aktif. Menyiapkan deteksi wajah...');
         await loadModels();
@@ -1119,15 +1243,20 @@ async function saveEmbedding() {
 startCameraButton.addEventListener('click', startCamera);
 resetSamplesButton.addEventListener('click', resetSamples);
 updateSampleCount();
+setupSafariHandoff();
+checkEnrollmentHandoffStatus();
 window.addEventListener('load', () => {
     loadModels().catch(() => {});
 });
+window.addEventListener('focus', checkEnrollmentHandoffStatus);
 window.addEventListener('beforeunload', stopCameraStream);
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
         stopEnrollmentTracking();
         stopCameraStream();
         cameraStartToken += 1;
+    } else {
+        checkEnrollmentHandoffStatus();
     }
 });
 </script>

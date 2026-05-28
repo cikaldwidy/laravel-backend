@@ -13,6 +13,7 @@ class FeaturePageController extends Controller
 
         if (in_array($featureKey, ['sakit', 'cuti'], true)) {
             return redirect()->route('leave_requests.create', [
+                'jenis_izin' => $featureKey,
                 'back' => 'dashboard',
             ]);
         }
