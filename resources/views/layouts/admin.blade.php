@@ -399,6 +399,68 @@
         background: transparent !important;
         box-shadow: none !important;
     }
+    .admin-global-search-results {
+        position: absolute;
+        left: 0;
+        top: calc(100% + .75rem);
+        width: min(34rem, calc(100vw - 2rem));
+        max-height: 24rem;
+        overflow-y: auto;
+        border: 1px solid var(--admin-border);
+        border-radius: 1rem;
+        background: var(--admin-card);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, .18);
+        padding: .5rem;
+        z-index: 60;
+    }
+    .admin-global-search-results[hidden] {
+        display: none !important;
+    }
+    .admin-global-search-item {
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        width: 100%;
+        border-radius: .8rem;
+        padding: .75rem;
+        color: var(--admin-ink);
+        text-align: left;
+        transition: background-color .18s ease, color .18s ease;
+    }
+    .admin-global-search-item:hover,
+    .admin-global-search-item.is-active {
+        background: var(--admin-hover);
+    }
+    .admin-global-search-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        flex: 0 0 auto;
+        border-radius: .8rem;
+        background: var(--admin-soft);
+        color: var(--admin-blue);
+    }
+    .admin-global-search-title {
+        display: block;
+        font-size: .9rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+    .admin-global-search-meta {
+        display: block;
+        margin-top: .2rem;
+        color: var(--admin-muted);
+        font-size: .76rem;
+        line-height: 1.25;
+    }
+    .admin-global-search-empty {
+        padding: .9rem;
+        color: var(--admin-muted);
+        font-size: .85rem;
+        font-weight: 700;
+    }
     html[data-admin-theme="dark"] .admin-top-search,
     html[data-admin-theme="dark"] #main-content header .bg-white,
     html[data-admin-theme="dark"] #main-content header .hover\:bg-blue-50:hover,
@@ -668,6 +730,38 @@
             $adminFeatureSettings = \App\Models\FeatureSetting::matrix();
             $adminNotifications = app(\App\Services\AdminNotificationService::class)->items(5);
             $adminNotificationCount = app(\App\Services\AdminNotificationService::class)->count();
+            $adminSearchItems = [
+                ['title' => 'Dashboard', 'section' => 'Dashboard', 'description' => 'Ringkasan presensi dan statistik admin.', 'url' => route('admin.dashboard'), 'icon' => 'fas fa-chart-line', 'keywords' => 'dashboard beranda statistik ringkasan presensi admin'],
+                ['title' => 'Master Unit Kerja/Bagian', 'section' => 'Struktur Organisasi', 'description' => 'Kelola unit kerja dan bagian.', 'url' => route('admin.departments.index'), 'icon' => 'fas fa-sitemap', 'keywords' => 'unit kerja bagian departemen struktur organisasi master', 'searchParam' => 'search'],
+                ['title' => 'Master Jabatan', 'section' => 'Struktur Organisasi', 'description' => 'Kelola jabatan pegawai.', 'url' => route('admin.positions.index'), 'icon' => 'fas fa-id-badge', 'keywords' => 'jabatan posisi struktur organisasi master', 'searchParam' => 'search'],
+                ['title' => 'Akun Pegawai', 'section' => 'Pegawai', 'description' => 'Cari dan kelola akun pegawai.', 'url' => route('admin.users.index'), 'icon' => 'fas fa-users', 'keywords' => 'pegawai akun user biodata karyawan email username nik nip hp', 'searchParam' => 'search'],
+                ['title' => 'Tambah Akun Pegawai', 'section' => 'Pegawai', 'description' => 'Buat akun pegawai baru.', 'url' => route('admin.users.create'), 'icon' => 'fas fa-user-plus', 'keywords' => 'tambah akun pegawai buat user password'],
+                ['title' => 'Data Wajah', 'section' => 'Pegawai', 'description' => 'Kelola data wajah dan template face recognition.', 'url' => route('admin.face_data.index'), 'icon' => 'fas fa-face-smile', 'keywords' => 'data wajah face recognition embedding capture kamera pegawai', 'searchParam' => 'search'],
+                ['title' => 'Master Shift', 'section' => 'Jadwal & Shift', 'description' => 'Kelola template shift.', 'url' => route('admin.shifts.index'), 'icon' => 'fas fa-clock', 'keywords' => 'master shift jadwal jam masuk pulang'],
+                ['title' => 'Jadwal Bulanan', 'section' => 'Jadwal & Shift', 'description' => 'Kelola jadwal dinas bulanan.', 'url' => route('jadwal-dinas.index'), 'icon' => 'fas fa-calendar-days', 'keywords' => 'jadwal bulanan dinas shift kalender excel export'],
+                ['title' => 'Tukar Shift', 'section' => 'Jadwal & Shift', 'description' => 'Kelola pengajuan tukar shift.', 'url' => route('admin.shift_management.swaps'), 'icon' => 'fas fa-right-left', 'keywords' => 'tukar shift swap pengajuan approve reject'],
+                ['title' => 'Riwayat Absensi', 'section' => 'Absensi & Izin', 'description' => 'Lihat histori presensi pegawai.', 'url' => route('admin.histories.index'), 'icon' => 'fas fa-clipboard-check', 'keywords' => 'riwayat absensi presensi hadir pulang telat'],
+                ['title' => 'Perizinan', 'section' => 'Absensi & Izin', 'description' => 'Kelola izin dan cuti pegawai.', 'url' => route('admin.leave_requests.index'), 'icon' => 'fas fa-file-signature', 'keywords' => 'izin cuti sakit leave request perizinan'],
+                ['title' => 'Notifikasi', 'section' => 'Info & Laporan', 'description' => 'Lihat notifikasi admin.', 'url' => route('admin.notifications.index'), 'icon' => 'fas fa-bell', 'keywords' => 'notifikasi pemberitahuan aktivitas'],
+                ['title' => 'Pengumuman', 'section' => 'Info & Laporan', 'description' => 'Buat dan kelola pengumuman.', 'url' => route('admin.announcements.index'), 'icon' => 'fas fa-bullhorn', 'keywords' => 'pengumuman announcement informasi berita'],
+                ['title' => 'Laporan', 'section' => 'Info & Laporan', 'description' => 'Export dan lihat laporan presensi.', 'url' => route('admin.reports.index'), 'icon' => 'fas fa-file-export', 'keywords' => 'laporan report export excel pdf presensi'],
+                ['title' => 'Lokasi Presensi', 'section' => 'Pengaturan', 'description' => 'Atur lokasi dan radius presensi.', 'url' => route('admin.settings.work.edit'), 'icon' => 'fas fa-location-dot', 'keywords' => 'lokasi presensi radius kantor pengaturan'],
+                ['title' => 'Pengaturan Fitur', 'section' => 'Pengaturan', 'description' => 'Atur fitur yang aktif untuk admin dan user.', 'url' => route('admin.settings.features.index'), 'icon' => 'fas fa-sliders', 'keywords' => 'pengaturan fitur aktif nonaktif akses'],
+                ['title' => 'Akun Admin', 'section' => 'Pengaturan', 'description' => 'Kelola akun administrator.', 'url' => route('admin.settings.admin_accounts.index'), 'icon' => 'fas fa-user-shield', 'keywords' => 'admin administrator akun pengaturan'],
+            ];
+
+            foreach (\App\Models\FeatureSetting::FEATURES as $featureKey => $feature) {
+                if (\App\Models\FeatureSetting::availableForRole($featureKey, 'admin') && ($adminFeatureSettings[$featureKey]['admin'] ?? false)) {
+                    $adminSearchItems[] = [
+                        'title' => $feature['label'],
+                        'section' => 'Absensi & Izin',
+                        'description' => 'Buka fitur ' . $feature['label'] . '.',
+                        'url' => route('admin.features.show', $featureKey),
+                        'icon' => $feature['icon'] ?? 'fas fa-layer-group',
+                        'keywords' => 'fitur absensi izin ' . $feature['label'],
+                    ];
+                }
+            }
         @endphp
         <nav id="sidebar-nav" class="md:px-2 sidebar-scroll overflow-y-auto px-4 py-3 space-y-2" style="height: calc(100vh - 5rem);">
             <a href="{{ route('admin.dashboard') }}"
@@ -796,13 +890,16 @@
                     <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
-                    <div class="admin-top-search hidden xl:flex h-10 w-full max-w-sm items-center gap-2 rounded-md border border-gray-200 bg-white px-3 text-gray-400">
+                    <div id="adminGlobalSearch" class="admin-top-search relative hidden xl:flex h-10 w-full max-w-sm items-center gap-2 rounded-md border border-gray-200 bg-white px-3 text-gray-400">
                         <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
                         <input
+                            id="adminGlobalSearchInput"
                             type="search"
                             placeholder="Cari sesuatu"
+                            autocomplete="off"
                             class="h-full w-full border-0 bg-transparent px-0 text-sm text-gray-600 placeholder:text-gray-400 focus:outline-none focus:ring-0"
                         >
+                        <div id="adminGlobalSearchResults" class="admin-global-search-results" hidden></div>
                     </div>
                 </div>
 
@@ -953,6 +1050,187 @@ function applyAdminTheme(theme) {
 applyAdminTheme(document.documentElement.dataset.adminTheme || localStorage.getItem('adminTheme') || 'light');
 themeToggle?.addEventListener('click', () => {
     applyAdminTheme(document.documentElement.dataset.adminTheme === 'dark' ? 'light' : 'dark');
+});
+
+// Global admin search
+const adminGlobalSearchItems = @json($adminSearchItems);
+const adminGlobalSearch = document.getElementById('adminGlobalSearch');
+const adminGlobalSearchInput = document.getElementById('adminGlobalSearchInput');
+const adminGlobalSearchResults = document.getElementById('adminGlobalSearchResults');
+let adminSearchActiveIndex = -1;
+let adminSearchCurrentResults = [];
+
+function normalizeAdminSearchText(value) {
+    return (value || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+function adminSearchUrlWithParam(url, param, query) {
+    if (!param || !query) return url;
+    const target = new URL(url, window.location.origin);
+    target.searchParams.set(param, query);
+    return target.toString();
+}
+
+function buildAdminSearchResults(query) {
+    const normalizedQuery = normalizeAdminSearchText(query);
+
+    if (!normalizedQuery) {
+        return adminGlobalSearchItems.slice(0, 8).map(item => ({
+            ...item,
+            actionTitle: item.title,
+            actionUrl: item.url,
+        }));
+    }
+
+    const matchedItems = adminGlobalSearchItems
+        .map((item) => {
+            const haystack = normalizeAdminSearchText([
+                item.title,
+                item.section,
+                item.description,
+                item.keywords,
+            ].filter(Boolean).join(' '));
+
+            let score = 0;
+            if (normalizeAdminSearchText(item.title).startsWith(normalizedQuery)) score += 40;
+            if (normalizeAdminSearchText(item.title).includes(normalizedQuery)) score += 30;
+            if (haystack.includes(normalizedQuery)) score += 15;
+
+            return { item, score };
+        })
+        .filter(result => result.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 6)
+        .map(({ item }) => ({
+            ...item,
+            actionTitle: item.title,
+            actionUrl: adminSearchUrlWithParam(item.url, item.searchParam, query),
+        }));
+
+    const quickSearchItems = adminGlobalSearchItems
+        .filter(item => item.searchParam)
+        .slice(0, 4)
+        .map(item => ({
+            ...item,
+            title: `Cari "${query}"`,
+            actionTitle: `Cari "${query}" di ${item.title}`,
+            description: item.description,
+            actionUrl: adminSearchUrlWithParam(item.url, item.searchParam, query),
+        }));
+
+    const seenUrls = new Set();
+    return [...matchedItems, ...quickSearchItems].filter((item) => {
+        if (seenUrls.has(item.actionUrl)) return false;
+        seenUrls.add(item.actionUrl);
+        return true;
+    }).slice(0, 8);
+}
+
+function closeAdminGlobalSearch() {
+    adminSearchActiveIndex = -1;
+    adminSearchCurrentResults = [];
+    if (adminGlobalSearchResults) {
+        adminGlobalSearchResults.hidden = true;
+        adminGlobalSearchResults.innerHTML = '';
+    }
+}
+
+function setAdminSearchActiveItem(nextIndex) {
+    adminSearchActiveIndex = nextIndex;
+    adminGlobalSearchResults?.querySelectorAll('.admin-global-search-item').forEach((item, index) => {
+        item.classList.toggle('is-active', index === adminSearchActiveIndex);
+    });
+}
+
+function renderAdminGlobalSearchResults() {
+    if (!adminGlobalSearchInput || !adminGlobalSearchResults) return;
+
+    const query = adminGlobalSearchInput.value.trim();
+    adminSearchCurrentResults = buildAdminSearchResults(query);
+    adminSearchActiveIndex = adminSearchCurrentResults.length ? 0 : -1;
+    adminGlobalSearchResults.innerHTML = '';
+    adminGlobalSearchResults.hidden = false;
+
+    if (!adminSearchCurrentResults.length) {
+        const empty = document.createElement('div');
+        empty.className = 'admin-global-search-empty';
+        empty.textContent = 'Tidak ada hasil yang cocok.';
+        adminGlobalSearchResults.appendChild(empty);
+        return;
+    }
+
+    adminSearchCurrentResults.forEach((result, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'admin-global-search-item' + (index === adminSearchActiveIndex ? ' is-active' : '');
+
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'admin-global-search-icon';
+        const icon = document.createElement('i');
+        icon.className = result.icon || 'fas fa-magnifying-glass';
+        iconWrap.appendChild(icon);
+
+        const textWrap = document.createElement('span');
+        textWrap.className = 'min-w-0';
+        const title = document.createElement('span');
+        title.className = 'admin-global-search-title';
+        title.textContent = result.actionTitle || result.title;
+        const meta = document.createElement('span');
+        meta.className = 'admin-global-search-meta';
+        meta.textContent = `${result.section} - ${result.description}`;
+        textWrap.appendChild(title);
+        textWrap.appendChild(meta);
+
+        button.appendChild(iconWrap);
+        button.appendChild(textWrap);
+        button.addEventListener('mousedown', (event) => event.preventDefault());
+        button.addEventListener('click', () => {
+            window.location.href = result.actionUrl || result.url;
+        });
+
+        adminGlobalSearchResults.appendChild(button);
+    });
+}
+
+adminGlobalSearchInput?.addEventListener('focus', renderAdminGlobalSearchResults);
+adminGlobalSearchInput?.addEventListener('input', renderAdminGlobalSearchResults);
+adminGlobalSearchInput?.addEventListener('keydown', (event) => {
+    if (!adminSearchCurrentResults.length && event.key !== 'Escape') {
+        renderAdminGlobalSearchResults();
+    }
+
+    if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        if (!adminSearchCurrentResults.length) return;
+        const nextIndex = (adminSearchActiveIndex + 1) % adminSearchCurrentResults.length;
+        setAdminSearchActiveItem(nextIndex);
+    }
+
+    if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (!adminSearchCurrentResults.length) return;
+        const nextIndex = (adminSearchActiveIndex - 1 + adminSearchCurrentResults.length) % adminSearchCurrentResults.length;
+        setAdminSearchActiveItem(nextIndex);
+    }
+
+    if (event.key === 'Enter') {
+        const selected = adminSearchCurrentResults[adminSearchActiveIndex] || adminSearchCurrentResults[0];
+        if (selected) {
+            event.preventDefault();
+            window.location.href = selected.actionUrl || selected.url;
+        }
+    }
+
+    if (event.key === 'Escape') {
+        closeAdminGlobalSearch();
+        adminGlobalSearchInput.blur();
+    }
+});
+
+document.addEventListener('click', (event) => {
+    if (adminGlobalSearch && !adminGlobalSearch.contains(event.target)) {
+        closeAdminGlobalSearch();
+    }
 });
  
 function toggleMobileMenu() {

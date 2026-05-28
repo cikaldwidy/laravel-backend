@@ -17,9 +17,11 @@ class FaceDataController extends Controller
     {
         $validated = $request->validate([
             'unit_id' => ['nullable', 'integer', 'exists:departments,id'],
+            'search' => ['nullable', 'string', 'max:100'],
         ]);
 
         $selectedUnitId = $validated['unit_id'] ?? null;
+        $search = trim($validated['search'] ?? '') ?: null;
         $units = Department::query()
             ->orderBy('nama_departemen')
             ->get();
@@ -32,6 +34,20 @@ class FaceDataController extends Controller
                     $detailQuery->where('department_id', $selectedUnitId);
                 });
             })
+            ->when($search, function ($query) use ($search) {
+                $query->whereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('username', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%')
+                        ->orWhereHas('employeeDetail', function ($detailQuery) use ($search) {
+                            $detailQuery->where('nip', 'like', '%' . $search . '%')
+                                ->orWhere('departemen', 'like', '%' . $search . '%')
+                                ->orWhere('jabatan', 'like', '%' . $search . '%')
+                                ->orWhereHas('department', fn ($department) => $department->where('nama_departemen', 'like', '%' . $search . '%'))
+                                ->orWhereHas('position', fn ($position) => $position->where('nama_jabatan', 'like', '%' . $search . '%'));
+                        });
+                });
+            })
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -42,6 +58,20 @@ class FaceDataController extends Controller
             ->when($selectedUnitId, function ($query) use ($selectedUnitId) {
                 $query->whereHas('employeeDetail', function ($detailQuery) use ($selectedUnitId) {
                     $detailQuery->where('department_id', $selectedUnitId);
+                });
+            })
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('username', 'like', '%' . $search . '%')
+                        ->orWhere('email', 'like', '%' . $search . '%')
+                        ->orWhereHas('employeeDetail', function ($detailQuery) use ($search) {
+                            $detailQuery->where('nip', 'like', '%' . $search . '%')
+                                ->orWhere('departemen', 'like', '%' . $search . '%')
+                                ->orWhere('jabatan', 'like', '%' . $search . '%')
+                                ->orWhereHas('department', fn ($department) => $department->where('nama_departemen', 'like', '%' . $search . '%'))
+                                ->orWhereHas('position', fn ($position) => $position->where('nama_jabatan', 'like', '%' . $search . '%'));
+                        });
                 });
             });
 
