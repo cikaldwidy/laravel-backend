@@ -181,6 +181,12 @@ class DashboardController extends Controller
             ->distinct('user_id')
             ->count('user_id');
 
+        $userPulangHariIni = Presensi::query()
+            ->whereDate('tanggal', $tanggal)
+            ->whereNotNull('jam_keluar')
+            ->distinct('user_id')
+            ->count('user_id');
+
         $swapPending = ShiftSwap::query()
             ->where('status', 'pending')
             ->count();
@@ -251,6 +257,7 @@ class DashboardController extends Controller
             'announcements',
             'totalShiftHariIni',
             'userMasukHariIni',
+            'userPulangHariIni',
             'swapPending',
             'chart',
             'chartPeriod',

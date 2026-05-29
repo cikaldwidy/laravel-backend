@@ -46,11 +46,11 @@
         'violet' => 'from-violet-600 to-indigo-500 shadow-violet-700/20',
     ];
     $operationalStats = [
-        ['label' => 'Unit', 'value' => $units],
-        ['label' => 'Pengumuman', 'value' => $announcements],
-        ['label' => 'Shift', 'value' => $totalShiftHariIni],
         ['label' => 'Masuk', 'value' => $userMasukHariIni],
-        ['label' => 'Swap', 'value' => $swapPending],
+        ['label' => 'Pulang', 'value' => $userPulangHariIni],
+        ['label' => 'Tepat Waktu', 'value' => $hadir],
+        ['label' => 'Telat', 'value' => $telat],
+        ['label' => 'Izin', 'value' => $izin],
     ];
 
     $statusValues = [$hadir, $telat, $pulangCepat, $izin, $alpha];
@@ -246,9 +246,9 @@
             <div class="flex items-center justify-between gap-4">
                 <div>
                     <p class="text-sm font-bold text-blue-600">Operasional</p>
-                    <h2 class="mt-1 text-lg font-black text-gray-950">Ringkasan Fitur Aktif</h2>
+                    <h2 class="mt-1 text-lg font-black text-gray-950">Aktivitas Operasional Harian</h2>
                 </div>
-                <p class="text-xs font-bold text-gray-400">Hari ini</p>
+                <p class="text-xs font-bold text-gray-400">{{ $selectedDate->format('d/m/Y') }}</p>
             </div>
             <div class="relative mt-5 h-[280px]">
                 <canvas id="operationalBarChart"></canvas>
@@ -622,7 +622,7 @@
                 datasets: [{
                     label: 'Jumlah',
                     data: operational.map(item => item.value),
-                    backgroundColor: ['#2563eb', '#06b6d4', '#4f46e5', '#22c55e', '#8b5cf6'],
+                    backgroundColor: ['#2563eb', '#06b6d4', '#22c55e', '#f97316', '#38bdf8'],
                     borderRadius: 6,
                     maxBarThickness: 44,
                 }]
