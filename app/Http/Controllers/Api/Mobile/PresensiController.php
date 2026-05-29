@@ -8,6 +8,7 @@ use App\Models\Presensi;
 use App\Models\ShiftSchedule;
 use App\Models\User;
 use App\Models\WorkSetting;
+use App\Support\IpNetwork;
 use App\Support\ShiftTime;
 use Carbon\Carbon;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -62,6 +63,11 @@ class PresensiController extends Controller
                 'success' => false,
                 'message' => 'Shift belum diatur atau Anda berada di luar jam presensi.',
             ], 403);
+        }
+
+        $networkResponse = $this->validateAttendanceNetwork($request, $setting);
+        if ($networkResponse instanceof JsonResponse) {
+            return $networkResponse;
         }
 
         $tanggalPresensi = $activeShiftContext['shift_date']->toDateString();
@@ -165,6 +171,11 @@ class PresensiController extends Controller
                 'success' => false,
                 'message' => 'Shift belum diatur atau Anda berada di luar jam presensi.',
             ], 403);
+        }
+
+        $networkResponse = $this->validateAttendanceNetwork($request, $setting);
+        if ($networkResponse instanceof JsonResponse) {
+            return $networkResponse;
         }
 
         $tanggalPresensi = $activeShiftContext['shift_date']->toDateString();
@@ -291,6 +302,11 @@ class PresensiController extends Controller
                 'success' => false,
                 'message' => 'Shift belum diatur atau Anda berada di luar jam presensi.',
             ], 403);
+        }
+
+        $networkResponse = $this->validateAttendanceNetwork($request, $setting);
+        if ($networkResponse instanceof JsonResponse) {
+            return $networkResponse;
         }
 
         $tanggalPresensi = $activeShiftContext['shift_date']->toDateString();
@@ -680,6 +696,25 @@ class PresensiController extends Controller
         }
 
         return $distance;
+    }
+
+    private function validateAttendanceNetwork(Request $request, ?WorkSetting $setting): ?JsonResponse
+    {
+        if (!($setting?->attendance_network_check_enabled ?? false)) {
+            return null;
+        }
+
+        $clientIp = $request->ip();
+        $allowedNetworks = IpNetwork::parseList($setting->attendance_allowed_networks);
+
+        if ($clientIp && IpNetwork::contains($allowedNetworks, $clientIp)) {
+            return null;
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Absensi hanya dapat dilakukan dari jaringan kantor. IP Anda: ' . ($clientIp ?: '-'),
+        ], 403);
     }
 
     private function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): float

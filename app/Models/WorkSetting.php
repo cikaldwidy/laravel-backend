@@ -18,6 +18,8 @@ class WorkSetting extends Model
         'radius_meters',
         'checkin_early_minutes',
         'checkout_late_minutes',
+        'attendance_network_check_enabled',
+        'attendance_allowed_networks',
     ];
 
     protected $casts = [
@@ -26,5 +28,6 @@ class WorkSetting extends Model
         'radius_meters' => 'integer',
         'checkin_early_minutes' => 'integer',
         'checkout_late_minutes' => 'integer',
+        'attendance_network_check_enabled' => 'boolean',
     ];
 }

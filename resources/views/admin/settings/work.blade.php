@@ -21,6 +21,12 @@
         </div>
     @endif
 
+    @if($errors->any())
+        <div class="rounded-md border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {{ $errors->first() }}
+        </div>
+    @endif
+
     <div class="overflow-hidden rounded-md border border-gray-200 bg-white shadow-sm">
         <div class="border-b border-gray-100 px-5 py-3.5">
             <h2 class="text-sm font-semibold text-gray-700">Pengaturan Lokasi dan Toleransi</h2>
@@ -155,6 +161,46 @@
                 </div>
             </div>
 
+            <div class="rounded-md border border-gray-200 p-4">
+                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                        <h3 class="font-bold text-gray-800">Jaringan Kantor</h3>
+                        <p class="text-sm text-gray-500">Jika aktif, user hanya bisa absen dari IP atau subnet jaringan yang diizinkan.</p>
+                    </div>
+                    <label for="attendance_network_check_enabled" class="inline-flex cursor-pointer items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700">
+                        <input type="hidden" name="attendance_network_check_enabled" value="0">
+                        <input
+                            id="attendance_network_check_enabled"
+                            type="checkbox"
+                            name="attendance_network_check_enabled"
+                            value="1"
+                            class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            @checked(old('attendance_network_check_enabled', $setting->attendance_network_check_enabled ?? false))
+                        >
+                        Aktifkan pembatasan jaringan
+                    </label>
+                </div>
+
+                <div>
+                    <label for="attendance_allowed_networks" class="block text-sm font-semibold text-gray-700 mb-2">
+                        IP/Subnet yang Diizinkan
+                    </label>
+                    <textarea
+                        id="attendance_allowed_networks"
+                        name="attendance_allowed_networks"
+                        rows="5"
+                        placeholder="222.2.82.0/24&#10;192.168.1.10"
+                        class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >{{ old('attendance_allowed_networks', $setting->attendance_allowed_networks) }}</textarea>
+                    <p class="mt-2 text-sm text-gray-500">
+                        Pisahkan dengan baris baru, koma, atau spasi. Contoh untuk Wi-Fi pada screenshot: <span class="font-semibold text-gray-700">222.2.82.0/24</span>.
+                    </p>
+                    <p class="mt-1 text-xs text-gray-500">
+                        IP request halaman admin saat ini: <span class="font-semibold text-gray-700">{{ request()->ip() }}</span>.
+                    </p>
+                </div>
+            </div>
+
             <div class="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
                 <p>
                     Titik GPS kantor:
@@ -171,6 +217,13 @@
                     sebelum jam masuk shift dan sesi absen berakhir
                     <span class="font-semibold text-gray-800">{{ $setting->checkout_late_minutes ?? \App\Models\WorkSetting::DEFAULT_CHECKOUT_LATE_MINUTES }} menit</span>
                     setelah jam pulang shift.
+                </p>
+                <p class="mt-1">
+                    Pembatasan jaringan kantor
+                    <span class="font-semibold text-gray-800">{{ ($setting->attendance_network_check_enabled ?? false) ? 'aktif' : 'nonaktif' }}</span>
+                    @if($setting->attendance_network_check_enabled && filled($setting->attendance_allowed_networks))
+                        untuk {{ count(\App\Support\IpNetwork::parseList($setting->attendance_allowed_networks)) }} IP/subnet.
+                    @endif
                 </p>
             </div>
 

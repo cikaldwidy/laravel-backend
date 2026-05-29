@@ -789,6 +789,44 @@ function hasEnoughLocationSamples() {
     return geolocationSamples.length >= REQUIRED_LOCATION_SAMPLES;
 }
 
+function getCurrentPositionSample() {
+    return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                updateGeolocation(pos);
+                resolve(pos);
+            },
+            () => reject(new Error('Izin lokasi ditolak atau GPS tidak tersedia.')),
+            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        );
+    });
+}
+
+async function ensureEnoughLocationSamples(timeoutMs = 8000) {
+    if (!navigator.geolocation) {
+        throw new Error('Browser tidak mendukung geolokasi.');
+    }
+
+    const startedAt = Date.now();
+    while (!hasEnoughLocationSamples() && Date.now() - startedAt < timeoutMs) {
+        updateStatus('GPS sedang dipastikan. Mohon tunggu sebentar...');
+
+        try {
+            await getCurrentPositionSample();
+        } catch (error) {
+            if (!geolocation) {
+                throw error;
+            }
+        }
+
+        if (!hasEnoughLocationSamples()) {
+            await new Promise(resolve => setTimeout(resolve, 700));
+        }
+    }
+
+    return hasEnoughLocationSamples();
+}
+
 function currentLocationAgeSeconds(timestamp) {
     const timestampMs = Date.parse(timestamp);
     if (Number.isNaN(timestampMs)) return 9999;
@@ -1221,39 +1259,31 @@ async function requestGeolocation() {
     if (!navigator.geolocation) throw new Error('Browser tidak mendukung geolokasi.');
     stopGeolocationWatch();
 
-    const waitForStableLocation = () => new Promise((resolve, reject) => {
+    const waitForStableLocation = async () => {
         const startedAt = Date.now();
 
-        const tick = () => {
-            if (hasEnoughLocationSamples()) {
-                resolve();
-                return;
-            }
-
-            if (Date.now() - startedAt >= 15000) {
-                if (geolocation) {
-                    resolve();
-                    return;
+        while (!hasEnoughLocationSamples() && Date.now() - startedAt < 15000) {
+            try {
+                await getCurrentPositionSample();
+            } catch (error) {
+                if (!geolocation) {
+                    throw error;
                 }
-
-                reject(new Error('GPS belum stabil. Tunggu beberapa detik lalu coba lagi.'));
-                return;
             }
 
-            setTimeout(tick, 250);
-        };
+            if (!hasEnoughLocationSamples()) {
+                await new Promise(resolve => setTimeout(resolve, 700));
+            }
+        }
 
-        tick();
-    });
+        if (hasEnoughLocationSamples() || geolocation) {
+            return;
+        }
 
-    const currentLocation = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-            pos => resolve(pos),
-            () => reject(new Error('Izin lokasi ditolak atau GPS tidak tersedia.')),
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-        );
-    });
-    updateGeolocation(currentLocation);
+        throw new Error('GPS belum stabil. Tunggu beberapa detik lalu coba lagi.');
+    };
+
+    await getCurrentPositionSample();
     updateStatus('GPS didapatkan. Lanjutkan verifikasi wajah.');
 
     geolocationWatchId = navigator.geolocation.watchPosition(
@@ -1336,8 +1366,8 @@ async function submitAttendance() {
         return;
     }
 
-    if (!hasEnoughLocationSamples()) {
-        updateStatus('GPS sedang dipastikan. Coba kirim lagi dalam 1-2 detik.', true);
+    if (!hasEnoughLocationSamples() && !(await ensureEnoughLocationSamples())) {
+        updateStatus('GPS belum stabil. Tunggu beberapa detik lalu coba lagi.', true);
         return;
     }
 

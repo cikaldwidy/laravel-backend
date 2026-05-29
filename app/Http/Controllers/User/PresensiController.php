@@ -9,6 +9,7 @@ use App\Models\LeaveRequest;
 use App\Models\ShiftSchedule;
 use App\Models\User;
 use App\Models\WorkSetting;
+use App\Support\IpNetwork;
 use App\Support\ShiftTime;
 use Carbon\Carbon;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -127,6 +128,11 @@ class PresensiController extends Controller
         $officeLatitude = (float) ($setting->office_latitude ?? config('attendance.office_latitude', -6.123456));
         $officeLongitude = (float) ($setting->office_longitude ?? config('attendance.office_longitude', 106.123456));
         $officeRadius = (int) ($setting->radius_meters ?? config('attendance.radius_meters', 100));
+
+        $networkResponse = $this->validateAttendanceNetwork($request, $setting);
+        if ($networkResponse instanceof \Illuminate\Http\JsonResponse) {
+            return $networkResponse;
+        }
 
         if (!$this->passesQualityGate($validated['quality_metrics'])) {
             return response()->json([
@@ -420,6 +426,25 @@ class PresensiController extends Controller
         }
 
         return $distance;
+    }
+
+    private function validateAttendanceNetwork(Request $request, ?WorkSetting $setting): ?\Illuminate\Http\JsonResponse
+    {
+        if (!($setting?->attendance_network_check_enabled ?? false)) {
+            return null;
+        }
+
+        $clientIp = $request->ip();
+        $allowedNetworks = IpNetwork::parseList($setting->attendance_allowed_networks);
+
+        if ($clientIp && IpNetwork::contains($allowedNetworks, $clientIp)) {
+            return null;
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Absensi hanya dapat dilakukan dari jaringan kantor. IP Anda: ' . ($clientIp ?: '-'),
+        ], 403);
     }
 
     private function validateLocationMetadata(array $validated): ?\Illuminate\Http\JsonResponse
