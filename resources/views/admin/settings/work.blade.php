@@ -5,6 +5,21 @@
 @section('content')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
+@php
+    $currentRequestIp = request()->ip();
+    $suggestedPublicSubnet = filter_var($currentRequestIp, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)
+        ? preg_replace('/\.\d+$/', '.0/24', $currentRequestIp)
+        : null;
+    $networkEntries = old('attendance_networks');
+    if (!is_array($networkEntries)) {
+        $networkEntries = \App\Support\IpNetwork::parseEntries($setting->attendance_allowed_networks);
+    }
+    $networkEntries = array_values($networkEntries);
+    if (empty($networkEntries)) {
+        $networkEntries[] = ['name' => '', 'network' => ''];
+    }
+@endphp
+
 <div class="space-y-5">
     <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
@@ -181,22 +196,79 @@
                     </label>
                 </div>
 
+                <div class="overflow-hidden rounded-md border border-gray-200">
+                    <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        <thead class="bg-gray-50 text-left text-xs font-bold uppercase tracking-wide text-gray-500">
+                            <tr>
+                                <th class="px-4 py-3">Nama Jaringan</th>
+                                <th class="px-4 py-3">IP/Subnet</th>
+                                <th class="w-16 px-4 py-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceNetworkRows" class="divide-y divide-gray-100 bg-white">
+                            @foreach($networkEntries as $index => $entry)
+                                <tr>
+                                    <td class="px-4 py-3 align-top">
+                                        <input
+                                            type="text"
+                                            name="attendance_networks[{{ $index }}][name]"
+                                            value="{{ $entry['name'] ?? '' }}"
+                                            placeholder="Wi-Fi Kantor / Router Utama"
+                                            class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                    </td>
+                                    <td class="px-4 py-3 align-top">
+                                        <input
+                                            type="text"
+                                            name="attendance_networks[{{ $index }}][network]"
+                                            value="{{ $entry['network'] ?? '' }}"
+                                            placeholder="114.79.18.0/24 atau 36.77.44.7"
+                                            class="w-full rounded-md border border-gray-200 px-3 py-2 font-mono text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                    </td>
+                                    <td class="px-4 py-3 text-center align-top">
+                                        <button type="button" data-remove-network-row class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-red-50 hover:text-red-600" title="Hapus jaringan">
+                                            <i class="fas fa-trash text-xs"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <button
+                        id="addAttendanceNetwork"
+                        type="button"
+                        class="inline-flex items-center justify-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50">
+                        <i class="fas fa-plus text-xs"></i>
+                        Tambah Jaringan
+                    </button>
+                    @if($currentRequestIp)
+                        <button
+                            id="useCurrentRequestIp"
+                            type="button"
+                            data-ip="{{ $currentRequestIp }}"
+                            data-subnet="{{ $suggestedPublicSubnet }}"
+                            class="inline-flex items-center justify-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800">
+                            <i class="fas fa-wifi text-xs"></i>
+                            Pakai IP Saat Ini
+                        </button>
+                    @endif
+                </div>
+
                 <div>
-                    <label for="attendance_allowed_networks" class="block text-sm font-semibold text-gray-700 mb-2">
-                        IP/Subnet yang Diizinkan
-                    </label>
-                    <textarea
-                        id="attendance_allowed_networks"
-                        name="attendance_allowed_networks"
-                        rows="5"
-                        placeholder="222.2.82.0/24&#10;192.168.1.10"
-                        class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >{{ old('attendance_allowed_networks', $setting->attendance_allowed_networks) }}</textarea>
                     <p class="mt-2 text-sm text-gray-500">
-                        Pisahkan dengan baris baru, koma, atau spasi. Contoh untuk Wi-Fi pada screenshot: <span class="font-semibold text-gray-700">222.2.82.0/24</span>.
+                        Isi IP publik kantor atau subnet jika IP sering berubah di angka terakhir. Contoh:
+                        <span class="font-semibold text-gray-700">114.79.18.0/24</span>.
                     </p>
                     <p class="mt-1 text-xs text-gray-500">
-                        IP request halaman admin saat ini: <span class="font-semibold text-gray-700">{{ request()->ip() }}</span>.
+                        IP request halaman admin saat ini: <span class="font-semibold text-gray-700">{{ $currentRequestIp }}</span>.
+                        @if($suggestedPublicSubnet)
+                            Jika IP publik koneksi ini sering berubah di angka terakhir, gunakan subnet:
+                            <span class="font-semibold text-gray-700">{{ $suggestedPublicSubnet }}</span>.
+                        @endif
                     </p>
                 </div>
             </div>
@@ -222,7 +294,7 @@
                     Pembatasan jaringan kantor
                     <span class="font-semibold text-gray-800">{{ ($setting->attendance_network_check_enabled ?? false) ? 'aktif' : 'nonaktif' }}</span>
                     @if($setting->attendance_network_check_enabled && filled($setting->attendance_allowed_networks))
-                        untuk {{ count(\App\Support\IpNetwork::parseList($setting->attendance_allowed_networks)) }} IP/subnet.
+                        untuk {{ count(\App\Support\IpNetwork::parseEntries($setting->attendance_allowed_networks)) }} IP/subnet.
                     @endif
                 </p>
             </div>
@@ -249,6 +321,80 @@ const defaultLongitude = Number(longitudeInput.value) || {{ config('attendance.o
 let officeMap = null;
 let officeMarker = null;
 let officeCircle = null;
+
+const attendanceNetworkRows = document.getElementById('attendanceNetworkRows');
+const addAttendanceNetworkButton = document.getElementById('addAttendanceNetwork');
+const useCurrentRequestIpButton = document.getElementById('useCurrentRequestIp');
+let attendanceNetworkIndex = {{ count($networkEntries) }};
+
+function createAttendanceNetworkRow(name = '', network = '') {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td class="px-4 py-3 align-top">
+            <input
+                type="text"
+                name="attendance_networks[${attendanceNetworkIndex}][name]"
+                value="${escapeHtmlAttribute(name)}"
+                placeholder="Wi-Fi Kantor / Router Utama"
+                class="w-full rounded-md border border-gray-200 px-3 py-2 text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+        </td>
+        <td class="px-4 py-3 align-top">
+            <input
+                type="text"
+                name="attendance_networks[${attendanceNetworkIndex}][network]"
+                value="${escapeHtmlAttribute(network)}"
+                placeholder="114.79.18.0/24 atau 36.77.44.7"
+                class="w-full rounded-md border border-gray-200 px-3 py-2 font-mono text-sm text-gray-700 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+        </td>
+        <td class="px-4 py-3 text-center align-top">
+            <button type="button" data-remove-network-row class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-gray-200 text-gray-500 transition hover:bg-red-50 hover:text-red-600" title="Hapus jaringan">
+                <i class="fas fa-trash text-xs"></i>
+            </button>
+        </td>
+    `;
+    attendanceNetworkIndex += 1;
+    return row;
+}
+
+function escapeHtmlAttribute(value) {
+    return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('"', '&quot;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;');
+}
+
+function addAttendanceNetworkRow(name = '', network = '') {
+    attendanceNetworkRows.appendChild(createAttendanceNetworkRow(name, network));
+}
+
+addAttendanceNetworkButton?.addEventListener('click', () => {
+    addAttendanceNetworkRow();
+});
+
+useCurrentRequestIpButton?.addEventListener('click', () => {
+    addAttendanceNetworkRow(
+        'Koneksi saat ini',
+        useCurrentRequestIpButton.dataset.subnet || useCurrentRequestIpButton.dataset.ip || ''
+    );
+});
+
+attendanceNetworkRows?.addEventListener('click', event => {
+    const button = event.target.closest('[data-remove-network-row]');
+    if (!button) return;
+
+    const row = button.closest('tr');
+    if (!row) return;
+
+    if (attendanceNetworkRows.querySelectorAll('tr').length <= 1) {
+        row.querySelectorAll('input').forEach(input => input.value = '');
+        return;
+    }
+
+    row.remove();
+});
 
 function setGpsStatus(message, className = 'text-gray-500') {
     gpsStatus.textContent = message;

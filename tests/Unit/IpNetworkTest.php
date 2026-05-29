@@ -27,6 +27,21 @@ class IpNetworkTest extends TestCase
         );
     }
 
+    public function test_it_parses_named_json_network_entries(): void
+    {
+        $json = IpNetwork::encodeEntries([
+            ['name' => 'Router Utama', 'network' => '114.79.18.0/24'],
+            ['name' => 'Koneksi Cadangan', 'network' => '36.77.44.7'],
+        ]);
+
+        $this->assertSame([
+            ['name' => 'Router Utama', 'network' => '114.79.18.0/24'],
+            ['name' => 'Koneksi Cadangan', 'network' => '36.77.44.7'],
+        ], IpNetwork::parseEntries($json));
+
+        $this->assertSame(['114.79.18.0/24', '36.77.44.7'], IpNetwork::parseList($json));
+    }
+
     public function test_it_rejects_invalid_cidr_prefixes(): void
     {
         $this->assertFalse(IpNetwork::isValid('222.2.82.0/33'));

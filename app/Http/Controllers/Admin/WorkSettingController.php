@@ -37,16 +37,19 @@ class WorkSettingController extends Controller
             'checkin_early_minutes' => ['required', 'integer', 'min:0', 'max:240'],
             'checkout_late_minutes' => ['required', 'integer', 'min:0', 'max:480'],
             'attendance_network_check_enabled' => ['nullable', 'boolean'],
-            'attendance_allowed_networks' => ['nullable', 'string', 'max:5000'],
+            'attendance_networks' => ['nullable', 'array', 'max:50'],
+            'attendance_networks.*.name' => ['nullable', 'string', 'max:100'],
+            'attendance_networks.*.network' => ['nullable', 'string', 'max:100'],
         ]);
 
         $validator->after(function ($validator) use ($request) {
             $networkCheckEnabled = $request->boolean('attendance_network_check_enabled');
-            $networks = IpNetwork::parseList($request->input('attendance_allowed_networks'));
+            $entries = IpNetwork::parseEntries(json_encode($request->input('attendance_networks', [])));
+            $networks = array_column($entries, 'network');
 
             if ($networkCheckEnabled && empty($networks)) {
                 $validator->errors()->add(
-                    'attendance_allowed_networks',
+                    'attendance_networks',
                     'Isi minimal satu IP atau subnet jika pembatasan jaringan diaktifkan.'
                 );
             }
@@ -54,7 +57,7 @@ class WorkSettingController extends Controller
             foreach ($networks as $network) {
                 if (!IpNetwork::isValid($network)) {
                     $validator->errors()->add(
-                        'attendance_allowed_networks',
+                        'attendance_networks',
                         "Format IP/subnet tidak valid: {$network}."
                     );
                 }
@@ -62,7 +65,7 @@ class WorkSettingController extends Controller
         });
 
         $validated = $validator->validate();
-        $allowedNetworks = implode("\n", IpNetwork::parseList($validated['attendance_allowed_networks'] ?? null));
+        $allowedNetworks = IpNetwork::encodeEntries($validated['attendance_networks'] ?? []);
 
         $setting = WorkSetting::first() ?? new WorkSetting();
         $setting->fill([
