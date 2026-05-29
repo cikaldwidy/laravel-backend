@@ -145,7 +145,6 @@ class DashboardController extends Controller
             ->where('status', 'hadir')
             ->groupBy('user_id')
             ->orderByDesc('total')
-            ->limit(5)
             ->get();
 
         $topLateUsers = Presensi::query()
@@ -155,11 +154,10 @@ class DashboardController extends Controller
             ->whereIn('status', ['telat', 'terlambat'])
             ->groupBy('user_id')
             ->orderByDesc('total')
-            ->limit(5)
             ->get();
 
         $latestPresensiTotal = $this->latestPresensiActivityCount($latestYear);
-        $latestPerPage = 5;
+        $latestPerPage = 10;
         $latestTotalPages = max((int) ceil($latestPresensiTotal / $latestPerPage), 1);
         $latestPage = min($latestPage, $latestTotalPages);
         $latestPresensiRows = $this->latestPresensiRows($latestYear, $latestPerPage, $latestPage);
@@ -394,7 +392,7 @@ class DashboardController extends Controller
 
     private function latestPresensiRows(int $year, ?int $limit = null, int $page = 1)
     {
-        $rows = Presensi::with('user:id,name')
+        $rows = Presensi::with('user.employeeDetail.department', 'user.employeeDetail.position')
             ->whereYear('tanggal', $year)
             ->orderByDesc('tanggal')
             ->orderByDesc('updated_at')

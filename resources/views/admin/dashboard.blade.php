@@ -82,6 +82,12 @@
         background: rgba(96, 165, 250, .12) !important;
         color: #f8fafc !important;
     }
+    .admin-dashboard thead.dashboard-scroll-table {
+        background: #eff6ff;
+    }
+    html[data-admin-theme="dark"] .admin-dashboard thead.dashboard-scroll-table {
+        background: #172f55 !important;
+    }
     .admin-dashboard [data-dashboard-reveal] {
         opacity: 0;
         transform: translateY(14px);
@@ -262,9 +268,9 @@
                 <div class="border-b border-blue-50 px-5 py-4">
                     <h2 class="text-sm font-bold text-gray-700">Presensi Tepat Waktu</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="max-h-[260px] overflow-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-blue-50/40 text-[11px] font-black uppercase tracking-wide text-blue-800">
+                        <thead class="dashboard-scroll-table sticky top-0 z-10 text-[11px] font-black uppercase tracking-wide text-blue-800 shadow-sm">
                             <tr>
                                 <th class="px-4 py-3 text-left">No</th>
                                 <th class="px-4 py-3 text-left">Nama</th>
@@ -286,18 +292,19 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="border-t border-blue-50 px-5 py-3 text-xs italic text-gray-500">
-                    Tepat waktu adalah jumlah presensi masuk tepat waktu tahun {{ $selectedYear }}.
-                </p>
+                <div class="flex flex-col gap-3 border-t border-blue-50 px-5 py-3 text-xs text-gray-500">
+                    <p class="italic">Tepat waktu adalah jumlah presensi masuk tepat waktu tahun {{ $selectedYear }}.</p>
+                    <span class="font-semibold">Menampilkan {{ $topOnTimeUsers->count() }} data</span>
+                </div>
             </article>
 
             <article class="overflow-hidden rounded-md border border-blue-100 bg-white shadow-sm">
                 <div class="border-b border-blue-50 px-5 py-4">
                     <h2 class="text-sm font-bold text-gray-700">Presensi Telat</h2>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="max-h-[260px] overflow-auto">
                     <table class="min-w-full text-sm">
-                        <thead class="bg-blue-50/40 text-[11px] font-black uppercase tracking-wide text-blue-800">
+                        <thead class="dashboard-scroll-table sticky top-0 z-10 text-[11px] font-black uppercase tracking-wide text-blue-800 shadow-sm">
                             <tr>
                                 <th class="px-4 py-3 text-left">No</th>
                                 <th class="px-4 py-3 text-left">Nama</th>
@@ -319,9 +326,10 @@
                         </tbody>
                     </table>
                 </div>
-                <p class="border-t border-blue-50 px-5 py-3 text-xs italic text-gray-500">
-                    Telat adalah jumlah presensi masuk terlambat tahun {{ $selectedYear }}.
-                </p>
+                <div class="flex flex-col gap-3 border-t border-blue-50 px-5 py-3 text-xs text-gray-500">
+                    <p class="italic">Telat adalah jumlah presensi masuk terlambat tahun {{ $selectedYear }}.</p>
+                    <span class="font-semibold">Menampilkan {{ $topLateUsers->count() }} data</span>
+                </div>
             </article>
         </div>
 

@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\JadwalDinasExport;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Shift;
@@ -11,8 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class JadwalDinasController extends Controller
 {
@@ -85,16 +83,18 @@ class JadwalDinasController extends Controller
             ->with('success', 'Jadwal dinas bulanan berhasil disimpan.');
     }
 
-    public function export(Request $request): BinaryFileResponse
+    public function export(Request $request): StreamedResponse
     {
         $request->validate([
             'unit_id' => ['required', 'integer', 'exists:departments,id'],
         ]);
 
         $data = $this->buildScheduleData($request);
-        $filename = 'jadwal-dinas-' . $data['monthStart']->format('Y-m') . '.xlsx';
+        $filename = 'jadwal-dinas-' . $data['monthStart']->format('Y-m') . '.xls';
 
-        return Excel::download(new JadwalDinasExport($data), $filename);
+        return response()->streamDownload(function () use ($data) {
+            echo view('admin.jadwal_dinas.export', $data)->render();
+        }, $filename, ['Content-Type' => 'application/vnd.ms-excel; charset=UTF-8']);
     }
 
     private function buildScheduleData(Request $request): array

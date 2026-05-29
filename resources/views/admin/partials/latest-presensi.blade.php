@@ -52,6 +52,7 @@
                 <tr>
                     <th class="px-4 py-3 text-left">No</th>
                     <th class="px-4 py-3 text-left">Nama Pegawai</th>
+                    <th class="px-4 py-3 text-left">Unit Kerja/Jabatan</th>
                     <th class="px-4 py-3 text-left">Tanggal</th>
                     <th class="px-4 py-3 text-left">Waktu</th>
                     <th class="px-4 py-3 text-left">Jenis</th>
@@ -64,22 +65,31 @@
                         $latestStatus = $row['status'];
                         $latestLabel = $row['label'];
                         $latestBadge = $latestBadgeClass[$latestStatus] ?? 'bg-gray-100 text-gray-600 ring-1 ring-gray-200';
+                        $employeeDetail = $row['user']?->employeeDetail;
+                        $unitName = $employeeDetail?->department?->nama_departemen ?? $employeeDetail?->departemen ?? '-';
+                        $positionName = $employeeDetail?->position?->nama_jabatan ?? $employeeDetail?->jabatan ?? '-';
                     @endphp
                     <tr class="hover:bg-blue-50/40">
                         <td class="px-4 py-3 font-semibold text-gray-500">{{ $latestStart + $loop->index }}</td>
                         <td class="px-4 py-3 font-bold text-gray-700">{{ $row['user']?->name ?? 'User dihapus' }}</td>
+                        <td class="px-4 py-3 font-semibold text-gray-600">
+                            <div class="min-w-40 leading-tight">
+                                <p class="font-bold text-gray-700">{{ $unitName }}</p>
+                                <p class="mt-0.5 text-xs font-semibold text-gray-500">{{ $positionName }}</p>
+                            </div>
+                        </td>
                         <td class="px-4 py-3 font-semibold text-gray-600">{{ $row['tanggal']->format('Y-m-d') }}</td>
                         <td class="px-4 py-3 font-semibold text-gray-600">{{ $row['waktu']->format('H:i:s') }}</td>
                         <td class="px-4 py-3 font-semibold text-gray-600">{{ $row['jenis'] }}</td>
                         <td class="px-4 py-3">
-                            <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-black {{ $latestBadge }}">
+                            <span class="inline-flex min-w-[96px] items-center justify-center whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-black leading-none {{ $latestBadge }}">
                                 {{ $latestLabel }}
                             </span>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-4 py-12 text-center text-sm font-semibold text-gray-400">Belum ada presensi terbaru.</td>
+                        <td colspan="7" class="px-4 py-12 text-center text-sm font-semibold text-gray-400">Belum ada presensi terbaru.</td>
                     </tr>
                 @endforelse
             </tbody>
