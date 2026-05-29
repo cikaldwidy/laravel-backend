@@ -126,6 +126,7 @@ class DashboardController extends Controller
             'alpha' => $yearAlpha,
         ];
 
+        $chartPeriod = $request->input('chart_period', '7_days');
         $latestYear = (int) $request->input('latest_year', $selectedYear);
         $latestPage = (int) $request->input('latest_page', 1);
         $availableYears = Presensi::query()
@@ -163,6 +164,20 @@ class DashboardController extends Controller
         $latestPage = min($latestPage, $latestTotalPages);
         $latestPresensiRows = $this->latestPresensiRows($latestYear, $latestPerPage, $latestPage);
 
+        if ($request->ajax() && $request->boolean('latest_only')) {
+            return view('admin.partials.latest-presensi', compact(
+                'tanggal',
+                'chartPeriod',
+                'latestPresensiRows',
+                'latestYear',
+                'availableYears',
+                'latestPresensiTotal',
+                'latestPerPage',
+                'latestPage',
+                'latestTotalPages'
+            ));
+        }
+
         $workSetting = WorkSetting::first();
         $units = Department::query()->count();
         $announcements = Announcement::query()
@@ -191,7 +206,6 @@ class DashboardController extends Controller
             ->where('status', 'pending')
             ->count();
 
-        $chartPeriod = $request->input('chart_period', '7_days');
         $chartTitle = match ($chartPeriod) {
             '1_month' => 'Grafik Kehadiran 1 Bulan',
             '1_year' => 'Grafik Kehadiran 1 Tahun',

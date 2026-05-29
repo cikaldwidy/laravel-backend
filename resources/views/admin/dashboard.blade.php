@@ -53,7 +53,7 @@
         ['label' => 'Izin', 'value' => $izin],
     ];
 
-    $statusValues = [$hadir, $telat, $pulangCepat, $izin, $alpha];
+    $statusValues = [$hadir, $telat, $izin, $alpha];
 @endphp
 
 @once
@@ -325,104 +325,7 @@
             </article>
         </div>
 
-        <article class="overflow-hidden rounded-md border border-blue-100 bg-white shadow-sm">
-            <div class="flex flex-col gap-3 border-b border-blue-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <h2 class="text-sm font-bold text-gray-700">Presensi Terbaru</h2>
-                <form method="GET" action="{{ route('admin.dashboard') }}" data-auto-filter>
-                    <input type="hidden" name="tanggal" value="{{ $tanggal }}">
-                    <input type="hidden" name="chart_period" value="{{ $chartPeriod }}">
-                    <input type="hidden" name="latest_page" value="1">
-                    <label class="relative block">
-                        <select
-                            name="latest_year"
-                            class="dashboard-select h-9 appearance-none rounded-md border border-blue-100 bg-blue-50 pl-3 pr-8 text-xs font-black text-blue-700 outline-none transition hover:text-gray-700 focus:border-blue-500 focus:text-gray-700 focus:ring-4 focus:ring-blue-500/10"
-                        >
-                            @foreach($availableYears as $year)
-                                <option value="{{ $year }}" @selected((int) $latestYear === (int) $year)>{{ $year }}</option>
-                            @endforeach
-                        </select>
-                        <i class="fa-solid fa-chevron-down pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-blue-500"></i>
-                    </label>
-                </form>
-            </div>
-            <div class="flex flex-col gap-3 border-b border-blue-50 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <a href="{{ route('admin.dashboard.latest-presensi.export', ['year' => $latestYear]) }}"
-                   class="inline-flex h-8 w-fit items-center gap-1.5 rounded-md border border-blue-100 bg-white px-3 text-xs font-black text-gray-700 no-underline transition hover:bg-blue-50 hover:text-blue-700">
-                    <i class="fa-solid fa-file-excel text-[11px] text-emerald-600"></i>
-                    XLSX
-                </a>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-blue-50/40 text-[11px] font-black uppercase tracking-wide text-blue-800">
-                        <tr>
-                            <th class="px-4 py-3 text-left">No</th>
-                            <th class="px-4 py-3 text-left">Nama Pegawai</th>
-                            <th class="px-4 py-3 text-left">Tanggal</th>
-                            <th class="px-4 py-3 text-left">Waktu</th>
-                            <th class="px-4 py-3 text-left">Jenis</th>
-                            <th class="px-4 py-3 text-left">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-blue-50">
-                        @forelse($latestPresensiRows as $row)
-                            @php
-                                $latestStatus = $row['status'];
-                                $latestLabel = $row['label'];
-                                $latestBadge = $badgeClass[$latestStatus] ?? 'bg-gray-100 text-gray-600 ring-1 ring-gray-200';
-                            @endphp
-                            <tr class="hover:bg-blue-50/40">
-                                <td class="px-4 py-3 font-semibold text-gray-500">{{ $loop->iteration }}</td>
-                                <td class="px-4 py-3 font-bold text-gray-700">{{ $row['user']?->name ?? 'User dihapus' }}</td>
-                                <td class="px-4 py-3 font-semibold text-gray-600">{{ $row['tanggal']->format('Y-m-d') }}</td>
-                                <td class="px-4 py-3 font-semibold text-gray-600">{{ $row['waktu']->format('H:i:s') }}</td>
-                                <td class="px-4 py-3 font-semibold text-gray-600">{{ $row['jenis'] }}</td>
-                                <td class="px-4 py-3">
-                                    <span class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-black {{ $latestBadge }}">
-                                        {{ $latestLabel }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-4 py-12 text-center text-sm font-semibold text-gray-400">Belum ada presensi terbaru.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            <div class="flex flex-col gap-3 border-t border-blue-50 px-5 py-3 text-xs font-semibold text-gray-500 sm:flex-row sm:items-center sm:justify-between">
-                @php
-                    $latestStart = $latestPresensiTotal > 0 ? (($latestPage - 1) * $latestPerPage) + 1 : 0;
-                    $latestEnd = $latestPresensiTotal > 0 ? min($latestStart + $latestPresensiRows->count() - 1, $latestPresensiTotal) : 0;
-                    $latestQueryBase = [
-                        'tanggal' => $tanggal,
-                        'chart_period' => $chartPeriod,
-                        'latest_year' => $latestYear,
-                    ];
-                    $pageStart = max(1, $latestPage - 2);
-                    $pageEnd = min($latestTotalPages, $pageStart + 4);
-                    $pageStart = max(1, $pageEnd - 4);
-                @endphp
-                <span>Menampilkan {{ $latestStart }}-{{ $latestEnd }} dari {{ $latestPresensiTotal }} data</span>
-                <div class="flex items-center gap-1">
-                    <a href="{{ $latestPage > 1 ? route('admin.dashboard', $latestQueryBase + ['latest_page' => $latestPage - 1]) : '#' }}"
-                       class="dashboard-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $latestPage > 1 ? 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' : 'pointer-events-none text-gray-300' }}">
-                        &lt;&lt;
-                    </a>
-                    @for($page = $pageStart; $page <= $pageEnd; $page++)
-                        <a href="{{ route('admin.dashboard', $latestQueryBase + ['latest_page' => $page]) }}"
-                           class="dashboard-page-link inline-flex h-8 min-w-8 items-center justify-center rounded-md border border-blue-100 px-2 text-xs font-semibold no-underline {{ $page === $latestPage ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' }}">
-                            {{ $page }}
-                        </a>
-                    @endfor
-                    <a href="{{ $latestPage < $latestTotalPages ? route('admin.dashboard', $latestQueryBase + ['latest_page' => $latestPage + 1]) : '#' }}"
-                       class="dashboard-page-link inline-flex h-8 items-center rounded-md border border-blue-100 px-3 text-xs font-semibold no-underline {{ $latestPage < $latestTotalPages ? 'text-gray-600 hover:bg-blue-50 hover:text-gray-700' : 'pointer-events-none text-gray-300' }}">
-                        &gt;&gt;
-                    </a>
-                </div>
-            </div>
-        </article>
+        @include('admin.partials.latest-presensi')
     </section>
 
 </div>
@@ -437,9 +340,10 @@
     const izin = @json(collect($chart)->pluck('izin'));
     const alpha = @json(collect($chart)->pluck('alpha'));
     const operational = @json($operationalStats);
-    const statusLabels = ['Hadir', 'Telat', 'Pulang Cepat', 'Izin', 'Alpha'];
+    const statusLabels = ['Hadir', 'Telat', 'Izin', 'Alpha'];
     const statusValues = @json($statusValues);
     const dashboardCharts = [];
+    let latestPresensiAbortController = null;
 
     function chartTheme() {
         const isDark = document.documentElement.dataset.adminTheme === 'dark';
@@ -549,6 +453,103 @@
 
     animateCounters();
 
+    function latestHistoryUrl(url) {
+        const historyUrl = new URL(url, window.location.href);
+        historyUrl.searchParams.delete('latest_only');
+
+        return historyUrl;
+    }
+
+    async function loadLatestPresensi(url, pushHistory = true) {
+        const currentCard = document.querySelector('[data-latest-presensi-card]');
+
+        if (!currentCard || !url || url.endsWith('#')) {
+            return;
+        }
+
+        latestPresensiAbortController?.abort();
+        latestPresensiAbortController = new AbortController();
+
+        const requestUrl = new URL(url, window.location.href);
+        requestUrl.searchParams.set('latest_only', '1');
+
+        currentCard.classList.add('opacity-60', 'pointer-events-none');
+
+        try {
+            const response = await fetch(requestUrl.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html',
+                },
+                signal: latestPresensiAbortController.signal,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const html = await response.text();
+            const template = document.createElement('template');
+            template.innerHTML = html.trim();
+            const nextCard = template.content.querySelector('[data-latest-presensi-card]');
+
+            if (!nextCard) {
+                throw new Error('Partial presensi terbaru tidak valid.');
+            }
+
+            currentCard.replaceWith(nextCard);
+
+            if (pushHistory) {
+                window.history.pushState({ latestPresensiUrl: latestHistoryUrl(requestUrl).toString() }, '', latestHistoryUrl(requestUrl));
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                window.location.href = latestHistoryUrl(requestUrl).toString();
+            }
+        } finally {
+            latestPresensiAbortController = null;
+            document.querySelector('[data-latest-presensi-card]')?.classList.remove('opacity-60', 'pointer-events-none');
+        }
+    }
+
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('[data-latest-presensi-page]');
+
+        if (!link || link.classList.contains('pointer-events-none')) {
+            return;
+        }
+
+        event.preventDefault();
+        loadLatestPresensi(link.href);
+    });
+
+    document.addEventListener('change', (event) => {
+        const field = event.target;
+        const form = field.closest('[data-latest-presensi-form]');
+
+        if (!form) {
+            return;
+        }
+
+        event.preventDefault();
+        loadLatestPresensi(`${form.action}?${new URLSearchParams(new FormData(form)).toString()}`);
+    });
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target.closest('[data-latest-presensi-form]');
+
+        if (!form) {
+            return;
+        }
+
+        event.preventDefault();
+        loadLatestPresensi(`${form.action}?${new URLSearchParams(new FormData(form)).toString()}`);
+    });
+
+    window.addEventListener('popstate', () => {
+        loadLatestPresensi(window.location.href, false);
+    });
+
     const trendCanvas = document.getElementById('attendanceTrendChart');
     if (trendCanvas) {
         const ctx = trendCanvas.getContext('2d');
@@ -593,7 +594,7 @@
                 labels: statusLabels,
                 datasets: [{
                     data: statusValues,
-                    backgroundColor: ['#22c55e', '#f97316', '#6366f1', '#38bdf8', '#f43f5e'],
+                    backgroundColor: ['#22c55e', '#f97316', '#38bdf8', '#ef4444'],
                     borderColor: chartTheme().doughnutBorder,
                     borderWidth: 3,
                     hoverOffset: 8,
