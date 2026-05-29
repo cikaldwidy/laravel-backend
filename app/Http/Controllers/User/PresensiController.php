@@ -437,13 +437,20 @@ class PresensiController extends Controller
         $clientIp = $request->ip();
         $allowedNetworks = IpNetwork::parseList($setting->attendance_allowed_networks);
 
+        if (empty($allowedNetworks)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Pembatasan jaringan kantor aktif, tetapi daftar IP kantor belum diatur. Hubungi admin.',
+            ], 403);
+        }
+
         if ($clientIp && IpNetwork::contains($allowedNetworks, $clientIp)) {
             return null;
         }
 
         return response()->json([
             'status' => 'error',
-            'message' => 'Absensi hanya dapat dilakukan dari jaringan kantor. IP Anda: ' . ($clientIp ?: '-'),
+            'message' => 'Absensi hanya dapat dilakukan dari jaringan kantor. IP perangkat Anda (' . ($clientIp ?: '-') . ') belum terdaftar sebagai IP/subnet kantor.',
         ], 403);
     }
 

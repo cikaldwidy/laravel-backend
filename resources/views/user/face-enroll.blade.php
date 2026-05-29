@@ -1262,9 +1262,7 @@ resetSamplesButton.addEventListener('click', resetSamples);
 updateSampleCount();
 setupSafariHandoff();
 checkEnrollmentHandoffStatus();
-window.addEventListener('load', () => {
-    loadModels().catch(() => {});
-});
+loadModels().catch(() => {});
 window.addEventListener('focus', checkEnrollmentHandoffStatus);
 window.addEventListener('beforeunload', stopCameraStream);
 document.addEventListener('visibilitychange', () => {

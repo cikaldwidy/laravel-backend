@@ -37,13 +37,13 @@ use App\Models\FeatureSetting;
 // ================= USER LOGIN =================
 Route::view('/', 'landing.welcome')->name('landing');
 Route::get('/login', [AuthController::class, 'showUserLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'userLogin']);
+Route::post('/login', [AuthController::class, 'userLogin'])->middleware('throttle:login');
 Route::get('/register', [AuthController::class, 'showUserRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'userRegister'])->name('register.store');
 
 // ================= ADMIN LOGIN =================
 Route::get('/admin/login', [AuthController::class, 'showAdminLogin']);
-Route::post('/admin/login', [AuthController::class, 'adminLogin']);
+Route::post('/admin/login', [AuthController::class, 'adminLogin'])->middleware('throttle:login');
 
 // ================= USER =================
 Route::middleware(['auth', 'role:user'])->group(function () {

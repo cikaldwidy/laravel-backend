@@ -46,10 +46,24 @@ class AuthController extends Controller
             $user = $employee?->user;
         }
 
-        if (!$user || $user->role !== 'user' || !Hash::check($validated['password'], $user->password)) {
+        if (!$user) {
             return response()->json([
                 'success' => false,
-                'message' => 'Login gagal. Periksa username, email, NIP, atau password.',
+                'message' => 'Akun user tidak terdaftar. Periksa kembali username, email, atau NIP.',
+            ], 422);
+        }
+
+        if ($user->role !== 'user') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun ini bukan akun pegawai. Gunakan halaman login yang sesuai.',
+            ], 403);
+        }
+
+        if (!Hash::check($validated['password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password yang Anda masukkan salah.',
             ], 422);
         }
 

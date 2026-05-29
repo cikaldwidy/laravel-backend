@@ -62,9 +62,15 @@ class AuthController extends Controller
             $user = $employee?->user;
         }
 
-        if (!$user || $user->role !== 'user') {
+        if (!$user) {
             return back()
-                ->withErrors(['login' => 'NIP atau username salah.'])
+                ->withErrors(['login' => 'Akun user tidak terdaftar. Periksa kembali NIP/username atau hubungi admin.'])
+                ->withInput($request->only('login'));
+        }
+
+        if ($user->role !== 'user') {
+            return back()
+                ->withErrors(['login' => 'Akun ini bukan akun pegawai. Gunakan halaman login yang sesuai.'])
                 ->withInput($request->only('login'));
         }
 
@@ -77,7 +83,7 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        if ($validated['redirect_to'] ?? null === 'face.enroll') {
+        if (($validated['redirect_to'] ?? null) === 'face.enroll') {
             return redirect()->route('face.enroll');
         }
 
