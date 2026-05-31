@@ -5,17 +5,13 @@
 @section('content')
 @php
     $typeMeta = [
-        'izin' => ['label' => 'Izin Absen', 'icon' => 'fa-file-lines', 'color' => 'text-emerald-700', 'bg' => 'bg-emerald-50', 'fab' => 'bg-emerald-600'],
         'sakit' => ['label' => 'Izin Sakit', 'icon' => 'fa-kit-medical', 'color' => 'text-rose-700', 'bg' => 'bg-rose-50', 'fab' => 'bg-rose-500'],
         'cuti' => ['label' => 'Izin Cuti', 'icon' => 'fa-umbrella-beach', 'color' => 'text-orange-700', 'bg' => 'bg-orange-50', 'fab' => 'bg-orange-500'],
-        'dinas' => ['label' => 'Izin Dinas', 'icon' => 'fa-route', 'color' => 'text-cyan-700', 'bg' => 'bg-cyan-50', 'fab' => 'bg-cyan-500'],
     ];
 
     $fabTypes = collect([
-        ['key' => 'izin', 'label' => 'Izin Absen'],
         ['key' => 'sakit', 'label' => 'Izin Sakit', 'enabled' => \App\Models\FeatureSetting::enabled('sakit', 'user')],
         ['key' => 'cuti', 'label' => 'Izin Cuti', 'enabled' => \App\Models\FeatureSetting::enabled('cuti', 'user')],
-        ['key' => 'dinas', 'label' => 'Izin Dinas'],
     ])->filter(fn ($item) => $item['enabled'] ?? true)->values();
 
     $statusMeta = [
@@ -113,7 +109,7 @@
                             <i class="fa-solid fa-calendar-days"></i>
                         </div>
                         <p class="mt-3 text-sm font-semibold text-slate-700">Belum ada pengajuan izin.</p>
-                        <p class="mt-1 text-xs text-slate-500">Pilih jenis izin dari tombol kanan bawah.</p>
+                        <p class="mt-1 text-xs text-slate-500">Pilih izin sakit atau cuti dari tombol kanan bawah.</p>
                     </section>
                 @endforelse
             </section>

@@ -121,7 +121,7 @@ class UserController extends Controller
             'department_id' => ['required', 'exists:departments,id'],
             'position_id' => ['required', 'exists:positions,id'],
             'nip' => ['required', 'string', 'max:50'],
-            'status_kerja' => ['required', 'in:tetap,kontrak,magang'],
+            'status_kerja' => ['required', 'in:tetap,kontrak,capeg,training'],
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
         ], [], [
             'department_id' => 'unit kerja/bagian',

@@ -18,6 +18,10 @@ class FeaturePageController extends Controller
             ]);
         }
 
+        if ($featureKey === 'lembur') {
+            return redirect()->route('overtime.index');
+        }
+
         return view('feature-placeholder', [
             'title' => FeatureSetting::FEATURES[$featureKey]['label'],
             'roleLabel' => 'User',
@@ -31,6 +35,10 @@ class FeaturePageController extends Controller
 
         if (in_array($featureKey, ['sakit', 'cuti'], true)) {
             return redirect()->route('admin.leave_requests.index', ['jenis_izin' => $featureKey]);
+        }
+
+        if ($featureKey === 'lembur') {
+            return redirect()->route('admin.overtime.index');
         }
 
         return view('admin.feature_pages.placeholder', [

@@ -40,6 +40,28 @@
                 <label class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-gray-500">Catatan Admin</label>
                 <textarea id="status-note" name="catatan_admin" rows="3" class="w-full rounded-md border border-gray-200 px-3.5 py-2.5 text-sm text-gray-800 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Tambahkan catatan jika diperlukan"></textarea>
             </div>
+            <div id="status-replacement-fields" class="hidden rounded-md border border-amber-100 bg-amber-50 p-4">
+                <p class="mb-3 text-xs font-bold uppercase tracking-wider text-amber-700">Pengganti Sakit & Lembur</p>
+                <div class="space-y-3">
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-amber-800">Pegawai Pengganti</label>
+                        <select id="replacement-user-id" name="replacement_user_id" class="w-full rounded-md border border-amber-200 bg-white px-3.5 py-2.5 text-sm text-gray-800 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="">Tidak ada pengganti</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1.5 block text-xs font-semibold text-amber-800">Kompensasi Pengganti</label>
+                        <select id="compensation-type" name="compensation_type" class="w-full rounded-md border border-amber-200 bg-white px-3.5 py-2.5 text-sm text-gray-800 transition focus:border-transparent focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="uang">Uang lembur</option>
+                            <option value="libur_pengganti">Libur pengganti</option>
+                        </select>
+                    </div>
+                    <p class="text-xs font-medium leading-5 text-amber-800">Jika dipilih, sistem otomatis membuat catatan lembur untuk pegawai pengganti saat sakit di-approve.</p>
+                </div>
+            </div>
             <div class="mt-6 flex justify-end gap-2">
                 <button type="button" onclick="closeModal('modal-status')" class="rounded-md bg-gray-100 px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-200">
                     Batal
@@ -194,7 +216,7 @@
                                 <div class="flex justify-end">
                                     <button
                                         type="button"
-                                        onclick="openStatus(@js(route('admin.leave_requests.update', $item)), @js($item->user?->name ?? '-'), @js($periode), @js($item->status === 'rejected' ? 'rejected' : 'approved'), @js($item->catatan_admin ?? ''))"
+                                        onclick="openStatus(@js(route('admin.leave_requests.update', $item)), @js($item->user?->name ?? '-'), @js($periode), @js($item->status === 'rejected' ? 'rejected' : 'approved'), @js($item->catatan_admin ?? ''), @js($item->jenis_izin), @js($item->user_id), @js($item->overtimeRequest?->user_id), @js($item->overtimeRequest?->compensation_type ?? 'uang'))"
                                         class="inline-flex items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-600 transition hover:bg-blue-100">
                                         <i class="fas fa-pen text-[10px]"></i> Update
                                     </button>
@@ -254,14 +276,38 @@
         if (event.target === this) closeModal('modal-status');
     });
 
-    function openStatus(actionUrl, userName, period, status, note) {
-        document.getElementById('form-status').action = actionUrl;
+    function openStatus(actionUrl, userName, period, status, note, leaveType, requestUserId, replacementUserId, compensationType) {
+        const form = document.getElementById('form-status');
+        form.action = actionUrl;
+        form.dataset.leaveType = leaveType || '';
+        form.dataset.requestUserId = requestUserId || '';
         document.getElementById('status-user').textContent = userName;
         document.getElementById('status-period').textContent = period;
         document.getElementById('status-value').value = status;
         document.getElementById('status-note').value = note;
+        document.getElementById('replacement-user-id').value = replacementUserId || '';
+        document.getElementById('compensation-type').value = compensationType || 'uang';
+        syncReplacementFields(leaveType, requestUserId);
         openModal('modal-status');
     }
+
+    function syncReplacementFields(leaveType = null, requestUserId = null) {
+        const statusValue = document.getElementById('status-value')?.value;
+        const wrapper = document.getElementById('status-replacement-fields');
+        const replacementSelect = document.getElementById('replacement-user-id');
+        const shouldShow = leaveType === 'sakit' && statusValue === 'approved';
+
+        wrapper?.classList.toggle('hidden', !shouldShow);
+        replacementSelect?.querySelectorAll('option').forEach((option) => {
+            option.hidden = requestUserId && option.value === String(requestUserId);
+            option.disabled = requestUserId && option.value === String(requestUserId);
+        });
+    }
+
+    document.getElementById('status-value')?.addEventListener('change', () => {
+        const form = document.getElementById('form-status');
+        syncReplacementFields(form.dataset.leaveType, form.dataset.requestUserId);
+    });
 
     function toggleAll(master) {
         document.querySelectorAll('.row-check').forEach(cb => cb.checked = master.checked);

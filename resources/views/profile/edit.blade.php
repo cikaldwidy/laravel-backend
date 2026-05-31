@@ -96,7 +96,8 @@
                             <option value="">-- pilih --</option>
                             <option value="tetap" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'tetap')>tetap</option>
                             <option value="kontrak" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'kontrak')>kontrak</option>
-                            <option value="magang" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'magang')>magang</option>
+                            <option value="capeg" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'capeg')>capeg</option>
+                            <option value="training" @selected(old('status_kerja', $employeeDetail?->status_kerja) === 'training')>training</option>
                         </select>
                         @error('status_kerja') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
                     </div>

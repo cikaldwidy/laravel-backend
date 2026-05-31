@@ -5,14 +5,15 @@
 @section('content')
 @php
     $leaveTypeOptions = collect([
-        ['key' => 'izin', 'label' => 'Izin Absen'],
         ['key' => 'sakit', 'label' => 'Izin Sakit', 'enabled' => \App\Models\FeatureSetting::enabled('sakit', 'user')],
         ['key' => 'cuti', 'label' => 'Izin Cuti', 'enabled' => \App\Models\FeatureSetting::enabled('cuti', 'user')],
-        ['key' => 'dinas', 'label' => 'Izin Dinas'],
     ])->filter(fn ($item) => $item['enabled'] ?? true)->values();
 
     $selectedLabel = $leaveTypeOptions->firstWhere('key', $selectedJenisIzin)['label'] ?? 'Izin';
     $pageTitle = 'Buat ' . $selectedLabel;
+    $minimumCutiDate = now()->addMonthNoOverflow()->toDateString();
+    $cutiSubmitBlocked = $selectedJenisIzin === 'cuti'
+        && (($cutiQuota['quota_days'] ?? 0) <= 0 || ($cutiQuota['remaining_days'] ?? 0) <= 0);
 @endphp
 
 <div class="user-page">
@@ -32,10 +33,23 @@
                 <input type="hidden" name="jenis_izin" value="{{ $selectedJenisIzin }}">
 
                 @if($selectedJenisIzin === 'cuti')
-                    <div class="rounded-lg bg-emerald-100/70 px-4 py-3 text-sm font-bold text-emerald-900">
-                        <i class="fa-solid fa-circle-info mr-2"></i>
-                        Sisa cuti tahunan Anda akan mengikuti data admin.
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-info mt-0.5 text-emerald-700"></i>
+                            <div class="min-w-0 flex-1">
+                                <p class="font-extrabold">
+                                    Sisa cuti {{ $cutiQuota['year'] ?? now()->year }}:
+                                    {{ $cutiQuota['remaining_days'] ?? 0 }} / {{ $cutiQuota['quota_days'] ?? 0 }} hari
+                                </p>
+                                <p class="mt-1 text-xs font-semibold text-emerald-800">
+                                    Status: {{ $cutiQuota['status_label'] ?? 'Belum Diatur' }}. Pengajuan cuti minimal 1 bulan sebelum tanggal mulai dan sebelum jadwal kerja dibuat.
+                                </p>
+                            </div>
+                        </div>
                     </div>
+                    @error('jenis_izin')
+                        <p class="rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs font-bold text-red-700">{{ $message }}</p>
+                    @enderror
                 @endif
 
                 <label class="block rounded-2xl border-2 border-emerald-900/45 bg-white/70 px-4 py-3 shadow-sm">
@@ -43,9 +57,12 @@
                         <i class="fa-regular fa-calendar-days text-xl text-emerald-800"></i>
                         <span class="min-w-0 flex-1">
                             <span class="block text-[11px] font-bold text-slate-600">Dari Tanggal</span>
-                            <input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" class="mt-1 w-full bg-transparent text-base font-extrabold text-slate-800 outline-none">
+                            <input type="date" name="tanggal_mulai" value="{{ old('tanggal_mulai') }}" @if($selectedJenisIzin === 'cuti') min="{{ $minimumCutiDate }}" @endif class="mt-1 w-full bg-transparent text-base font-extrabold text-slate-800 outline-none">
                         </span>
                     </div>
+                    @error('tanggal_mulai')
+                        <p class="mt-2 text-xs font-bold text-red-600">{{ $message }}</p>
+                    @enderror
                 </label>
 
                 <label class="block rounded-2xl border-2 border-emerald-900/45 bg-white/70 px-4 py-3 shadow-sm">
@@ -53,9 +70,12 @@
                         <i class="fa-regular fa-calendar-days text-xl text-emerald-800"></i>
                         <span class="min-w-0 flex-1">
                             <span class="block text-[11px] font-bold text-slate-600">Sampai Tanggal</span>
-                            <input type="date" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" class="mt-1 w-full bg-transparent text-base font-extrabold text-slate-800 outline-none">
+                            <input type="date" name="tanggal_selesai" value="{{ old('tanggal_selesai') }}" @if($selectedJenisIzin === 'cuti') min="{{ $minimumCutiDate }}" @endif class="mt-1 w-full bg-transparent text-base font-extrabold text-slate-800 outline-none">
                         </span>
                     </div>
+                    @error('tanggal_selesai')
+                        <p class="mt-2 text-xs font-bold text-red-600">{{ $message }}</p>
+                    @enderror
                 </label>
 
                 <div class="rounded-2xl border-2 border-emerald-900/45 bg-white/70 px-4 py-3 shadow-sm">
@@ -76,6 +96,9 @@
                             <textarea name="keterangan" rows="3" class="mt-1 w-full resize-none bg-transparent text-base font-extrabold text-slate-800 outline-none" placeholder="Tulis keterangan">{{ old('keterangan') }}</textarea>
                         </span>
                     </div>
+                    @error('keterangan')
+                        <p class="mt-2 text-xs font-bold text-red-600">{{ $message }}</p>
+                    @enderror
                 </label>
 
                 <label class="block rounded-2xl border-2 border-emerald-900/45 bg-white/70 px-4 py-3 shadow-sm">
@@ -86,11 +109,14 @@
                             <input type="file" name="lampiran" class="mt-1 w-full text-sm font-semibold text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-700 file:px-3 file:py-2 file:text-xs file:font-bold file:text-white">
                         </span>
                     </div>
+                    @error('lampiran')
+                        <p class="mt-2 text-xs font-bold text-red-600">{{ $message }}</p>
+                    @enderror
                 </label>
 
-                <button class="flex w-full items-center justify-center gap-3 rounded-xl bg-emerald-700 px-4 py-4 text-base font-extrabold text-white shadow-lg shadow-emerald-900/20">
+                <button @disabled($cutiSubmitBlocked) class="flex w-full items-center justify-center gap-3 rounded-xl bg-emerald-700 px-4 py-4 text-base font-extrabold text-white shadow-lg shadow-emerald-900/20 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none">
                         <i class="fa-solid fa-paper-plane"></i>
-                        Ajukan {{ $selectedLabel }}
+                        {{ $cutiSubmitBlocked ? 'Kuota Cuti Tidak Tersedia' : 'Ajukan ' . $selectedLabel }}
                 </button>
             </form>
         </main>

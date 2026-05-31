@@ -17,6 +17,8 @@
         .cell-warning { background: #fef08a; color: #713f12; font-weight: bold; }
         .cell-danger, .cell-off { background: #dc2626; color: #fff; font-weight: bold; }
         .cell-leave { background: #0ea5e9; color: #fff; font-weight: bold; }
+        .cell-sick { background: #f43f5e; color: #fff; font-weight: bold; }
+        .cell-overtime { background: #7c3aed; color: #fff; font-weight: bold; }
         .cell-empty { background: #f1f5f9; color: #64748b; }
         .legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
         .legend-item { display: inline-block; margin-right: 8px; margin-bottom: 4px; }

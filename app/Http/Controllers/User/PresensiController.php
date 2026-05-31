@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\FaceEmbedding;
 use App\Models\Presensi;
 use App\Models\LeaveRequest;
+use App\Models\OvertimeRequest;
 use App\Models\ShiftSchedule;
 use App\Models\User;
 use App\Models\WorkSetting;
@@ -35,6 +36,7 @@ class PresensiController extends Controller
         $activeShiftContext = $this->resolveActiveShift($user, $now, $setting);
         $scheduledShift = $this->getTodayShiftAssignment($user, $now);
         $activeShift = $activeShiftContext['shift'] ?? null;
+        $activeOvertime = $activeShiftContext['overtime'] ?? null;
         $canAttend = (bool) $activeShiftContext;
         $tanggalPresensi = $activeShiftContext['shift_date'] ?? $now->copy()->startOfDay();
         $approvedLeave = $this->getApprovedLeaveForDate($user->id, $tanggalPresensi->toDateString());
@@ -47,6 +49,7 @@ class PresensiController extends Controller
             'presensi' => $presensi,
             'workSetting' => $setting,
             'activeShift' => $activeShift,
+            'activeOvertime' => $activeOvertime,
             'scheduledShift' => $scheduledShift,
             'canAttend' => $canAttend,
             'approvedLeave' => $approvedLeave,
@@ -357,6 +360,45 @@ class PresensiController extends Controller
                 'end' => $window['end'],
                 'is_overnight' => ShiftTime::isOvernight($jamMasuk, $jamPulang),
             ];
+        }
+
+        $overtimeCandidates = OvertimeRequest::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->whereNotNull('jam_mulai')
+            ->whereNotNull('jam_selesai')
+            ->whereDate('tanggal_mulai', '<=', $now->toDateString())
+            ->whereDate('tanggal_selesai', '>=', $now->copy()->subDay()->toDateString())
+            ->latest('tanggal_mulai')
+            ->get();
+
+        foreach ($overtimeCandidates as $overtime) {
+            foreach ([$now->copy()->startOfDay(), $now->copy()->subDay()->startOfDay()] as $shiftDate) {
+                if (
+                    $shiftDate->lt($overtime->tanggal_mulai->copy()->startOfDay()) ||
+                    $shiftDate->gt($overtime->tanggal_selesai->copy()->startOfDay())
+                ) {
+                    continue;
+                }
+
+                $jamMasuk = $overtime->jam_mulai->format('H:i:s');
+                $jamPulang = $overtime->jam_selesai->format('H:i:s');
+                $window = ShiftTime::window($shiftDate, $jamMasuk, $jamPulang, $checkinEarlyMinutes, $checkoutLateMinutes);
+
+                if (!$now->between($window['allowed_start'], $window['allowed_end'], true)) {
+                    continue;
+                }
+
+                return [
+                    'assignment' => $overtime,
+                    'shift' => null,
+                    'overtime' => $overtime,
+                    'shift_date' => $shiftDate,
+                    'start' => $window['start'],
+                    'end' => $window['end'],
+                    'is_overnight' => ShiftTime::isOvernight($jamMasuk, $jamPulang),
+                ];
+            }
         }
 
         return null;

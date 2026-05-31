@@ -289,12 +289,13 @@
     }
 </style>
 @php
+    $hasActiveOvertime = isset($activeOvertime) && $activeOvertime;
     $jadwalMasuk = isset($scheduledShift) && $scheduledShift?->jam_masuk
         ? $scheduledShift->jam_masuk->format('H:i')
-        : '--:--';
+        : ($hasActiveOvertime && $activeOvertime?->jam_mulai ? $activeOvertime->jam_mulai->format('H:i') : '--:--');
     $jadwalPulang = isset($scheduledShift) && $scheduledShift?->jam_pulang
         ? $scheduledShift->jam_pulang->format('H:i')
-        : '--:--';
+        : ($hasActiveOvertime && $activeOvertime?->jam_selesai ? $activeOvertime->jam_selesai->format('H:i') : '--:--');
     $jamMasuk = $presensi?->jam_masuk?->format('H:i') ?? $jadwalMasuk;
     $jamPulang = $presensi?->jam_keluar?->format('H:i') ?? $jadwalPulang;
     $sudahMasuk = (bool) $presensi?->jam_masuk;
@@ -303,11 +304,11 @@
     $fotoAktif = $presensi?->foto_keluar ?? $presensi?->foto_masuk ?? $presensi?->foto ?? null;
     $hasScheduledShift = isset($scheduledShift) && $scheduledShift;
     $isShiftOff = $hasScheduledShift && $scheduledShift->status === 'libur';
-    $shiftLabel = $hasScheduledShift ? $scheduledShift->nama_shift : 'Belum Dijadwalkan';
-    $shiftDisplayName = 'Belum Dijadwalkan';
+    $shiftLabel = $hasScheduledShift ? $scheduledShift->nama_shift : ($hasActiveOvertime ? 'Lembur Pengganti' : 'Belum Dijadwalkan');
+    $shiftDisplayName = $hasActiveOvertime ? 'Lembur' : 'Belum Dijadwalkan';
 
-    if ($hasScheduledShift && $scheduledShift?->jam_masuk) {
-        $shiftHour = (int) $scheduledShift->jam_masuk->format('H');
+    if (($hasScheduledShift && $scheduledShift?->jam_masuk) || ($hasActiveOvertime && $activeOvertime?->jam_mulai)) {
+        $shiftHour = (int) ($hasScheduledShift ? $scheduledShift->jam_masuk : $activeOvertime->jam_mulai)->format('H');
         $shiftDisplayName = match (true) {
             $shiftHour < 12 => 'Shift Pagi',
             $shiftHour < 18 => 'Shift Sore',
@@ -503,7 +504,11 @@
                     </div>
                 </section>
 
-                @if(!isset($scheduledShift) || !$scheduledShift)
+                @if($hasActiveOvertime && !isset($scheduledShift))
+                    <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
+                        Anda sedang memiliki tugas lembur pengganti sakit. Jam absensi mengikuti jadwal pengganti {{ $jadwalMasuk }} - {{ $jadwalPulang }}.
+                    </section>
+                @elseif(!isset($scheduledShift) || !$scheduledShift)
                     <section class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
                         Shift kamu belum diatur oleh admin. Hubungi admin untuk assign jadwal shift terlebih dulu.
                     </section>

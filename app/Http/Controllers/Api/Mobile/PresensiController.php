@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Mobile;
 
 use App\Http\Controllers\Controller;
 use App\Models\LeaveRequest;
+use App\Models\OvertimeRequest;
 use App\Models\Presensi;
 use App\Models\ShiftSchedule;
 use App\Models\User;
@@ -503,6 +504,47 @@ class PresensiController extends Controller
                 'start' => $window['start'],
                 'end' => $window['end'],
             ];
+        }
+
+        $overtimeCandidates = OvertimeRequest::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'approved')
+            ->whereNotNull('jam_mulai')
+            ->whereNotNull('jam_selesai')
+            ->whereDate('tanggal_mulai', '<=', $now->toDateString())
+            ->whereDate('tanggal_selesai', '>=', $now->copy()->subDay()->toDateString())
+            ->latest('tanggal_mulai')
+            ->get();
+
+        foreach ($overtimeCandidates as $overtime) {
+            foreach ([$now->copy()->startOfDay(), $now->copy()->subDay()->startOfDay()] as $shiftDate) {
+                if (
+                    $shiftDate->lt($overtime->tanggal_mulai->copy()->startOfDay()) ||
+                    $shiftDate->gt($overtime->tanggal_selesai->copy()->startOfDay())
+                ) {
+                    continue;
+                }
+
+                $window = ShiftTime::window(
+                    $shiftDate,
+                    $overtime->jam_mulai->format('H:i:s'),
+                    $overtime->jam_selesai->format('H:i:s'),
+                    $checkinEarlyMinutes,
+                    $checkoutLateMinutes
+                );
+
+                if (!$now->between($window['allowed_start'], $window['allowed_end'], true)) {
+                    continue;
+                }
+
+                return [
+                    'shift' => null,
+                    'overtime' => $overtime,
+                    'shift_date' => $shiftDate,
+                    'start' => $window['start'],
+                    'end' => $window['end'],
+                ];
+            }
         }
 
         return null;

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\FeatureSetting;
 use App\Models\LeaveRequest;
 use App\Services\AdminPushService;
+use App\Services\LeavePolicyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,7 @@ use Illuminate\Validation\Rule;
 
 class LeaveRequestController extends Controller
 {
-    private const TYPES = ['izin', 'sakit', 'cuti', 'dinas'];
+    private const TYPES = ['sakit', 'cuti'];
 
     public function index(Request $request)
     {
@@ -21,6 +22,7 @@ class LeaveRequestController extends Controller
 
         $requests = LeaveRequest::query()
             ->where('user_id', $user->id)
+            ->whereIn('jenis_izin', self::TYPES)
             ->when($request->filled('search'), function ($query) use ($request) {
                 $search = trim($request->search);
 
@@ -41,23 +43,26 @@ class LeaveRequestController extends Controller
         return view('user.leave_requests.index', compact('requests'));
     }
 
-    public function create(Request $request)
+    public function create(Request $request, LeavePolicyService $leavePolicy)
     {
-        $selectedJenisIzin = old('jenis_izin', $request->query('jenis_izin', 'izin'));
+        $selectedJenisIzin = old('jenis_izin', $request->query('jenis_izin', 'sakit'));
         $backUrl = $request->query('back') === 'dashboard'
             ? route('dashboard')
             : route('leave_requests.index');
+        $cutiQuota = null;
 
         abort_unless(in_array($selectedJenisIzin, self::TYPES, true), 404);
 
-        if (in_array($selectedJenisIzin, ['sakit', 'cuti'], true)) {
-            abort_unless(FeatureSetting::enabled($selectedJenisIzin, 'user'), 403, 'Anda tidak memiliki akses ke fitur ini.');
+        abort_unless(FeatureSetting::enabled($selectedJenisIzin, 'user'), 403, 'Anda tidak memiliki akses ke fitur ini.');
+
+        if ($selectedJenisIzin === 'cuti') {
+            $cutiQuota = $leavePolicy->annualQuotaSummary(Auth::user());
         }
 
-        return view('user.leave_requests.create', compact('selectedJenisIzin', 'backUrl'));
+        return view('user.leave_requests.create', compact('selectedJenisIzin', 'backUrl', 'cutiQuota'));
     }
 
-    public function store(Request $request, AdminPushService $adminPush)
+    public function store(Request $request, AdminPushService $adminPush, LeavePolicyService $leavePolicy)
     {
         $validated = $request->validate([
             'jenis_izin' => ['required', 'string', 'max:50', Rule::in(self::TYPES)],
@@ -67,8 +72,14 @@ class LeaveRequestController extends Controller
             'lampiran' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:2048'],
         ]);
 
-        if (in_array($validated['jenis_izin'], ['sakit', 'cuti'], true)) {
-            abort_unless(FeatureSetting::enabled($validated['jenis_izin'], 'user'), 403, 'Anda tidak memiliki akses ke fitur ini.');
+        abort_unless(FeatureSetting::enabled($validated['jenis_izin'], 'user'), 403, 'Anda tidak memiliki akses ke fitur ini.');
+
+        if ($validated['jenis_izin'] === 'cuti') {
+            $leavePolicy->validateCutiRequest(
+                Auth::user(),
+                $validated['tanggal_mulai'],
+                $validated['tanggal_selesai']
+            );
         }
 
         $lampiranPath = $request->hasFile('lampiran')

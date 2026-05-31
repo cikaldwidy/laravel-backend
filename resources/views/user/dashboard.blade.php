@@ -374,12 +374,12 @@ const pushStoreUrl = pushEnableButton?.dataset.storeUrl || '';
 const pushTestUrl = pushEnableButton?.dataset.testUrl || '';
 const browserNotificationStorageKey = 'presensi_browser_notifications_enabled';
 const browserNotificationAutoStorageKey = 'presensi_browser_notifications_auto_enabled';
+const browserNotificationSeenStorageKey = 'presensi_browser_notifications_seen_ids_v2';
 let notificationSignature = '';
 let notificationFetchInFlight = false;
 let browserNotificationsPrimed = false;
-let knownBrowserNotificationIds = new Set();
+let knownBrowserNotificationIds = readSeenBrowserNotificationIds();
 let browserNotificationActivationShown = false;
-let browserInitialNotificationShown = false;
 
 if (notificationWrap && notificationButton && notificationPanel) {
     notificationButton.addEventListener('click', (event) => {
@@ -476,8 +476,34 @@ function systemBrowserNotificationsEnabled() {
         && Notification.permission === 'granted';
 }
 
+function readSeenBrowserNotificationIds() {
+    try {
+        const parsedIds = JSON.parse(localStorage.getItem(browserNotificationSeenStorageKey) || '[]');
+        return Array.isArray(parsedIds)
+            ? new Set(parsedIds.map((id) => String(id)))
+            : new Set();
+    } catch (error) {
+        return new Set();
+    }
+}
+
+function persistSeenBrowserNotificationIds() {
+    try {
+        const latestIds = Array.from(knownBrowserNotificationIds).slice(-100);
+        localStorage.setItem(browserNotificationSeenStorageKey, JSON.stringify(latestIds));
+    } catch (error) {
+        // Browser bisa membatasi storage pada mode privat; notifikasi tetap berjalan untuk sesi ini.
+    }
+}
+
 function rememberBrowserNotificationIds(announcements) {
-    knownBrowserNotificationIds = new Set(announcements.map((item) => String(item.id)));
+    announcements.forEach((item) => knownBrowserNotificationIds.add(String(item.id)));
+    persistSeenBrowserNotificationIds();
+}
+
+function markBrowserNotificationSeen(id) {
+    knownBrowserNotificationIds.add(String(id));
+    persistSeenBrowserNotificationIds();
 }
 
 function showBrowserNotification(announcement) {
@@ -549,35 +575,15 @@ function notifyNewBrowserAnnouncements(announcements) {
         return;
     }
 
-    if (!browserNotificationsPrimed) {
-        rememberBrowserNotificationIds(announcements);
-        browserNotificationsPrimed = true;
-
-        if (announcements.length > 0 && !browserInitialNotificationShown) {
-            browserInitialNotificationShown = true;
-            const latestAnnouncement = announcements[0];
-            showBrowserNotification({
-                id: `initial-${latestAnnouncement.id}`,
-                title: announcements.length > 1
-                    ? `${announcements.length} pemberitahuan aktif`
-                    : latestAnnouncement.title,
-                body: announcements.length > 1
-                    ? latestAnnouncement.title + ' - ' + (latestAnnouncement.body || 'Buka panel notifikasi untuk detail.')
-                    : latestAnnouncement.body,
-                action_url: latestAnnouncement.action_url || '',
-            });
-        }
-
-        return;
-    }
-
     announcements.forEach((announcement) => {
         const id = String(announcement.id);
         if (knownBrowserNotificationIds.has(id)) return;
 
-        knownBrowserNotificationIds.add(id);
+        markBrowserNotificationSeen(id);
         showBrowserNotification(announcement);
     });
+
+    browserNotificationsPrimed = true;
 }
 
 function renderNotificationFeed(data, force = false) {

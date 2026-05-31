@@ -117,9 +117,9 @@
                 @enderror
             </label>
             <div class="flex justify-end border-t border-gray-100 pt-4 md:col-span-2">
-                <button class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                <button type="submit" data-submit-button class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70">
                     <i class="fa-solid fa-paper-plane text-xs"></i>
-                    Publish
+                    <span data-submit-label>Publish</span>
                 </button>
             </div>
         </form>
@@ -292,6 +292,19 @@ document.querySelectorAll('.announcement-form').forEach((form) => {
 
     targetEl?.addEventListener('change', syncTargetFields);
     syncTargetFields();
+
+    form.addEventListener('submit', () => {
+        const submitButton = form.querySelector('[data-submit-button]');
+        const submitLabel = form.querySelector('[data-submit-label]');
+
+        if (submitButton) {
+            submitButton.disabled = true;
+        }
+
+        if (submitLabel) {
+            submitLabel.textContent = 'Memproses...';
+        }
+    });
 });
 </script>
 @endsection

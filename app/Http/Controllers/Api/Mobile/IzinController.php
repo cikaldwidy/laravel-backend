@@ -6,13 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\FeatureSetting;
 use App\Models\LeaveRequest;
 use App\Models\User;
+use App\Services\LeavePolicyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
 
 class IzinController extends Controller
 {
-    private const TYPES = ['izin', 'sakit', 'cuti', 'dinas'];
+    private const TYPES = ['sakit', 'cuti'];
 
     public function index(Request $request): JsonResponse
     {
@@ -28,6 +30,7 @@ class IzinController extends Controller
 
         $items = LeaveRequest::query()
             ->where('user_id', $user->id)
+            ->whereIn('jenis_izin', self::TYPES)
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->status))
             ->latest('tanggal_mulai')
             ->latest('created_at')
@@ -52,7 +55,7 @@ class IzinController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, LeavePolicyService $leavePolicy): JsonResponse
     {
         /** @var User $user */
         $user = $request->user();
@@ -71,12 +74,27 @@ class IzinController extends Controller
             'keterangan' => ['nullable', 'string'],
         ]);
 
-        if (in_array($validated['jenis_izin'], ['sakit', 'cuti'], true)) {
-            if (!FeatureSetting::enabled($validated['jenis_izin'], 'user')) {
+        if (!FeatureSetting::enabled($validated['jenis_izin'], 'user')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki akses ke fitur ini.',
+            ], 403);
+        }
+
+        if ($validated['jenis_izin'] === 'cuti') {
+            try {
+                $leavePolicy->validateCutiRequest(
+                    $user,
+                    $validated['tanggal_mulai'],
+                    $validated['tanggal_selesai'] ?? $validated['tanggal_mulai']
+                );
+            } catch (ValidationException $exception) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Anda tidak memiliki akses ke fitur ini.',
-                ], 403);
+                    'message' => collect($exception->errors())->flatten()->first()
+                        ?? 'Pengajuan cuti tidak memenuhi aturan.',
+                    'errors' => $exception->errors(),
+                ], 422);
             }
         }
 

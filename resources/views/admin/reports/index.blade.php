@@ -36,6 +36,8 @@
         'cell-danger' => 'bg-red-600 text-white',
         'cell-off' => 'bg-red-600 text-white',
         'cell-leave' => 'bg-sky-500 text-white',
+        'cell-sick' => 'bg-rose-500 text-white',
+        'cell-overtime' => 'bg-violet-600 text-white',
         'cell-empty' => 'bg-slate-100 text-slate-400',
     ];
 @endphp

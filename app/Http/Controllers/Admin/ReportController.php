@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\LeaveRequest;
+use App\Models\OvertimeRequest;
 use App\Models\Presensi;
 use App\Models\ShiftSchedule;
 use App\Models\User;
@@ -99,6 +100,8 @@ class ReportController extends Controller
             ->whereDate('tanggal_selesai', '>=', $tanggalMulai->toDateString())
             ->get();
 
+        $overtimes = $this->overtimeMap($users->keys(), $tanggalMulai, $tanggalSelesai);
+
         $leaveMap = [];
         foreach ($approvedLeaves as $leave) {
             $cursor = $leave->tanggal_mulai->copy();
@@ -116,21 +119,26 @@ class ReportController extends Controller
                 $presensi = $presensis->get($key);
                 $shift = $shifts->get($key);
                 $leave = $leaveMap[$key] ?? null;
+                $overtime = $overtimes[$key] ?? null;
 
-                if (!$shift && !$presensi && !$leave) {
+                if (!$shift && !$presensi && !$leave && !$overtime) {
                     continue;
                 }
 
-                $status = $leave ? 'izin' : ($presensi?->status ?? 'alpha');
+                $status = $leave ? $leave->jenis_izin : ($presensi?->status ?? ($overtime ? 'lembur' : 'alpha'));
                 $rows[] = [
                     'tanggal' => $cursor->format('Y-m-d'),
                     'nama' => $user->name,
                     'unit' => $user->employeeDetail?->department?->nama_departemen ?? $user->employeeDetail?->departemen ?? '-',
-                    'shift' => $shift ? ($shift->nama_shift . ' (' . $shift->jam_masuk->format('H:i') . '-' . $shift->jam_pulang->format('H:i') . ')') : '-',
+                    'shift' => $shift
+                        ? ($shift->nama_shift . ' (' . $shift->jam_masuk->format('H:i') . '-' . $shift->jam_pulang->format('H:i') . ')')
+                        : ($overtime ? ('Lembur (' . $overtime->jam_mulai?->format('H:i') . '-' . $overtime->jam_selesai?->format('H:i') . ')') : '-'),
                     'check_in' => $presensi?->jam_masuk?->format('H:i') ?? '-',
                     'check_out' => $presensi?->jam_keluar?->format('H:i') ?? '-',
                     'status' => $status,
-                    'keterangan' => $leave?->jenis_izin ?? ($presensi?->status_pulang ?? '-'),
+                    'keterangan' => $overtime
+                        ? 'Lembur pengganti sakit: ' . $this->compensationLabel($overtime->compensation_type)
+                        : ($leave?->jenis_izin ?? ($presensi?->status_pulang ?? '-')),
                 ];
             }
             $cursor->addDay();
@@ -179,6 +187,8 @@ class ReportController extends Controller
             ->whereDate('tanggal_selesai', '>=', $tanggalMulai->toDateString())
             ->get();
 
+        $overtimes = $this->overtimeMap($userIds, $tanggalMulai, $tanggalSelesai);
+
         $leaveMap = [];
         foreach ($approvedLeaves as $leave) {
             $leaveCursor = $leave->tanggal_mulai->copy();
@@ -219,13 +229,16 @@ class ReportController extends Controller
                 $shift = $shifts->get($key);
                 $presensi = $presensis->get($key);
                 $leave = $leaveMap[$key] ?? null;
-                $cell = $this->makeMatrixCell($shift, $presensi, $leave);
+                $overtime = $overtimes[$key] ?? null;
+                $cell = $this->makeMatrixCell($shift, $presensi, $leave, $overtime);
                 $shiftGroup = null;
 
                 if ($shift && $shift->status === 'aktif') {
                     $shiftGroup = $this->shiftGroup($shift);
                     $shiftTotals[$shiftGroup]++;
                     $dailyTotals[$dateKey][$shiftGroup]++;
+                } elseif ($overtime?->jam_mulai) {
+                    $shiftGroup = $this->shiftGroupFromHour((int) $overtime->jam_mulai->format('H'));
                 }
 
                 if ($presensi?->jam_masuk && $presensi?->jam_keluar) {
@@ -291,13 +304,24 @@ class ReportController extends Controller
                 ['label' => 'BM', 'text' => 'Belum absen masuk / alpha', 'class' => 'cell-danger'],
                 ['label' => 'L', 'text' => 'Libur', 'class' => 'cell-off'],
                 ['label' => 'I', 'text' => 'Izin approved', 'class' => 'cell-leave'],
+                ['label' => 'S', 'text' => 'Sakit approved', 'class' => 'cell-sick'],
+                ['label' => 'LB', 'text' => 'Lembur pengganti sakit', 'class' => 'cell-overtime'],
             ],
         ];
     }
 
-    private function makeMatrixCell(?ShiftSchedule $shift, ?Presensi $presensi, ?LeaveRequest $leave): array
+    private function makeMatrixCell(?ShiftSchedule $shift, ?Presensi $presensi, ?LeaveRequest $leave, ?OvertimeRequest $overtime = null): array
     {
         if ($leave) {
+            if ($leave->jenis_izin === 'sakit') {
+                return [
+                    'label' => 'S',
+                    'title' => 'Sakit approved',
+                    'class' => 'cell-sick',
+                    'status_key' => 'izin',
+                ];
+            }
+
             return [
                 'label' => 'I',
                 'title' => 'Izin: ' . $leave->jenis_izin,
@@ -315,7 +339,7 @@ class ReportController extends Controller
             ];
         }
 
-        if (!$shift) {
+        if (!$shift && !$overtime) {
             return [
                 'label' => '-',
                 'title' => 'Tidak ada jadwal',
@@ -324,23 +348,36 @@ class ReportController extends Controller
             ];
         }
 
-        $shiftStart = ShiftTime::startAt($shift->tanggal, $shift->jam_masuk->format('H:i:s'));
-        $shiftEnd = ShiftTime::endAt($shift->tanggal, $shift->jam_masuk->format('H:i:s'), $shift->jam_pulang->format('H:i:s'));
+        $shiftDate = $shift?->tanggal ?? $overtime?->tanggal_mulai;
+        $jamMasuk = $shift?->jam_masuk?->format('H:i:s') ?? $overtime?->jam_mulai?->format('H:i:s');
+        $jamPulang = $shift?->jam_pulang?->format('H:i:s') ?? $overtime?->jam_selesai?->format('H:i:s');
+        if (!$jamMasuk || !$jamPulang) {
+            return [
+                'label' => 'LB',
+                'title' => 'Lembur pengganti sakit',
+                'class' => 'cell-overtime',
+                'status_key' => 'menunggu',
+            ];
+        }
+
+        $shiftStart = ShiftTime::startAt($shiftDate, $jamMasuk);
+        $shiftEnd = ShiftTime::endAt($shiftDate, $jamMasuk, $jamPulang);
         $now = now();
+        $titleSuffix = $overtime ? ' + lembur pengganti sakit (' . $this->compensationLabel($overtime->compensation_type) . ')' : '';
 
         if (!$presensi || !$presensi->jam_masuk) {
             if ($now->lt($shiftStart)) {
                 return [
-                    'label' => '-',
-                    'title' => 'Jadwal belum mulai',
-                    'class' => 'cell-empty',
+                    'label' => $overtime ? 'LB' : '-',
+                    'title' => ($overtime ? 'Lembur pengganti sakit belum mulai' : 'Jadwal belum mulai'),
+                    'class' => $overtime ? 'cell-overtime' : 'cell-empty',
                     'status_key' => 'menunggu',
                 ];
             }
 
             return [
                 'label' => 'BM',
-                'title' => 'Belum absen masuk',
+                'title' => 'Belum absen masuk' . $titleSuffix,
                 'class' => 'cell-danger',
                 'status_key' => 'belum_masuk',
             ];
@@ -353,7 +390,7 @@ class ReportController extends Controller
             if ($now->lt($shiftEnd)) {
                 return [
                     'label' => 'T',
-                    'title' => 'Terlambat, belum waktunya pulang',
+                    'title' => 'Terlambat, belum waktunya pulang' . $titleSuffix,
                     'class' => 'cell-late',
                     'status_key' => 'terlambat',
                 ];
@@ -361,7 +398,7 @@ class ReportController extends Controller
 
             return [
                 'label' => 'T/BP',
-                'title' => 'Terlambat, belum absen pulang',
+                'title' => 'Terlambat, belum absen pulang' . $titleSuffix,
                 'class' => 'cell-late',
                 'status_key' => 'terlambat',
             ];
@@ -370,7 +407,7 @@ class ReportController extends Controller
         if ($isLate) {
             return [
                 'label' => 'T',
-                'title' => 'Terlambat',
+                'title' => 'Terlambat' . $titleSuffix,
                 'class' => 'cell-late',
                 'status_key' => 'terlambat',
             ];
@@ -380,7 +417,7 @@ class ReportController extends Controller
             if ($now->lt($shiftEnd)) {
                 return [
                     'label' => 'M',
-                    'title' => 'Sudah absen masuk, belum waktunya pulang',
+                    'title' => 'Sudah absen masuk, belum waktunya pulang' . $titleSuffix,
                     'class' => 'cell-present',
                     'status_key' => 'masuk',
                 ];
@@ -388,16 +425,16 @@ class ReportController extends Controller
 
             return [
                 'label' => 'BP',
-                'title' => 'Belum absen pulang',
+                'title' => 'Belum absen pulang' . $titleSuffix,
                 'class' => 'cell-warning',
                 'status_key' => 'belum_pulang',
             ];
         }
 
         return [
-            'label' => 'M',
-            'title' => 'Masuk lengkap',
-            'class' => 'cell-present',
+            'label' => $overtime ? 'M+LB' : 'M',
+            'title' => 'Masuk lengkap' . $titleSuffix,
+            'class' => $overtime ? 'cell-overtime' : 'cell-present',
             'status_key' => 'masuk',
         ];
     }
@@ -415,6 +452,50 @@ class ReportController extends Controller
         }
 
         return 'malam';
+    }
+
+    private function shiftGroupFromHour(int $hour): string
+    {
+        if ($hour >= 5 && $hour < 12) {
+            return 'pagi';
+        }
+
+        if ($hour >= 12 && $hour < 18) {
+            return 'sore';
+        }
+
+        return 'malam';
+    }
+
+    private function overtimeMap($userIds, Carbon $tanggalMulai, Carbon $tanggalSelesai): array
+    {
+        $overtimeMap = [];
+        $overtimes = OvertimeRequest::query()
+            ->where('status', 'approved')
+            ->whereIn('user_id', $userIds)
+            ->whereDate('tanggal_mulai', '<=', $tanggalSelesai->toDateString())
+            ->whereDate('tanggal_selesai', '>=', $tanggalMulai->toDateString())
+            ->get();
+
+        foreach ($overtimes as $overtime) {
+            $cursor = $overtime->tanggal_mulai->copy()->startOfDay();
+            while ($cursor->lte($overtime->tanggal_selesai)) {
+                if ($cursor->gte($tanggalMulai) && $cursor->lte($tanggalSelesai)) {
+                    $overtimeMap[$overtime->user_id . '|' . $cursor->toDateString()] = $overtime;
+                }
+                $cursor->addDay();
+            }
+        }
+
+        return $overtimeMap;
+    }
+
+    private function compensationLabel(?string $type): string
+    {
+        return match ($type) {
+            'libur_pengganti' => 'Libur Pengganti',
+            default => 'Uang Lembur',
+        };
     }
 
     private function presensiMinutes(Presensi $presensi): int

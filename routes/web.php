@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FeaturePageController;
+use App\Http\Controllers\OvertimeController;
 use App\Http\Controllers\User\AnnouncementController;
 use App\Http\Controllers\User\FaceEnrollmentController;
 use App\Http\Controllers\User\HistoryController;
@@ -74,6 +75,7 @@ Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/tukar-shift/create', [ShiftSwapController::class, 'create'])->name('shift-swaps.create');
     Route::get('/tukar-shift/target-shifts', [ShiftSwapController::class, 'availableTargetShifts'])->name('shift-swaps.target-shifts');
     Route::post('/tukar-shift', [ShiftSwapController::class, 'store'])->name('shift-swaps.store');
+    Route::get('/lembur', [OvertimeController::class, 'user'])->name('overtime.index');
 });
 
 Route::middleware(['auth'])->group(function () {
@@ -98,6 +100,7 @@ Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        Route::get('/lembur', [OvertimeController::class, 'admin'])->name('overtime.index');
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/presensi-terbaru/export', [DashboardController::class, 'exportLatestPresensi'])->name('dashboard.latest-presensi.export');
         Route::get('/presensi', [DashboardController::class, 'index'])->name('presensi.index');

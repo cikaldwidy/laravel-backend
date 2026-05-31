@@ -59,6 +59,8 @@
         .cell-danger,
         .cell-off { background: #dc2626; color: #ffffff; font-weight: bold; }
         .cell-leave { background: #0ea5e9; color: #ffffff; font-weight: bold; }
+        .cell-sick { background: #f43f5e; color: #ffffff; font-weight: bold; }
+        .cell-overtime { background: #7c3aed; color: #ffffff; font-weight: bold; }
         .cell-empty { background: #f1f5f9; color: #64748b; }
         .sunday-cell { background: #fce4d6; }
         .legend-title { background: #fff2cc; font-weight: bold; text-align: left; }
