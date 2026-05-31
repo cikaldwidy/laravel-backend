@@ -534,35 +534,7 @@ function showBrowserNotification(announcement) {
         };
     }
 
-    showInAppNotification(announcement);
-}
-
-function showInAppNotification(announcement) {
-    document.querySelectorAll('[data-browser-notification-toast]').forEach((item) => item.remove());
-
-    const toast = document.createElement('button');
-    toast.type = 'button';
-    toast.dataset.browserNotificationToast = 'true';
-    toast.className = 'fixed left-4 right-4 top-4 z-[9999] rounded-2xl bg-slate-950 px-4 py-3 text-left text-white shadow-2xl transition duration-200 sm:left-auto sm:right-5 sm:w-80';
-    toast.innerHTML = `
-        <span class="block text-xs font-bold text-blue-200">Notifikasi</span>
-        <span class="mt-1 block text-sm font-bold">${escapeHtml(announcement.title || 'Notifikasi Presensi')}</span>
-        <span class="mt-1 block text-xs text-slate-200 line-clamp-2">${escapeHtml(announcement.body || 'Ada pemberitahuan baru.')}</span>
-    `;
-
-    toast.addEventListener('click', () => {
-        if (announcement.action_url) {
-            window.location.href = announcement.action_url;
-        }
-        toast.remove();
-    });
-
-    document.body.appendChild(toast);
-    window.setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(-8px)';
-        window.setTimeout(() => toast.remove(), 220);
-    }, 5500);
+    return;
 }
 
 function showBrowserNotificationActivated(message = 'Mode browser aktif. Notifikasi akan muncul saat ada pemberitahuan baru.') {

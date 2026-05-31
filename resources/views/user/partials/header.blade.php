@@ -4,7 +4,7 @@
     $action = $action ?? null;
 @endphp
 
-<header class="px-4" style="padding-top: calc(1.25rem + env(safe-area-inset-top));">
+<header class="px-4" style="padding-top: calc(2.25rem + env(safe-area-inset-top));">
     <div class="flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
             @if($back)

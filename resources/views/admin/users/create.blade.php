@@ -11,6 +11,7 @@
     ])->values();
     $selectedDepartmentId = old('department_id');
     $selectedPositionId = old('position_id');
+    $departmentOptionsPayload = base64_encode(json_encode($departmentOptions));
 @endphp
 
 <style>
@@ -308,7 +309,7 @@
                             </div>
                             <div>
                                 <label class="admin-edit-label">Jabatan</label>
-                                <select name="position_id" id="position_id" class="admin-edit-field">
+                                <select name="position_id" id="position_id" data-selected-position-id="{{ $selectedPositionId }}" data-department-options="{{ $departmentOptionsPayload }}" class="admin-edit-field">
                                     <option value="">Pilih jabatan</option>
                                 </select>
                                 @error('position_id') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
@@ -341,10 +342,11 @@
 </div>
 
 <script>
-const departmentOptions = @json($departmentOptions);
 const departmentSelect = document.getElementById('department_id');
 const positionSelect = document.getElementById('position_id');
-const selectedPositionId = @json((string) $selectedPositionId);
+const departmentOptionsPayload = positionSelect?.dataset.departmentOptions || '';
+const departmentOptions = JSON.parse(atob(departmentOptionsPayload || 'W10='));
+const selectedPositionId = String(positionSelect?.dataset.selectedPositionId || '');
 const generatedPasswordInput = document.getElementById('generatedPassword');
 const generatePasswordButton = document.getElementById('generatePasswordButton');
 const copyPasswordButton = document.getElementById('copyPasswordButton');

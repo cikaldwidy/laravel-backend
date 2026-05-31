@@ -762,6 +762,8 @@
                     ];
                 }
             }
+
+            $adminSearchItemsPayload = base64_encode(json_encode($adminSearchItems));
         @endphp
         <nav id="sidebar-nav" class="md:px-2 sidebar-scroll overflow-y-auto px-4 py-3 space-y-2" style="height: calc(100vh - 5rem);">
             <a href="{{ route('admin.dashboard') }}"
@@ -890,7 +892,7 @@
                     <button id="mobile-menu-btn" class="md:hidden text-gray-600 hover:text-gray-900 focus:outline-none">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
-                    <div id="adminGlobalSearch" class="admin-top-search relative hidden xl:flex h-10 w-full max-w-sm items-center gap-2 rounded-md border border-gray-200 bg-white px-3 text-gray-400">
+                    <div id="adminGlobalSearch" data-search-items="{{ $adminSearchItemsPayload }}" class="admin-top-search relative hidden xl:flex h-10 w-full max-w-sm items-center gap-2 rounded-md border border-gray-200 bg-white px-3 text-gray-400">
                         <i class="fa-solid fa-magnifying-glass text-gray-400"></i>
                         <input
                             id="adminGlobalSearchInput"
@@ -1053,8 +1055,9 @@ themeToggle?.addEventListener('click', () => {
 });
 
 // Global admin search
-const adminGlobalSearchItems = @json($adminSearchItems);
 const adminGlobalSearch = document.getElementById('adminGlobalSearch');
+const adminGlobalSearchItemsPayload = adminGlobalSearch?.dataset.searchItems || '';
+const adminGlobalSearchItems = JSON.parse(atob(adminGlobalSearchItemsPayload || 'W10='));
 const adminGlobalSearchInput = document.getElementById('adminGlobalSearchInput');
 const adminGlobalSearchResults = document.getElementById('adminGlobalSearchResults');
 let adminSearchActiveIndex = -1;

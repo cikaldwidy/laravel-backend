@@ -381,6 +381,9 @@
                                 data-office-lat="{{ (float) $officeLatitude }}"
                                 data-office-lng="{{ (float) $officeLongitude }}"
                                 data-office-radius="{{ (int) $officeRadius }}"
+                                data-min-brightness="{{ (float) config('attendance.min_brightness', 30) }}"
+                                data-max-brightness="{{ (float) config('attendance.max_brightness', 220) }}"
+                                data-min-sharpness="{{ (float) config('attendance.min_sharpness', 8) }}"
                             ></div>
                             <div class="attendance-gps-badge absolute left-3 bottom-3 text-white text-xs px-3 py-2 rounded-xl max-w-[88%]">
                                 <i class="fa-solid fa-location-dot mr-1"></i>
@@ -885,9 +888,9 @@ const MAX_LOCATION_SAMPLE_BUFFER = 5;
 const FAST_LOCATION_ACCURACY = 25;
 const REQUIRED_LIVENESS_STEPS = 2;
 
-const MIN_BRIGHTNESS = {{ (float) config('attendance.min_brightness', 30) }};
-const MAX_BRIGHTNESS = {{ (float) config('attendance.max_brightness', 220) }};
-const MIN_SHARPNESS = {{ (float) config('attendance.min_sharpness', 8) }};
+const MIN_BRIGHTNESS = Number(attendanceMapElement?.dataset.minBrightness ?? 30);
+const MAX_BRIGHTNESS = Number(attendanceMapElement?.dataset.maxBrightness ?? 220);
+const MIN_SHARPNESS = Number(attendanceMapElement?.dataset.minSharpness ?? 8);
 const BLINK_OPEN_EAR = 0.27;
 const BLINK_CLOSED_EAR = 0.26;
 const BLINK_DROP_RATIO = 0.9;

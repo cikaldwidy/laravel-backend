@@ -338,18 +338,32 @@
 
 </div>
 
+<div
+    id="adminDashboardData"
+    data-labels="{{ base64_encode(json_encode(collect($chart)->pluck('label'))) }}"
+    data-hadir="{{ base64_encode(json_encode(collect($chart)->pluck('hadir'))) }}"
+    data-telat="{{ base64_encode(json_encode(collect($chart)->pluck('telat'))) }}"
+    data-izin="{{ base64_encode(json_encode(collect($chart)->pluck('izin'))) }}"
+    data-alpha="{{ base64_encode(json_encode(collect($chart)->pluck('alpha'))) }}"
+    data-operational="{{ base64_encode(json_encode($operationalStats)) }}"
+    data-status-values="{{ base64_encode(json_encode($statusValues)) }}"
+    hidden
+></div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script>
 (function () {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const labels = @json(collect($chart)->pluck('label'));
-    const hadir = @json(collect($chart)->pluck('hadir'));
-    const telat = @json(collect($chart)->pluck('telat'));
-    const izin = @json(collect($chart)->pluck('izin'));
-    const alpha = @json(collect($chart)->pluck('alpha'));
-    const operational = @json($operationalStats);
+    const dashboardData = document.getElementById('adminDashboardData');
+    const parseDashboardData = (key, fallback) => JSON.parse(atob(dashboardData?.dataset[key] || fallback));
+    const labels = parseDashboardData('labels', 'W10=');
+    const hadir = parseDashboardData('hadir', 'W10=');
+    const telat = parseDashboardData('telat', 'W10=');
+    const izin = parseDashboardData('izin', 'W10=');
+    const alpha = parseDashboardData('alpha', 'W10=');
+    const operational = parseDashboardData('operational', 'e30=');
     const statusLabels = ['Hadir', 'Telat', 'Izin', 'Alpha'];
-    const statusValues = @json($statusValues);
+    const statusValues = parseDashboardData('statusValues', 'W10=');
     const dashboardCharts = [];
     let latestPresensiAbortController = null;
 

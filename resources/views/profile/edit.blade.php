@@ -84,6 +84,7 @@
                         ])->values();
                         $selectedDepartmentId = old('department_id', $employeeDetail?->department_id);
                         $selectedPositionId = old('position_id', $employeeDetail?->position_id);
+                        $departmentOptionsPayload = base64_encode(json_encode($departmentOptions));
                     @endphp
                     <div>
                         <label class="text-xs font-semibold text-slate-600">NIP</label>
@@ -116,7 +117,7 @@
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-slate-600">Jabatan</label>
-                        <select name="position_id" id="position_id" class="user-field mt-1">
+                        <select name="position_id" id="position_id" data-selected-position-id="{{ $selectedPositionId }}" data-department-options="{{ $departmentOptionsPayload }}" class="user-field mt-1">
                             <option value="">Pilih jabatan</option>
                         </select>
                         @error('position_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
@@ -147,10 +148,11 @@
     </div>
 </div>
 <script>
-const departmentOptions = @json($departmentOptions);
 const departmentSelect = document.getElementById('department_id');
 const positionSelect = document.getElementById('position_id');
-const selectedPositionId = @json((string) $selectedPositionId);
+const departmentOptionsPayload = positionSelect?.dataset.departmentOptions || '';
+const departmentOptions = JSON.parse(atob(departmentOptionsPayload || 'W10='));
+const selectedPositionId = String(positionSelect?.dataset.selectedPositionId || '');
 
 function fillDependentOptions(select, items, selectedValue, placeholder) {
     select.innerHTML = '';
