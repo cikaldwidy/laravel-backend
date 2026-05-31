@@ -2,6 +2,7 @@
     "name": "Aplikasi Presensi",
     "short_name": "Presensi",
     "description": "Aplikasi presensi berbasis face recognition dan GPS radius",
+    "id": "/",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",

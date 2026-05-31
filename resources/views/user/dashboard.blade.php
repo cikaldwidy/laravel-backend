@@ -470,6 +470,15 @@ function autoEnableBrowserNotifications() {
     }
 }
 
+function disableBrowserNotifications() {
+    localStorage.removeItem(browserNotificationStorageKey);
+    localStorage.removeItem(browserNotificationAutoStorageKey);
+
+    if (pushEnableButton && pushEnableButton.textContent.trim() === 'Browser') {
+        pushEnableButton.textContent = 'Aktifkan PWA';
+    }
+}
+
 function systemBrowserNotificationsEnabled() {
     return browserNotificationsEnabled()
         && 'Notification' in window
@@ -716,7 +725,7 @@ function bindNotificationItems() {
     document.querySelectorAll('.notification-item').forEach(bindNotificationItem);
 }
 
-autoEnableBrowserNotifications();
+configureNotificationMode();
 bindNotificationItems();
 fetchNotifications({ force: true });
 
@@ -766,6 +775,75 @@ function isIosDevice() {
         || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
+function isAndroidDevice() {
+    return /Android/i.test(navigator.userAgent);
+}
+
+function isStandaloneApp() {
+    return window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true;
+}
+
+function shouldUseBrowserNotificationMode() {
+    return isIosDevice() && !isStandaloneApp();
+}
+
+function canUsePushNotificationMode() {
+    return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+
+function defaultPushButtonText() {
+    return shouldUseBrowserNotificationMode() ? 'Browser' : 'Aktifkan PWA';
+}
+
+function configureNotificationMode() {
+    if (shouldUseBrowserNotificationMode()) {
+        autoEnableBrowserNotifications();
+        return;
+    }
+
+    if (canUsePushNotificationMode()) {
+        disableBrowserNotifications();
+        return;
+    }
+
+    autoEnableBrowserNotifications();
+}
+
+async function syncPushButtonState() {
+    if (!pushEnableButton || shouldUseBrowserNotificationMode() || !canUsePushNotificationMode()) return;
+
+    if (Notification.permission !== 'granted') {
+        pushEnableButton.textContent = 'Aktifkan PWA';
+        setPushStatus(
+            isAndroidDevice()
+                ? 'Mode PWA Android. Buka dari aplikasi/Chrome lalu aktifkan notifikasi.'
+                : isIosDevice()
+                    ? 'Mode PWA iOS. Aktifkan notifikasi dari aplikasi Home Screen.'
+                : 'Mode PWA. Aktifkan notifikasi untuk menerima push dari aplikasi.',
+            'info'
+        );
+        return;
+    }
+
+    try {
+        const registration = await navigator.serviceWorker.ready;
+        const subscription = await registration.pushManager.getSubscription();
+
+        if (subscription) {
+            pushEnableButton.textContent = 'Aktif';
+            setPushStatus('Mode PWA aktif. Perangkat ini siap menerima notifikasi lewat service worker.', 'success');
+            return;
+        }
+
+        pushEnableButton.textContent = 'Aktifkan PWA';
+        setPushStatus('Izin notifikasi sudah ada. Klik Aktifkan PWA untuk menyimpan subscription perangkat ini.', 'info');
+    } catch (error) {
+        pushEnableButton.textContent = 'Aktifkan PWA';
+        setPushStatus('Service worker belum siap. Coba refresh lalu aktifkan notifikasi PWA.', 'danger');
+    }
+}
+
 async function resolveVapidPublicKey() {
     if (vapidPublicKey) return vapidPublicKey;
     if (!pushPublicKeyUrl) return '';
@@ -804,7 +882,7 @@ async function enablePushNotifications() {
         if (!publicKey) {
             setPushStatus('VAPID public key belum terbaca. Coba refresh aplikasi, lalu aktifkan lagi.', 'danger');
             pushEnableButton.disabled = false;
-            pushEnableButton.textContent = 'Aktifkan';
+            pushEnableButton.textContent = defaultPushButtonText();
             return;
         }
 
@@ -815,7 +893,7 @@ async function enablePushNotifications() {
         if (permission !== 'granted') {
             setPushStatus('Izin notifikasi belum diberikan.', 'danger');
             pushEnableButton.disabled = false;
-            pushEnableButton.textContent = 'Aktifkan';
+            pushEnableButton.textContent = defaultPushButtonText();
             return;
         }
 
@@ -857,7 +935,7 @@ async function enablePushNotifications() {
             throw new Error(message);
         }
 
-        setPushStatus('Notifikasi aktif. Mengirim test...', 'success');
+        setPushStatus('Notifikasi PWA aktif. Mengirim test...', 'success');
 
         fetch(pushTestUrl, {
             method: 'POST',
@@ -873,7 +951,7 @@ async function enablePushNotifications() {
     } catch (error) {
         setPushStatus(error.message || 'Gagal mengaktifkan notifikasi.', 'danger');
         pushEnableButton.disabled = false;
-        pushEnableButton.textContent = 'Aktifkan';
+        pushEnableButton.textContent = defaultPushButtonText();
     }
 }
 
@@ -914,22 +992,42 @@ async function enableBrowserNotifications(successMessage = 'Notifikasi browser a
 }
 
 if (pushEnableButton) {
-    autoEnableBrowserNotifications();
+    configureNotificationMode();
 
-    if (isIosDevice()) {
-        setPushStatus('Mode browser aktif otomatis. Notifikasi muncul selama dashboard terbuka.', 'info');
-    } else if (browserNotificationsEnabled() && !systemBrowserNotificationsEnabled()) {
-        setPushStatus('Mode browser aktif otomatis. Klik Browser untuk izin notifikasi sistem.', 'info');
-    }
-
-    if (browserNotificationsEnabled()) {
+    if (shouldUseBrowserNotificationMode()) {
         pushEnableButton.textContent = 'Browser';
+        setPushStatus('Mode browser aktif otomatis untuk iOS. Notifikasi muncul selama dashboard terbuka.', 'info');
+    } else if (!canUsePushNotificationMode()) {
+        pushEnableButton.textContent = 'Browser';
+        setPushStatus('Browser ini belum mendukung push PWA. Mode browser dipakai selama dashboard terbuka.', 'info');
     } else if ('Notification' in window && Notification.permission === 'granted') {
-        pushEnableButton.textContent = 'Aktif';
+        pushEnableButton.textContent = 'Memeriksa...';
+        setPushStatus('Memeriksa subscription PWA perangkat ini...', 'info');
+        syncPushButtonState();
+    } else {
+        pushEnableButton.textContent = 'Aktifkan PWA';
+        setPushStatus(
+            isAndroidDevice()
+                ? 'Mode PWA Android. Buka dari aplikasi/Chrome lalu aktifkan notifikasi.'
+                : isIosDevice()
+                    ? 'Mode PWA iOS. Aktifkan notifikasi dari aplikasi Home Screen.'
+                : 'Mode PWA. Aktifkan notifikasi untuk menerima push dari aplikasi.',
+            'info'
+        );
     }
 
     pushEnableButton.addEventListener('click', (event) => {
         event.stopPropagation();
+
+        if (shouldUseBrowserNotificationMode() || !canUsePushNotificationMode()) {
+            enableBrowserNotifications(
+                shouldUseBrowserNotificationMode()
+                    ? 'Notifikasi browser aktif untuk iOS saat dashboard masih terbuka.'
+                    : 'Notifikasi browser aktif saat dashboard masih terbuka.'
+            );
+            return;
+        }
+
         enablePushNotifications();
     });
 }
