@@ -24,6 +24,35 @@
 </style>
 
 @if($turnstileEnabled && $turnstileSiteKey)
+  <script>
+    window.onTurnstileSuccess = () => {
+      const loginSubmit = document.getElementById('loginSubmit');
+
+      if (loginSubmit) {
+        loginSubmit.disabled = false;
+      }
+    };
+
+    window.onTurnstileExpired = () => {
+      const loginSubmit = document.getElementById('loginSubmit');
+
+      if (loginSubmit) {
+        loginSubmit.disabled = true;
+      }
+    };
+
+    window.onTurnstileError = () => {
+      const loginSubmit = document.getElementById('loginSubmit');
+
+      if (loginSubmit) {
+        loginSubmit.disabled = true;
+      }
+
+      if (window.turnstile) {
+        window.turnstile.reset('#loginTurnstile');
+      }
+    };
+  </script>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 @endif
 
@@ -114,9 +143,13 @@
           <div>
             <div
               class="cf-turnstile"
+              id="loginTurnstile"
               data-sitekey="{{ $turnstileSiteKey }}"
               data-theme="light"
               data-action="user-login"
+              data-callback="onTurnstileSuccess"
+              data-expired-callback="onTurnstileExpired"
+              data-error-callback="onTurnstileError"
             ></div>
             @error('cf-turnstile-response')
               <p class="text-red-500 text-xs mt-2">{{ $message }}</p>
@@ -126,8 +159,10 @@
 
         <!-- BUTTON -->
         <button
+          id="loginSubmit"
           type="submit"
-          class="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-3 rounded-md shadow-lg shadow-blue-700/20 transition text-sm tracking-[.5px]">
+          @if($turnstileEnabled && $turnstileSiteKey) disabled @endif
+          class="w-full bg-blue-700 hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none text-white font-semibold py-3 rounded-md shadow-lg shadow-blue-700/20 transition text-sm tracking-[.5px]">
           LOGIN
         </button>
 
@@ -146,9 +181,15 @@
 </div>
 
 <script>
+  const turnstileEnabled = @json($turnstileEnabled && $turnstileSiteKey);
+  const loginSubmit = document.getElementById('loginSubmit');
   const passwordInput = document.getElementById('password');
   const togglePassword = document.getElementById('togglePassword');
   const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+  if (!turnstileEnabled && loginSubmit) {
+    loginSubmit.disabled = false;
+  }
 
   if (passwordInput && togglePassword && togglePasswordIcon) {
     togglePassword.addEventListener('click', () => {

@@ -8,8 +8,8 @@ return [
     // Lebih kecil berarti lebih ketat; 0.35 membantu menolak wajah yang berbeda.
     'face_threshold'           => (float) env('ATTENDANCE_FACE_THRESHOLD', 0.35),
     'face_duplicate_threshold' => (float) env('ATTENDANCE_FACE_DUPLICATE_THRESHOLD', 0.45),
-    'enrollment_average_threshold' => (float) env('ATTENDANCE_ENROLLMENT_AVERAGE_THRESHOLD', 0.45),
-    'enrollment_consistency_threshold' => (float) env('ATTENDANCE_ENROLLMENT_CONSISTENCY_THRESHOLD', 0.55),
+    'enrollment_average_threshold' => (float) env('ATTENDANCE_ENROLLMENT_AVERAGE_THRESHOLD', 0.38),
+    'enrollment_consistency_threshold' => (float) env('ATTENDANCE_ENROLLMENT_CONSISTENCY_THRESHOLD', 0.42),
 
     'challenge_ttl_seconds'    => (int)   env('ATTENDANCE_CHALLENGE_TTL_SECONDS', 600),
     'min_brightness'           => (float) env('ATTENDANCE_MIN_BRIGHTNESS', 30),

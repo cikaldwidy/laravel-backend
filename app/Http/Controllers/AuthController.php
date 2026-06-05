@@ -103,6 +103,9 @@ class AuthController extends Controller
         try {
             $response = Http::asForm()
                 ->timeout(5)
+                ->withOptions([
+                    'verify' => (bool) config('services.turnstile.verify_ssl', true),
+                ])
                 ->post(config('services.turnstile.verify_url'), [
                     'secret' => config('services.turnstile.secret_key'),
                     'response' => $token,
@@ -119,7 +122,17 @@ class AuthController extends Controller
 
             $payload = $response->json();
 
-            return (bool) ($payload['success'] ?? false);
+            if (!($payload['success'] ?? false)) {
+                Log::warning('Turnstile verification rejected.', [
+                    'error_codes' => $payload['error-codes'] ?? [],
+                    'hostname' => $payload['hostname'] ?? null,
+                    'action' => $payload['action'] ?? null,
+                ]);
+
+                return false;
+            }
+
+            return true;
         } catch (\Throwable $e) {
             Log::warning('Turnstile verification exception.', [
                 'message' => $e->getMessage(),

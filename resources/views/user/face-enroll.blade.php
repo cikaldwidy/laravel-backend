@@ -25,24 +25,178 @@
     50% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(59,130,246,0.08), 0 0 0 22px rgba(59,130,246,0.03); }
 }
 
+@keyframes enrollment-step-pop {
+    0% { transform: scale(0.88); }
+    70% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+}
+
 .face-enroll-shell {
     width: 100%;
 }
 
 .face-enroll-stage {
     aspect-ratio: 18 / 9;
+    flex: 1 1 auto;
+    min-height: 22rem;
     background: #ffffff;
-    border: 1px solid rgba(191, 219, 254, 0.9);
+    border: 1px solid rgba(191, 219, 254, 0.85);
+    border-radius: 0.75rem;
+    box-shadow: inset 0 0 0 1px rgba(219, 234, 254, 0.55);
+}
+
+.face-stage-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
 }
 
 .face-guide {
-    width: min(82vw, 29rem);
-    height: min(82vw, 29rem);
+    aspect-ratio: 1 / 1;
+    flex: 0 0 auto;
+    width: clamp(18rem, 34vw, 25rem);
+    height: auto;
 }
 
 .camera-panel {
-    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #dbeafe;
     background: #ffffff;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.06);
+}
+
+.enroll-side-panel {
+    height: 100%;
+    border: 1px solid #dbeafe;
+    background: #ffffff;
+    box-shadow: 0 18px 42px rgba(37, 99, 235, 0.08);
+}
+
+.enroll-guide-item {
+    border: 1px solid #e0ecff;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.enroll-guide-icon {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.enroll-guide-text {
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.enroll-status {
+    margin: 1rem auto 0;
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.enroll-status.is-error {
+    color: #dc2626;
+}
+
+.enrollment-timeline {
+    position: relative;
+    display: grid;
+    gap: 0;
+}
+
+.enrollment-step {
+    --step-color: #cbd5e1;
+    position: relative;
+    display: grid;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    gap: 1rem;
+    min-height: 4.75rem;
+}
+
+.enrollment-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 1.25rem;
+    top: 2.55rem;
+    bottom: 0.35rem;
+    width: 3px;
+    border-radius: 9999px;
+    background: var(--step-color);
+    transition: background 0.25s ease;
+}
+
+.enrollment-step-marker {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 2.5rem;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: 2px solid var(--step-color);
+    background: #ffffff;
+    color: var(--step-color);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+
+.enrollment-step-marker i {
+    font-size: 0.95rem;
+}
+
+.enrollment-step-title {
+    color: #64748b;
+    font-size: 1rem;
+    line-height: 1.35;
+}
+
+.enrollment-step-badge {
+    display: none;
+}
+
+.enrollment-step.is-current {
+    --step-color: #6366f1;
+}
+
+.enrollment-step.is-current .enrollment-step-title {
+    color: #334155;
+}
+
+.enrollment-step.is-current .enrollment-step-marker,
+.enrollment-step.is-complete .enrollment-step-marker {
+    animation: enrollment-step-pop 0.32s ease;
+}
+
+.enrollment-step.is-current .enrollment-step-badge {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.enrollment-step.is-complete {
+    --step-color: #22c55e;
+}
+
+.enrollment-step.is-complete .enrollment-step-marker {
+    background: #22c55e;
+    color: #ffffff;
+}
+
+.enrollment-step.is-complete .enrollment-step-title {
+    color: #166534;
+}
+
+.enrollment-step.is-complete .enrollment-step-badge {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+@media (max-width: 420px) {
+    .enrollment-step-title {
+        font-size: 0.92rem;
+    }
 }
 
 /* ── blur mask luar lingkaran ── */
@@ -89,6 +243,12 @@
 }
 
 .camera-guide-badge {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: max-content;
+    max-width: calc(100% - 2rem);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -225,10 +385,18 @@
 }
 
 @media (max-width: 640px) {
-    .face-enroll-stage { aspect-ratio: 5 / 6; }
+    .face-enroll-stage {
+        aspect-ratio: 5 / 6;
+        min-height: 0;
+    }
+    .face-stage-overlay {
+        padding: 1rem;
+    }
     .face-guide {
-        width: min(86vw, 21rem);
-        height: min(86vw, 21rem);
+        width: min(78vw, 23rem);
+    }
+    .enroll-status {
+        margin-top: 0.75rem;
     }
 }
 </style>
@@ -236,10 +404,13 @@
 <div class="px-6 md:px-10 mt-5">
     <div class="relative p-5">
         <div class="absolute top-10 left-0 w-full h-[2px] bg-gray-300"></div>
+        <div class="absolute top-10 left-0 h-[2px] w-1/3 bg-blue-600"></div>
 
         <div class="flex justify-between relative z-10 text-[8px] md:text-sm text-gray-500 tracking-[1px]">
             <div class="flex flex-col items-center">
-                <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold">1</div>
+                <div class="w-10 h-10 flex items-center justify-center rounded-full bg-blue-600 text-white font-bold">
+                    <i class="fa-solid fa-check"></i>
+                </div>
                 <span class="mt-1 text-blue-600 font-semibold">LOGIN</span>
             </div>
 
@@ -263,41 +434,71 @@
 
 <div class="px-6 md:px-10 pb-7">
     <div class="face-enroll-shell">
-        <div class="mx-auto">
-            <div class="mb-8 w-full rounded-md border border-blue-100 bg-white p-6 md:p-8 text-left shadow-[0_18px_40px_rgba(37,99,235,0.08)]">
-                <div class="flex flex-col gap-7 md:flex-row md:items-center">
-                    <div class="md:w-72 md:shrink-0 flex justify-center">
-                        <img src="{{ asset('img/img-pendaftaran.png') }}" alt="Pendaftaran Wajah" class="w-52 md:w-64 h-auto">
-                    </div>
+        <div class="mx-auto grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-stretch">
+            <div class="enroll-side-panel order-3 w-full rounded-xl p-6 text-left lg:order-none lg:col-start-2 lg:row-start-1">
+                <div>
                     <div class="flex-1">
                         <span class="inline-flex items-center px-2 py-1.5 text-xs font-semibold uppercase tracking-[1.5px] text-blue-600">
                             Panduan Pendaftaran Wajah 
                         </span>
-                        <div class="mt-3 space-y-4 text-sm md:text-[15px] text-slate-600 tracking-[.2px]">
-                            <p class="flex items-center gap-4 rounded-md bg-white/75 p-2 ring-1 ring-blue-50">
-                                <span class="flex h-12 w-12 shrink-0 items-center justify-center self-center rounded-full bg-blue-50 text-blue-600">
+                        <div class="mt-3 space-y-3 text-slate-600 tracking-[.2px]">
+                            <p class="enroll-guide-item flex items-center gap-3 rounded-lg p-3">
+                                <span class="enroll-guide-icon flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full text-sm">
                                     <i class="fa-regular fa-face-smile"></i>
                                 </span>
-                                <span class="self-center leading-relaxed">Hadapkan wajah ke kamera dan pastikan posisi berada di tengah bingkai.</span>
+                                <span class="enroll-guide-text self-center">Hadapkan wajah ke kamera dan pastikan posisi berada di tengah bingkai.</span>
                             </p>
-                            <p class="flex items-center gap-4 rounded-md bg-white/75 p-2 ring-1 ring-blue-50">
-                                <span class="flex h-12 w-12 shrink-0 items-center justify-center self-center rounded-full bg-blue-50 text-blue-600">
+                            <p class="enroll-guide-item flex items-center gap-3 rounded-lg p-3">
+                                <span class="enroll-guide-icon flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full text-sm">
                                     <i class="fa-regular fa-lightbulb"></i>
                                 </span>
-                                <span class="self-center leading-relaxed">Gunakan pencahayaan cukup agar sistem dapat membaca wajah dengan stabil.</span>
+                                <span class="enroll-guide-text self-center">Gunakan pencahayaan cukup agar sistem dapat membaca wajah dengan stabil.</span>
                             </p>
-                            <p class="flex items-center gap-4 rounded-2xl bg-white/75 p-2 ring-1 ring-blue-50">
-                                <span class="flex h-12 w-12 shrink-0 items-center justify-center self-center rounded-full bg-blue-50 text-blue-600">
+                            <p class="enroll-guide-item flex items-center gap-3 rounded-lg p-3">
+                                <span class="enroll-guide-icon flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full text-sm">
                                     <i class="fa-solid fa-arrows-rotate"></i>
                                 </span>
-                                <span class="self-center leading-relaxed">Sampel akan tersimpan otomatis setelah wajah jelas dan kedipan terverifikasi.</span>
+                                <span class="enroll-guide-text self-center">Sampel akan tersimpan otomatis setelah wajah jelas dan kedipan terverifikasi.</span>
                             </p>
+                        </div>
+
+                        <div class="mt-6 border-t border-blue-50 pt-5">
+                            <ol id="enrollmentTimeline" class="enrollment-timeline">
+                                <li class="enrollment-step is-current" data-step-index="0" data-step-icon="fa-solid fa-eye">
+                                    <span class="enrollment-step-marker">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </span>
+                                    <span class="pt-0.5">
+                                        <span class="enrollment-step-title block font-semibold">Kedipkan mata</span>
+                                        <span class="enrollment-step-badge mt-1">Langkah aktif</span>
+                                    </span>
+                                </li>
+                                <li class="enrollment-step" data-step-index="1" data-step-icon="fa-solid fa-arrow-right">
+                                    <span class="enrollment-step-marker">
+                                        <i class="fa-solid fa-arrow-right"></i>
+                                    </span>
+                                    <span class="pt-0.5">
+                                        <span class="enrollment-step-title block font-semibold">Hadapkan wajah ke kanan</span>
+                                        <span class="enrollment-step-badge mt-1">Menunggu</span>
+                                    </span>
+                                </li>
+                                <li class="enrollment-step" data-step-index="2" data-step-icon="fa-solid fa-arrow-left">
+                                    <span class="enrollment-step-marker">
+                                        <i class="fa-solid fa-arrow-left"></i>
+                                    </span>
+                                    <span class="pt-0.5">
+                                        <span class="enrollment-step-title block font-semibold">Hadapkan wajah ke kiri</span>
+                                        <span class="enrollment-step-badge mt-1">Menunggu</span>
+                                    </span>
+                                </li>
+                            </ol>
+                            <p id="sampleStepNote" class="sr-only">Langkah 1: Kedipkan mata.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="camera-panel rounded-md p-4 md:p-5">
+            <div class="camera-panel order-1 rounded-xl p-4 md:p-5 lg:col-start-1 lg:row-start-1">
                 <div id="iosSafariHandoff" class="hidden mb-4 rounded-md border border-blue-200 bg-blue-50 p-4">
                     <p class="text-sm font-bold text-blue-800">Kamera iPhone PWA kurang stabil</p>
                     <p class="mt-1 text-xs leading-relaxed text-blue-700">
@@ -313,30 +514,26 @@
                     </div>
                 </div>
 
-                <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <p class="text-sm font-semibold uppercase tracking-[1.4px] text-blue-600">Area Kamera</p>
-                        <p class="mt-1 text-sm text-slate-500">Aktifkan kamera, lalu ikuti instruksi sampai 3 sampel wajah tersimpan.</p>
-                    </div>
-                    <div class="flex flex-col gap-3 w-full md:w-auto md:items-end">
-                        <div id="cameraStatusBadge" class="inline-flex items-center gap-2 self-start border border-gray-200 bg-gray-100 px-2 py-1.5 text-xs font-medium tracking-[.3px] text-slate-500 md:self-end">
-                            <i id="cameraStatusIcon" class="fa-solid fa-camera-slash"></i>
-                            <span id="cameraStatusText">Kamera mati</span>
+                <div class="mb-4 space-y-4">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold uppercase tracking-[1.4px] text-blue-600">Area Kamera</p>
+                            <p class="mt-1 max-w-3xl text-sm leading-relaxed text-slate-500">Aktifkan kamera, lalu ikuti instruksi sampai 3 sampel wajah tersimpan.</p>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full md:min-w-[360px]">
-                        <button type="button" id="startCamera" class="w-full rounded-md bg-blue-600 px-4 py-2 text-xs font-semibold tracking-[.5px] text-white transition hover:bg-blue-700 hover:shadow-lg">
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(14rem,18rem)_minmax(9rem,12rem)] lg:justify-end">
+                        <button type="button" id="startCamera" class="h-11 w-full rounded-lg bg-blue-600 px-4 text-xs font-semibold tracking-[.5px] text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md">
                             <i class="fa-solid fa-camera mr-2"></i>AKTIFKAN KAMERA
                         </button>
-                        <button type="button" id="resetSamples" class="w-full rounded-md border border-red-200 bg-white px-4 py-2 text-xs font-semibold tracking-[.5px] text-red-500 transition hover:bg-red-50">
+                        <button type="button" id="resetSamples" class="h-11 w-full rounded-lg border border-red-200 bg-white px-4 text-xs font-semibold tracking-[.5px] text-red-500 transition hover:bg-red-50">
                             RESET
                         </button>
-                        </div>
                     </div>
                 </div>
 
                 <div id="enrollStage" class="face-enroll-stage relative overflow-hidden">
                     <video id="video" autoplay muted playsinline class="w-full h-full object-cover opacity-0 transition-opacity duration-300"></video>
-                    <div class="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                    <div class="face-stage-overlay absolute inset-0 pointer-events-none flex flex-col">
                       <div id="headGuide" class="face-guide relative transition-transform duration-500 ease-out">
 
     <!-- BLUR LUAR LINGKARAN (box-shadow trick, bukan backdrop-filter) -->
@@ -358,30 +555,10 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <p id="status" class="mt-5 text-sm text-gray-500 text-center tracking-[.3px]">
-                Siapkan kamera untuk mulai proses pendaftaran.
-            </p>
-
-            <div class="mt-6">
-                <div class="rounded-md border bg-white p-4 sm:p-5">
-                    <div class="flex items-center justify-between text-sm font-semibold text-gray-700">
-                        <p class="tracking-[.3px]">Wajah Disimpan</p>
-                        <p id="sampleCount">0 / 3</p>
-                    </div>
-
-                    <div class="mt-4 h-3 w-full overflow-hidden rounded-full bg-blue-100 ring-1 ring-blue-200/70">
-                        <div id="sampleProgressBar" class="h-full w-0 rounded-full bg-gradient-to-r from-sky-400 via-blue-500 to-blue-600 transition-all duration-300 ease-out"></div>
-                    </div>
-
-                    <p class="mt-3 text-xs text-gray-500 tracking-[.3px]">
-                        Progress akan bertambah otomatis setiap sampel wajah berhasil disimpan.
-                    </p>
-                    <p id="sampleStepNote" class="mt-2 text-sm font-medium tracking-[.5px] text-blue-600">
-                        Langkah 1: Kedipkan mata.
-                    </p>
-                </div>
+                <p id="status" class="enroll-status tracking-[.3px]">
+                    Siapkan kamera untuk mulai proses pendaftaran.
+                </p>
             </div>
 
             <canvas id="captureCanvas" class="hidden"></canvas>
@@ -402,8 +579,8 @@ const cameraStatusIcon = document.getElementById('cameraStatusIcon');
 const cameraStatusText = document.getElementById('cameraStatusText');
 const statusText = document.getElementById('status');
 const sampleCount = document.getElementById('sampleCount');
-const sampleProgressBar = document.getElementById('sampleProgressBar');
 const sampleStepNote = document.getElementById('sampleStepNote');
+const enrollmentTimelineSteps = document.querySelectorAll('[data-step-index]');
 const canvas = document.getElementById('captureCanvas');
 const headGuide = document.getElementById('headGuide');
 const headFrame = document.getElementById('headFrame');
@@ -426,8 +603,11 @@ const MAX_BRIGHTNESS = 210;
 const MIN_SHARPNESS = 10;
 const BLINK_OPEN_EAR = 0.17;
 const BLINK_CLOSED_EAR = 0.145;
-const BLINK_DROP_RATIO = 0.9;
-const TURN_THRESHOLD = 0.035;
+const BLINK_DROP_RATIO = 0.82;
+const BLINK_OPEN_STABLE_FRAMES = 4;
+const BLINK_CLOSED_STABLE_FRAMES = 1;
+const TURN_THRESHOLD = 0.085;
+const TURN_STABLE_FRAMES = 6;
 const BLINK_CAPTURE_WINDOW_MS = 2200;
 const BLINK_COOLDOWN_MS = 900;
 const CAMERA_RESPONSE_TIMEOUT_MS = 7000;
@@ -453,8 +633,12 @@ let blinkVerifiedAt = 0;
 let eyesWereOpen = false;
 let lastEar = null;
 let maxOpenEar = 0;
+let openEyeFrames = 0;
 let blinkCloseFrames = 0;
+let blinkCloseCandidate = false;
 let blinkCooldownUntil = 0;
+let stableTurnDirection = 'center';
+let stableTurnFrames = 0;
 let lastNoFaceFeedbackAt = 0;
 let lastVideoWaitingFeedbackAt = 0;
 let detectionErrorCount = 0;
@@ -486,8 +670,8 @@ function setScanAnimationActive(isActive) {
     }
     if (cameraStatusBadge && cameraStatusIcon && cameraStatusText) {
         cameraStatusBadge.className = isActive
-            ? 'inline-flex items-center gap-2 self-start rounded-full border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold tracking-[.4px] text-blue-600 md:self-end'
-            : 'inline-flex items-center gap-2 self-start rounded-full border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-semibold tracking-[.4px] text-slate-500 md:self-end';
+            ? 'inline-flex h-9 min-w-36 shrink-0 items-center justify-center gap-2 self-start whitespace-nowrap rounded-lg border border-blue-200 bg-blue-50 px-3 text-xs font-semibold tracking-[.4px] text-blue-600 lg:self-start'
+            : 'inline-flex h-9 min-w-36 shrink-0 items-center justify-center gap-2 self-start whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-semibold tracking-[.4px] text-slate-500 lg:self-start';
         cameraStatusIcon.className = isActive ? 'fa-solid fa-camera' : 'fa-solid fa-camera-slash';
         cameraStatusText.textContent = isActive ? 'Kamera aktif' : 'Kamera mati';
     }
@@ -495,9 +679,7 @@ function setScanAnimationActive(isActive) {
 
 function updateStatus(message, isError = false) {
     statusText.textContent = message;
-    statusText.className = isError
-        ? 'mt-4 text-sm text-red-500 text-center md:text-left'
-        : 'mt-4 text-sm text-gray-500 text-center md:text-left';
+    statusText.className = `enroll-status tracking-[.3px]${isError ? ' is-error' : ''}`;
 }
 
 function setupSafariHandoff() {
@@ -554,6 +736,16 @@ function setBlinkVerified(value) {
     blinkVerifiedAt = value ? Date.now() : 0;
 }
 
+function resetBlinkState() {
+    eyesWereOpen = false;
+    lastEar = null;
+    maxOpenEar = 0;
+    openEyeFrames = 0;
+    blinkCloseFrames = 0;
+    blinkCloseCandidate = false;
+    blinkCooldownUntil = 0;
+}
+
 function updateStepNote() {
     if (!sampleStepNote) return;
 
@@ -565,17 +757,38 @@ function updateStepNote() {
     sampleStepNote.textContent = ENROLLMENT_STEPS[descriptors.length];
 }
 
+function updateEnrollmentTimeline() {
+    enrollmentTimelineSteps.forEach((step) => {
+        const stepIndex = Number(step.dataset.stepIndex);
+        const isComplete = stepIndex < descriptors.length;
+        const isCurrent = stepIndex === descriptors.length && descriptors.length < REQUIRED_SAMPLES;
+        const markerIcon = step.querySelector('.enrollment-step-marker i');
+        const badge = step.querySelector('.enrollment-step-badge');
+
+        step.classList.toggle('is-complete', isComplete);
+        step.classList.toggle('is-current', isCurrent);
+
+        if (markerIcon) {
+            markerIcon.className = isComplete ? 'fa-solid fa-check' : step.dataset.stepIcon;
+        }
+
+        if (badge) {
+            badge.textContent = isComplete ? 'Berhasil' : (isCurrent ? 'Langkah aktif' : 'Menunggu');
+        }
+    });
+}
+
 function updateFrameIndicator(isValid) {
     headFrame.classList.toggle('valid', isValid);
     headFrame.classList.toggle('invalid', !isValid);
 }
 
 function updateSampleCount() {
-    sampleCount.textContent = `${descriptors.length} / ${REQUIRED_SAMPLES}`;
-    if (sampleProgressBar) {
-        sampleProgressBar.style.width = `${(descriptors.length / REQUIRED_SAMPLES) * 100}%`;
+    if (sampleCount) {
+        sampleCount.textContent = `${descriptors.length} / ${REQUIRED_SAMPLES}`;
     }
     updateStepNote();
+    updateEnrollmentTimeline();
 }
 
 function isFaceInsideGuide(box) {
@@ -613,28 +826,32 @@ function detectBlink(landmarks) {
     lastEar = ear;
 
     maxOpenEar = Math.max(maxOpenEar, ear);
-    const adaptiveOpenThreshold = Math.max(BLINK_OPEN_EAR, maxOpenEar * 0.88);
+    const adaptiveOpenThreshold = Math.max(BLINK_OPEN_EAR, maxOpenEar * 0.86);
     const adaptiveClosedThreshold = Math.max(BLINK_CLOSED_EAR, maxOpenEar * BLINK_DROP_RATIO);
 
     if (ear >= adaptiveOpenThreshold) {
-        if (eyesWereOpen && blinkCloseFrames >= 1 && now >= blinkCooldownUntil) {
+        openEyeFrames += 1;
+        eyesWereOpen = openEyeFrames >= BLINK_OPEN_STABLE_FRAMES;
+
+        if (eyesWereOpen && blinkCloseCandidate && blinkCloseFrames >= BLINK_CLOSED_STABLE_FRAMES && now >= blinkCooldownUntil) {
             blinkCloseFrames = 0;
+            blinkCloseCandidate = false;
             blinkCooldownUntil = now + BLINK_COOLDOWN_MS;
             return true;
         }
 
-        eyesWereOpen = true;
         blinkCloseFrames = 0;
         return false;
     }
 
     if (eyesWereOpen && ear <= adaptiveClosedThreshold && now >= blinkCooldownUntil) {
+        blinkCloseCandidate = true;
         blinkCloseFrames += 1;
-        if (blinkCloseFrames >= 2 && maxOpenEar > 0 && ear <= maxOpenEar * BLINK_DROP_RATIO) {
-            blinkCooldownUntil = now + BLINK_COOLDOWN_MS;
-            blinkCloseFrames = 0;
-            return true;
-        }
+        return false;
+    }
+
+    if (ear < adaptiveOpenThreshold) {
+        openEyeFrames = Math.max(0, openEyeFrames - 1);
     }
 
     return false;
@@ -651,6 +868,27 @@ function getHeadTurnDirection(landmarks, faceBox) {
     if (horizontalOffset >= TURN_THRESHOLD) return 'right';
     if (horizontalOffset <= -TURN_THRESHOLD) return 'left';
     return 'center';
+}
+
+function updateTurnStability(direction) {
+    if (direction === stableTurnDirection) {
+        stableTurnFrames += 1;
+    } else {
+        stableTurnDirection = direction;
+        stableTurnFrames = 1;
+    }
+
+    return {
+        direction: stableTurnDirection,
+        frames: stableTurnFrames,
+        isStable: stableTurnFrames >= TURN_STABLE_FRAMES,
+    };
+}
+
+function hasStableHeadTurn(requiredDirection, currentDirection) {
+    const stability = updateTurnStability(currentDirection);
+
+    return stability.direction === requiredDirection && stability.isStable;
 }
 
 function getHeadTurnFeedback(direction, step) {
@@ -1010,11 +1248,9 @@ function resetSamples() {
     detectionErrorCount = 0;
     lastNoFaceFeedbackAt = 0;
     lastVideoWaitingFeedbackAt = 0;
-    eyesWereOpen = false;
-    lastEar = null;
-    maxOpenEar = 0;
-    blinkCloseFrames = 0;
-    blinkCooldownUntil = 0;
+    resetBlinkState();
+    stableTurnDirection = 'center';
+    stableTurnFrames = 0;
     setBlinkVerified(false);
     updateSampleCount();
     updateFrameIndicator(false);
@@ -1133,14 +1369,14 @@ function startEnrollmentTracking() {
                 return;
             }
 
-            if (descriptors.length === 1 && headTurnDirection !== 'right') {
+            if (descriptors.length === 1 && !hasStableHeadTurn('right', headTurnDirection)) {
                 const feedback = getHeadTurnFeedback(headTurnDirection, 1);
                 guideInstruction.textContent = feedback.guide;
                 updateStatus(feedback.status, true);
                 return;
             }
 
-            if (descriptors.length === 2 && headTurnDirection !== 'left') {
+            if (descriptors.length === 2 && !hasStableHeadTurn('left', headTurnDirection)) {
                 const feedback = getHeadTurnFeedback(headTurnDirection, 2);
                 guideInstruction.textContent = feedback.guide;
                 updateStatus(feedback.status, true);
@@ -1197,6 +1433,7 @@ async function startCamera() {
         setScanAnimationActive(true);
         updateStatus('Kamera aktif. Menyiapkan deteksi wajah...');
         await loadModels();
+        resetBlinkState();
         startEnrollmentTracking();
         updateStatus('Kamera aktif. Sistem akan mengambil sampel otomatis saat wajah jelas.');
     } catch (error) {

@@ -28,12 +28,16 @@ class FaceEnrollmentController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = Auth::user();
+        $verificationFailed = (bool) session('face_verification_failed', false);
 
-        if (!$user->hasFaceEnrollment()) {
+        if (!$user->hasFaceEnrollment() && !$verificationFailed) {
             return redirect()->route('face.enroll');
         }
 
-        return view('user.verification-progress');
+        return view('user.verification-progress', [
+            'verificationFailed' => $verificationFailed,
+            'verificationMessage' => session('face_verification_message', 'Wajah yang terlihat di setiap langkah berbeda. Ulangi pendaftaran dan pastikan orang yang sama mengikuti semua instruksi.'),
+        ]);
     }
 
     public function showSuccess()
@@ -104,10 +108,14 @@ class FaceEnrollmentController extends Controller
         }
 
         if (!$this->hasConsistentEnrollmentSamples($embedding, $descriptorSamples)) {
+            session()->flash('face_verification_failed', true);
+            session()->flash('face_verification_message', 'Wajah yang terlihat di setiap langkah berbeda. Ulangi pendaftaran dan pastikan orang yang sama mengikuti semua instruksi.');
+
             return response()->json([
-                'status' => 'error',
-                'message' => 'Sampel pendaftaran wajah tidak konsisten. Pastikan hanya wajah pemilik akun yang digunakan.',
-            ], 422);
+                'status' => 'failed',
+                'message' => 'Wajah tidak cocok. Mengalihkan ke halaman verifikasi.',
+                'redirect' => route('face.verify.progress'),
+            ]);
         }
 
         if ($this->isFaceRegisteredToAnotherUser(Auth::id(), $embedding, $descriptorSamples)) {
@@ -180,11 +188,20 @@ class FaceEnrollmentController extends Controller
 
     private function hasConsistentEnrollmentSamples(array $embedding, array $descriptorSamples): bool
     {
-        $averageThreshold = (float) config('attendance.enrollment_average_threshold', 0.45);
-        $consistencyThreshold = (float) config('attendance.enrollment_consistency_threshold', 0.55);
+        $averageThreshold = (float) config('attendance.enrollment_average_threshold', 0.38);
+        $consistencyThreshold = (float) config('attendance.enrollment_consistency_threshold', 0.42);
+        $referenceSample = $descriptorSamples[0] ?? null;
+
+        if (!is_array($referenceSample) || count($referenceSample) !== 128) {
+            return false;
+        }
 
         foreach ($descriptorSamples as $sample) {
             if ($this->compareEmbeddings($embedding, $sample) > $averageThreshold) {
+                return false;
+            }
+
+            if ($this->compareEmbeddings($referenceSample, $sample) > $consistencyThreshold) {
                 return false;
             }
         }
