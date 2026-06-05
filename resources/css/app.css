@@ -14,18 +14,20 @@
 @layer components {
     .user-phone > main {
         width: 100%;
-        max-width: 72rem;
+        max-width: none;
         margin-left: auto;
         margin-right: auto;
-        padding-left: clamp(0.75rem, 2vw, 2rem) !important;
-        padding-right: clamp(0.75rem, 2vw, 2rem) !important;
+        padding-left: clamp(0.75rem, 3vw, 3rem) !important;
+        padding-right: clamp(0.75rem, 3vw, 3rem) !important;
     }
 
     .user-phone > header {
         width: 100%;
-        max-width: 72rem;
+        max-width: none;
         margin-left: auto;
         margin-right: auto;
+        padding-left: clamp(1rem, 3vw, 3rem) !important;
+        padding-right: clamp(1rem, 3vw, 3rem) !important;
     }
 
     @media (max-width: 480px) {
@@ -37,16 +39,12 @@
 
     .user-page {
         @apply min-h-[100dvh] w-full bg-slate-50 flex justify-center;
-        background:
-            radial-gradient(circle at top left, rgb(220 38 38 / 0.09), transparent 26rem),
-            radial-gradient(circle at bottom right, rgb(37 99 235 / 0.13), transparent 30rem),
-            #f8fafc;
+        background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 48%, #f8fafc 100%);
     }
 
     .user-phone {
         @apply w-full min-h-[100dvh] relative overflow-x-hidden pb-[calc(6rem+env(safe-area-inset-bottom))];
-        background:
-            linear-gradient(180deg, rgb(239 246 255 / 0.9) 0%, rgb(248 250 252 / 1) 46%, rgb(255 241 242 / 0.42) 100%);
+        background: transparent;
     }
 
     .user-header {
@@ -58,7 +56,7 @@
     }
 
     .user-card {
-        @apply bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm;
+        @apply bg-white/90 backdrop-blur rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-900/5;
     }
 
     .user-soft-card {
@@ -82,7 +80,7 @@
     }
 
     .user-bottom-nav-inner {
-        @apply w-full max-w-6xl h-16 bg-white border-t shadow-xl flex items-center justify-around rounded-t-2xl;
+        @apply w-full h-16 bg-white/95 backdrop-blur border-t border-slate-200 shadow-xl shadow-slate-900/10 flex items-center justify-around rounded-t-2xl;
     }
 
     .user-nav-link {

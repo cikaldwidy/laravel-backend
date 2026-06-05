@@ -8,6 +8,7 @@
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         align-items: start;
+        gap: 1rem;
     }
 
     .user-dashboard-main > .span-full {
@@ -20,7 +21,47 @@
     }
 
     .dashboard-menu-card {
-        min-height: 5.75rem;
+        min-height: 6.75rem;
+        border: 1px solid rgb(226 232 240 / 0.82);
+        background: rgb(255 255 255 / 0.94);
+        box-shadow: 0 12px 28px rgb(15 23 42 / 0.06);
+    }
+
+    .dashboard-menu-card:hover {
+        transform: translateY(-2px);
+        border-color: rgb(37 99 235 / 0.28);
+        box-shadow: 0 18px 38px rgb(37 99 235 / 0.11);
+    }
+
+    .dashboard-panel {
+        border: 1px solid rgb(226 232 240 / 0.85);
+        background: rgb(255 255 255 / 0.94);
+        box-shadow: 0 14px 34px rgb(15 23 42 / 0.07);
+    }
+
+    .dashboard-header-card {
+        border: 1px solid rgb(226 232 240 / 0.88);
+        background:
+            linear-gradient(135deg, rgb(255 255 255 / 0.96), rgb(239 246 255 / 0.9));
+        box-shadow: 0 16px 42px rgb(15 23 42 / 0.08);
+    }
+
+    .dashboard-clock-card {
+        min-width: min(17rem, 100%);
+        background: linear-gradient(135deg, #1d4ed8, #0f766e);
+        color: white;
+    }
+
+    .dashboard-history-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 0.75rem;
+    }
+
+    .dashboard-history-card {
+        border: 1px solid rgb(226 232 240 / 0.82);
+        background: rgb(255 255 255 / 0.94);
+        box-shadow: 0 10px 28px rgb(15 23 42 / 0.06);
     }
 
     .notification-panel {
@@ -57,17 +98,31 @@
         .dashboard-menu-grid {
             grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
         }
+
+        .dashboard-history-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
     }
 
     @media (min-width: 1024px) {
         .user-dashboard-main {
             grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
         }
+
+        .dashboard-header-card {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+        }
     }
 
     @media (min-width: 1180px) {
         .user-dashboard-main {
-            grid-template-columns: minmax(36rem, 1fr) minmax(24rem, 30rem);
+            grid-template-columns: minmax(42rem, 1fr) minmax(24rem, 32rem);
+        }
+
+        .dashboard-menu-grid {
+            grid-template-columns: repeat(auto-fit, minmax(8.25rem, 1fr));
         }
     }
 </style>
@@ -93,20 +148,35 @@
     $shiftLabel = $hasScheduledShift ? $scheduledShift->nama_shift : null;
     $announcementCount = $announcements->count();
     $featureSettings = \App\Models\FeatureSetting::matrix();
+    $userName = auth()->user()->name ?? 'Akun User';
+    $userInitial = strtoupper(substr(trim($userName) ?: 'U', 0, 1));
 @endphp
 
 <div class="user-page">
     <div class="user-phone">
         <header class="dashboard-header px-4">
-            <div class="flex items-center justify-between gap-3">
-                <div class="min-w-0">
-                    <p class="text-sm font-semibold text-slate-700 leading-tight">{{ auth()->user()->name }}</p>
-                    <p class="text-xs text-slate-500 leading-tight">Akun User</p>
+            <div class="dashboard-header-card rounded-2xl p-4 sm:p-5 gap-4">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="h-12 w-12 shrink-0 rounded-2xl bg-blue-700 text-white flex items-center justify-center text-lg font-extrabold shadow-lg shadow-blue-700/20">
+                        {{ $userInitial }}
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[11px] uppercase tracking-[0.14em] font-bold text-blue-700">Dashboard Presensi</p>
+                        <p class="mt-1 text-base sm:text-lg font-extrabold text-slate-900 leading-tight truncate">{{ $userName }}</p>
+                        <p class="text-xs text-slate-500 leading-tight">Akun User</p>
+                    </div>
                 </div>
 
-                <div class="dashboard-top-actions flex items-center gap-2 shrink-0">
+                <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between lg:mt-0 lg:justify-end">
+                    <div class="dashboard-clock-card rounded-2xl px-4 py-3 shadow-lg shadow-blue-900/10">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.12em] text-white/75">Waktu Sekarang</p>
+                        <div id="bigClock" class="mt-1 text-3xl sm:text-4xl font-extrabold tracking-tight leading-none">--:--:--</div>
+                        <div class="mt-1 text-xs font-semibold text-white/80">{{ now()->translatedFormat('l, d F Y') }}</div>
+                    </div>
+
+                    <div class="dashboard-top-actions flex items-center gap-2 shrink-0">
                     <div class="relative" id="notificationWrap" data-feed-url="{{ route('announcements.feed', [], false) }}">
-                        <button type="button" id="notificationButton" class="dashboard-top-button relative w-11 h-11 rounded-xl bg-white/70 hover:bg-white text-blue-700 flex items-center justify-center shadow-sm border border-white/60">
+                        <button type="button" id="notificationButton" class="dashboard-top-button relative w-11 h-11 rounded-xl bg-white hover:bg-blue-50 text-blue-700 flex items-center justify-center shadow-sm border border-slate-200 transition">
                             <i class="fa-solid fa-bell"></i>
                             @if($announcementCount > 0)
                                 <span id="notificationBadge" class="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">
@@ -162,57 +232,82 @@
 
                     <form method="POST" action="/logout" data-logout-form>
                         @csrf
-                        <button type="submit" class="dashboard-top-button w-11 h-11 rounded-xl bg-white/70 hover:bg-white text-slate-700 flex items-center justify-center shadow-sm border border-white/60">
+                        <button type="submit" class="dashboard-top-button w-11 h-11 rounded-xl bg-white hover:bg-red-50 text-slate-700 hover:text-red-600 flex items-center justify-center shadow-sm border border-slate-200 transition">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i>
                         </button>
                     </form>
+                    </div>
                 </div>
-            </div>
-
-            <div class="mt-5 flex flex-col items-center">
-                <div id="bigClock" class="text-4xl font-extrabold tracking-tight text-blue-800 leading-none">--:--:--</div>
-                <div class="mt-1 text-xs text-slate-500">{{ now()->translatedFormat('l, d F Y') }}</div>
             </div>
         </header>
 
         <main class="user-dashboard-main px-4 pt-4 gap-4">
             @if(!$hasScheduledShift)
-                <section class="span-full bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-sm shadow-sm">
-                    Shift kamu belum diatur oleh admin untuk hari ini. Absen hanya bisa dilakukan setelah ada jadwal shift.
+                <section class="span-full rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+                    <div class="flex items-start gap-3">
+                        <div class="mt-0.5 h-9 w-9 shrink-0 rounded-xl bg-white text-amber-700 flex items-center justify-center">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <p class="leading-relaxed">Shift kamu belum diatur oleh admin untuk hari ini. Absen hanya bisa dilakukan setelah ada jadwal shift.</p>
+                    </div>
                 </section>
             @elseif($isShiftOff)
-                <section class="span-full bg-slate-50 border border-slate-200 text-slate-700 rounded-2xl p-4 text-sm shadow-sm">
-                    Hari ini kamu dijadwalkan libur.
+                <section class="span-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 shadow-sm">
+                    <div class="flex items-start gap-3">
+                        <div class="mt-0.5 h-9 w-9 shrink-0 rounded-xl bg-white text-slate-600 flex items-center justify-center">
+                            <i class="fa-solid fa-bed"></i>
+                        </div>
+                        <p class="leading-relaxed">Hari ini kamu dijadwalkan libur.</p>
+                    </div>
                 </section>
             @endif
 
-            <section class="span-full bg-white/80 backdrop-blur rounded-2xl shadow-sm border border-white/70 overflow-hidden">
-                <div class="grid grid-cols-2 divide-x divide-slate-100">
-                    <div class="p-3 flex items-center gap-2 min-w-0">
-                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
+            <section class="span-full dashboard-panel rounded-2xl overflow-hidden">
+                <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Presensi Hari Ini</p>
+                        <p class="mt-1 text-lg font-extrabold text-slate-900">{{ $shiftLabel ?? 'Belum ada jadwal shift' }}</p>
+                    </div>
+                    <span class="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-extrabold {{ $statusBadgeClass }}">
+                        <span class="h-2 w-2 rounded-full bg-current"></span>
+                        {{ $statusHariIni }}
+                    </span>
+                </div>
+                <div class="grid grid-cols-1 border-t border-slate-100 sm:grid-cols-2 sm:divide-x sm:divide-slate-100">
+                    <div class="p-4 flex items-center gap-3 min-w-0">
+                        <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
                             <i class="fa-solid fa-right-to-bracket"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-[11px] text-slate-500 leading-tight">Jam Masuk</p>
-                            <p class="text-sm font-bold text-slate-800 leading-tight truncate">{{ $jamMasuk ?? $jadwalMasuk }}</p>
+                            <p class="text-xs font-semibold text-slate-500 leading-tight">Jam Masuk</p>
+                            <p class="mt-1 text-xl font-extrabold text-slate-900 leading-tight truncate">{{ $jamMasuk ?? $jadwalMasuk }}</p>
                             @if($shiftLabel)
-                                <p class="text-[11px] text-slate-500 leading-tight truncate">{{ $shiftLabel }}</p>
+                                <p class="text-xs text-slate-500 leading-tight truncate">Jadwal {{ $jadwalMasuk }}</p>
                             @endif
                         </div>
                     </div>
-                    <div class="p-3 flex items-center gap-2 min-w-0">
-                        <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
+                    <div class="p-4 flex items-center gap-3 min-w-0">
+                        <div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
                             <i class="fa-solid fa-camera"></i>
                         </div>
                         <div class="min-w-0">
-                            <p class="text-[11px] text-slate-500 leading-tight">Jam Pulang</p>
-                            <p class="text-sm font-bold text-slate-800 leading-tight truncate">{{ $jamPulang ?? ($shiftLabel ? $jadwalPulang : 'Belum Dijadwalkan') }}</p>
+                            <p class="text-xs font-semibold text-slate-500 leading-tight">Jam Pulang</p>
+                            <p class="mt-1 text-xl font-extrabold text-slate-900 leading-tight truncate">{{ $jamPulang ?? ($shiftLabel ? $jadwalPulang : 'Belum Dijadwalkan') }}</p>
+                            @if($shiftLabel)
+                                <p class="text-xs text-slate-500 leading-tight truncate">Jadwal {{ $jadwalPulang }}</p>
+                            @endif
                         </div>
                     </div>
                 </div>
             </section>
 
-            <section class="dashboard-menu-grid gap-3">
+            <section class="dashboard-panel rounded-2xl p-4">
+                <div class="mb-3 flex items-end justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-extrabold text-slate-900">Akses Cepat</p>
+                        <p class="text-xs text-slate-500">Pilih kebutuhan presensi kamu</p>
+                    </div>
+                </div>
                 @php
                     $menu = [
                         ['label' => 'Hadir', 'icon' => 'fa-user-check', 'badge' => $hadir, 'url' => route('history.index')],
@@ -224,44 +319,46 @@
                     ];
                 @endphp
 
-                @foreach($menu as $item)
-                    @continue(isset($item['feature']) && !($featureSettings[$item['feature']]['user'] ?? false))
-                    <a href="{{ $item['url'] ?? '#' }}"
-                       class="dashboard-menu-card relative bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm px-2 py-3 text-center active:scale-[0.99] transition">
-                        @if(($item['badge'] ?? 0) > 0)
-                            <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
-                                {{ (int) $item['badge'] }}
-                            </span>
-                        @endif
-                        <div class="w-10 h-10 mx-auto rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-                            <i class="fa-solid {{ $item['icon'] }}"></i>
-                        </div>
-                        <p class="mt-2 text-[11px] font-semibold text-slate-700 leading-tight">{{ $item['label'] }}</p>
-                    </a>
-                @endforeach
+                <div class="dashboard-menu-grid gap-3">
+                    @foreach($menu as $item)
+                        @continue(isset($item['feature']) && !($featureSettings[$item['feature']]['user'] ?? false))
+                        <a href="{{ $item['url'] ?? '#' }}"
+                           class="dashboard-menu-card group relative rounded-2xl px-3 py-4 text-center active:scale-[0.99] transition duration-150 focus:outline-none focus:ring-4 focus:ring-blue-600/15">
+                            @if(($item['badge'] ?? 0) > 0)
+                                <span class="absolute top-2 right-2 min-w-5 h-5 px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center">
+                                    {{ (int) $item['badge'] }}
+                                </span>
+                            @endif
+                            <div class="w-11 h-11 mx-auto rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center transition group-hover:bg-blue-700 group-hover:text-white">
+                                <i class="fa-solid {{ $item['icon'] }}"></i>
+                            </div>
+                            <p class="mt-3 text-xs font-extrabold text-slate-800 leading-tight">{{ $item['label'] }}</p>
+                        </a>
+                    @endforeach
+                </div>
             </section>
 
-            <section class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">
+            <section class="dashboard-panel rounded-2xl p-4">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-xs font-semibold text-slate-700">30 Hari terakhir</p>
+                        <p class="text-sm font-extrabold text-slate-900">30 Hari terakhir</p>
                         <p class="text-[11px] text-slate-500">Ringkasan absensi</p>
                     </div>
                     <span class="px-3 py-1 rounded-full text-xs font-bold {{ $statusBadgeClass }}">{{ $statusHariIni }}</span>
                 </div>
 
                 <div class="mt-3 grid grid-cols-3 gap-2 text-center">
-                    <div class="rounded-xl bg-blue-50 p-2">
-                        <p class="text-sm font-extrabold text-blue-700">{{ $hadir }}</p>
-                        <p class="text-[11px] text-slate-500">Hadir</p>
+                    <div class="rounded-xl bg-blue-50 p-3">
+                        <p class="text-lg font-extrabold text-blue-700">{{ $hadir }}</p>
+                        <p class="text-[11px] font-semibold text-slate-500">Hadir</p>
                     </div>
-                    <div class="rounded-xl bg-amber-50 p-2">
-                        <p class="text-sm font-extrabold text-amber-700">{{ $telat }}</p>
-                        <p class="text-[11px] text-slate-500">Telat</p>
+                    <div class="rounded-xl bg-amber-50 p-3">
+                        <p class="text-lg font-extrabold text-amber-700">{{ $telat }}</p>
+                        <p class="text-[11px] font-semibold text-slate-500">Telat</p>
                     </div>
-                    <div class="rounded-xl bg-red-50 p-2">
-                        <p class="text-sm font-extrabold text-red-600">{{ $izin }}</p>
-                        <p class="text-[11px] text-slate-500">Izin</p>
+                    <div class="rounded-xl bg-red-50 p-3">
+                        <p class="text-lg font-extrabold text-red-600">{{ $izin }}</p>
+                        <p class="text-[11px] font-semibold text-slate-500">Izin</p>
                     </div>
                 </div>
             </section>
@@ -272,73 +369,85 @@
                 </section>
             @endif
 
-            <section class="span-full space-y-3">
+            <section class="span-full">
                 @php
                     $shiftLabel = 'SHIFT 1';
                     $shiftJam = $jadwalMasuk . ' - ' . $jadwalPulang;
                 @endphp
 
-                @forelse($recentPresensis as $item)
-                    @php
-                        $itemTanggal = optional($item->tanggal)->translatedFormat('d F Y') ?? '-';
-                        $itemMasuk = $item->jam_masuk?->format('H:i');
-                        $itemPulang = $item->jam_keluar?->format('H:i');
-                        $itemRange = $itemMasuk
-                            ? ($itemMasuk . ' - ' . ($itemPulang ?? 'Belum Absen'))
-                            : 'Belum Absen';
-                        $itemStatus = $itemMasuk
-                            ? (in_array($item->status, ['telat', 'terlambat'], true) ? 'Telat' : 'Tepat Waktu')
-                            : 'Belum Absen';
-                        $itemBadge = !$itemMasuk
-                            ? 'bg-slate-100 text-slate-600'
-                            : (in_array($item->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700');
-                    @endphp
+                <div class="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-extrabold text-slate-900">Presensi Terbaru</p>
+                        <p class="text-xs text-slate-500">Aktivitas presensi terakhir kamu</p>
+                    </div>
+                    <a href="{{ route('history.index') }}" class="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-blue-700 shadow-sm border border-slate-200 hover:bg-blue-50 transition">
+                        Lihat semua
+                    </a>
+                </div>
 
-                    <div class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-4">
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex items-start gap-3">
-                                <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-                                    <i class="fa-solid fa-fingerprint"></i>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-semibold text-slate-800 leading-tight">{{ $itemTanggal }}</p>
-                                    <p class="text-[11px] text-slate-500 leading-tight">{{ $itemRange }}</p>
-                                    <span class="inline-flex mt-2 px-2.5 py-1 rounded-full text-[11px] font-bold {{ $itemBadge }}">{{ $itemStatus }}</span>
-                                </div>
-                            </div>
+                <div class="dashboard-history-grid">
+                    @forelse($recentPresensis as $item)
+                        @php
+                            $itemTanggal = optional($item->tanggal)->translatedFormat('d F Y') ?? '-';
+                            $itemMasuk = $item->jam_masuk?->format('H:i');
+                            $itemPulang = $item->jam_keluar?->format('H:i');
+                            $itemRange = $itemMasuk
+                                ? ($itemMasuk . ' - ' . ($itemPulang ?? 'Belum Absen'))
+                                : 'Belum Absen';
+                            $itemStatus = $itemMasuk
+                                ? (in_array($item->status, ['telat', 'terlambat'], true) ? 'Telat' : 'Tepat Waktu')
+                                : 'Belum Absen';
+                            $itemBadge = !$itemMasuk
+                                ? 'bg-slate-100 text-slate-600'
+                                : (in_array($item->status, ['telat', 'terlambat'], true) ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700');
+                        @endphp
 
-                            <div class="text-right">
-                                <p class="text-[11px] font-bold text-slate-700 leading-tight">{{ $shiftLabel }}</p>
-                                <p class="text-[11px] text-slate-500 leading-tight">{{ $shiftJam }}</p>
+                        <div class="dashboard-history-card rounded-2xl p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-start gap-3 min-w-0">
+                                    <div class="w-10 h-10 shrink-0 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
+                                        <i class="fa-solid fa-fingerprint"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-extrabold text-slate-900 leading-tight truncate">{{ $itemTanggal }}</p>
+                                        <p class="mt-1 text-xs text-slate-500 leading-tight truncate">{{ $itemRange }}</p>
+                                        <span class="inline-flex mt-2 px-2.5 py-1 rounded-full text-[11px] font-bold {{ $itemBadge }}">{{ $itemStatus }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="shrink-0 text-right">
+                                    <p class="text-[11px] font-bold text-slate-700 leading-tight">{{ $shiftLabel }}</p>
+                                    <p class="text-[11px] text-slate-500 leading-tight">{{ $shiftJam }}</p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                @empty
-                    <div class="bg-white/85 backdrop-blur rounded-2xl border border-white/70 shadow-sm p-6 text-center text-sm text-slate-500">
-                        Belum ada data presensi.
-                    </div>
-                @endforelse
+                    @empty
+                        <div class="dashboard-history-card rounded-2xl p-6 text-center text-sm text-slate-500 sm:col-span-2">
+                            Belum ada data presensi.
+                        </div>
+                    @endforelse
+                </div>
             </section>
         </main>
 
         <nav class="user-bottom-nav">
             <div class="user-bottom-nav-inner">
-                <a href="{{ route('dashboard') }}" class="text-blue-700 text-center text-xs">
+                <a href="{{ route('dashboard') }}" class="flex min-w-14 flex-col items-center gap-1 rounded-xl px-3 py-2 text-center text-xs font-bold text-blue-700">
                     <i class="fa-solid fa-house text-lg"></i>
                     <p>Home</p>
                 </a>
-                <a href="{{ route('history.index') }}" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('history.index') }}" class="flex min-w-14 flex-col items-center gap-1 rounded-xl px-3 py-2 text-center text-xs font-semibold text-slate-500 hover:text-blue-700 transition">
                     <i class="fa-solid fa-file-lines text-lg"></i>
                     <p>Histori</p>
                 </a>
-                <a href="{{ route('absen.page') }}" class="w-14 h-14 -mt-8 bg-red-600 text-white rounded-full flex items-center justify-center border-4 border-white shadow-lg shadow-red-600/20">
+                <a href="{{ route('absen.page') }}" class="w-16 h-16 -mt-9 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center border-4 border-white shadow-xl shadow-red-600/25 transition">
                     @include('user.partials.face-id-icon', ['class' => 'w-7 h-7'])
                 </a>
-                <a href="{{ route('user.shifts.index') }}" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('user.shifts.index') }}" class="flex min-w-14 flex-col items-center gap-1 rounded-xl px-3 py-2 text-center text-xs font-semibold text-slate-500 hover:text-blue-700 transition">
                     <i class="fa-solid fa-calendar-days text-lg"></i>
                     <p>Jadwal</p>
                 </a>
-                <a href="{{ route('profile.index') }}" class="text-gray-500 text-center text-xs">
+                <a href="{{ route('profile.index') }}" class="flex min-w-14 flex-col items-center gap-1 rounded-xl px-3 py-2 text-center text-xs font-semibold text-slate-500 hover:text-blue-700 transition">
                     <i class="fa-solid fa-id-card text-lg"></i>
                     <p>Biodata</p>
                 </a>

@@ -21,10 +21,7 @@
       <style>
         .user-page {
             min-height: 100dvh;
-            background:
-                radial-gradient(circle at top left, rgb(220 38 38 / 0.09), transparent 26rem),
-                radial-gradient(circle at bottom right, rgb(37 99 235 / 0.13), transparent 30rem),
-                #f8fafc;
+            background: linear-gradient(135deg, #f8fafc 0%, #eef6ff 48%, #f8fafc 100%);
             display: flex;
             justify-content: center;
             width: 100%;
@@ -35,25 +32,26 @@
             min-height: 100dvh;
             position: relative;
             padding-bottom: calc(6rem + env(safe-area-inset-bottom));
-            background:
-                linear-gradient(180deg, rgb(239 246 255 / 0.9) 0%, rgb(248 250 252 / 1) 46%, rgb(255 241 242 / 0.42) 100%);
+            background: transparent;
             overflow-x: hidden;
         }
 
         .user-phone > main {
             width: 100%;
-            max-width: 72rem;
+            max-width: none;
             margin-left: auto;
             margin-right: auto;
-            padding-left: clamp(0.75rem, 2vw, 2rem) !important;
-            padding-right: clamp(0.75rem, 2vw, 2rem) !important;
+            padding-left: clamp(0.75rem, 3vw, 3rem) !important;
+            padding-right: clamp(0.75rem, 3vw, 3rem) !important;
         }
 
         .user-phone > header {
             width: 100%;
-            max-width: 72rem;
+            max-width: none;
             margin-left: auto;
             margin-right: auto;
+            padding-left: clamp(1rem, 3vw, 3rem) !important;
+            padding-right: clamp(1rem, 3vw, 3rem) !important;
         }
 
         @media (max-width: 480px) {
@@ -66,7 +64,7 @@
         @media (min-width: 1024px) {
             .user-phone,
             .user-bottom-nav-inner {
-                max-width: 72rem;
+                max-width: none;
             }
         }
 
@@ -80,10 +78,10 @@
         }
 
         .user-card {
-            border: 1px solid rgb(255 255 255 / 0.7);
+            border: 1px solid rgb(226 232 240 / 0.85);
             border-radius: 1rem;
-            background: rgb(255 255 255 / 0.85);
-            box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+            background: rgb(255 255 255 / 0.92);
+            box-shadow: 0 12px 28px rgb(15 23 42 / 0.08);
             backdrop-filter: blur(8px);
         }
 
@@ -151,10 +149,11 @@
             display: flex;
             align-items: center;
             justify-content: space-around;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid rgb(226 232 240 / 0.95);
             border-radius: 1rem 1rem 0 0;
-            background: #fff;
-            box-shadow: 0 -10px 25px rgb(15 23 42 / 0.14);
+            background: rgb(255 255 255 / 0.96);
+            box-shadow: 0 -12px 30px rgb(15 23 42 / 0.12);
+            backdrop-filter: blur(14px);
         }
 
         .user-nav-link,
